@@ -1,0 +1,7 @@
+Universe:
+Propositions
+
+KB:
+
+Goals:
+!(P <-> !P)

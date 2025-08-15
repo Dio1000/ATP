@@ -1,0 +1,5 @@
+KB:
+P -> Q
+P
+Goals:
+Q
