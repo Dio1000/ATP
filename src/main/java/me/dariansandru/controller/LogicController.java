@@ -7,6 +7,7 @@ import me.dariansandru.io.InputDevice;
 import me.dariansandru.parser.Parser;
 import me.dariansandru.parser.parsers.FormulaParser;
 import me.dariansandru.parser.parsers.ParserFactory;
+import me.dariansandru.reflexivity.PropositionalInferenceRules;
 import me.dariansandru.utils.helper.ErrorHelper;
 import me.dariansandru.utils.helper.WarningHelper;
 
@@ -39,8 +40,6 @@ public class LogicController {
             ErrorHelper.print();
             return;
         }
-
-        System.out.println("Hello");
 
 
     }

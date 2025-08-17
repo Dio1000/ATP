@@ -1,12 +1,22 @@
 package me.dariansandru.domain.formula;
 
 import me.dariansandru.domain.UniverseOfDiscourse;
+import me.dariansandru.utils.data_structures.ast.AST;
+import me.dariansandru.utils.data_structures.ast.PropositionalAST;
 
 public class PropositionalFormula implements Formula {
 
+    private final String formula;
+    private final PropositionalAST ast;
+
+    public PropositionalFormula(String formula) {
+        this.formula = formula;
+        this.ast = new PropositionalAST(formula);
+    }
+
     @Override
     public String toString() {
-        return null;
+        return formula;
     }
 
     @Override
@@ -22,6 +32,11 @@ public class PropositionalFormula implements Formula {
     @Override
     public boolean equivalentTo(Formula otherFormula) {
         return false;
+    }
+
+    @Override
+    public AST getAST() {
+        return ast;
     }
 
     @Override

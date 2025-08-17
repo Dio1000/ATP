@@ -14,6 +14,7 @@ import me.dariansandru.utils.helper.WarningHelper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.StringJoiner;
 
 public class PropositionalAST implements AST {
 
@@ -34,7 +35,52 @@ public class PropositionalAST implements AST {
 
     @Override
     public String toString() {
-        return formulaString;
+        if (root.getChildren().isEmpty()) {
+            return "";
+        }
+        String string = buildString((PropositionalASTNode) root.getChildren().getFirst());
+        if (string.startsWith(new Negation().getRepresentation())) return string;
+        else return string.substring(1, string.length() - 1);
+    }
+
+
+    private String buildString(PropositionalASTNode node) {
+        if (node == null || node.getKey() == null) {
+            return "";
+        }
+
+        Predicate predicate = (Predicate) node.getKey();
+        int arity = predicate.getArity();
+
+        switch (arity) {
+            case 0 -> {
+                return predicate.getRepresentation();
+            }
+            case 1 -> {
+                PropositionalASTNode child = (PropositionalASTNode) node.getChildren().getFirst();
+                String childStr = buildString(child);
+
+                if (child.getKey() instanceof Predicate childPred && childPred.getArity() != 0) {
+                    return predicate.getRepresentation() + childStr;
+                }
+                return predicate.getRepresentation() + childStr;
+            }
+            case 2 -> {
+                PropositionalASTNode left = (PropositionalASTNode) node.getChildren().get(0);
+                PropositionalASTNode right = (PropositionalASTNode) node.getChildren().get(1);
+                return "(" + buildString(left) + " " + predicate.getRepresentation() + " " + buildString(right) + ")";
+            }
+            case -1 -> {
+                StringJoiner joiner = new StringJoiner(" " + predicate.getRepresentation() + " ");
+                for (ASTNode child : node.getChildren()) {
+                    joiner.add(buildString((PropositionalASTNode) child));
+                }
+                return "(" + joiner + ")";
+            }
+            default -> {
+                return "<?>";
+            }
+        }
     }
 
     @Override
@@ -161,24 +207,33 @@ public class PropositionalAST implements AST {
         }
 
         boolean valid = (currentNode.equals(root)) && !invalid;
-
-        //TODO This is a glue fix, change it maybe? Update: Don't know if needed anymore, will test later.
-        try {
-            Predicate negatedPredicate = (Predicate) currentNode.getKey();
-            while (Objects.equals(negatedPredicate.getRepresentation(), new Negation().getRepresentation())) {
-                if (currentNode.getParent() != null) currentNode = (PropositionalASTNode) currentNode.getParent();
-                else break;
-            }
-            if (currentNode.equals(root)) valid = true;
-        }
-        catch (Exception ignored) {
-
-        }
-
         if (!valid) {
             ErrorHelper.add(formulaString + " is not a well-formed formula!");
         }
         return valid;
+    }
+
+    public void negate() {
+        if (root.getChildren().isEmpty()) {
+            return;
+        }
+        PropositionalASTNode formulaNode = (PropositionalASTNode) root.getChildren().get(0);
+        Predicate predicate = (Predicate) formulaNode.getKey();
+
+        if (predicate instanceof Negation) {
+            PropositionalASTNode negatedChild = (PropositionalASTNode) formulaNode.getChildren().getFirst();
+            negatedChild.setParent(root);
+
+            root.getChildren().set(0, negatedChild);
+        }
+        else {
+            PropositionalASTNode negationNode = new PropositionalASTNode(new Negation());
+            formulaNode.setParent(negationNode);
+            negationNode.getChildren().add(formulaNode);
+
+            root.getChildren().set(0, negationNode);
+            negationNode.setParent(root);
+        }
     }
 
     @Override
