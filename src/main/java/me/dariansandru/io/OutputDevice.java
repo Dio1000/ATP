@@ -20,4 +20,23 @@ public class OutputDevice {
         }
     }
 
+    public static void writeToConsole(String message) {
+        System.out.println(message);
+    }
+
+    public static void writeToConsole(String message, int num) {
+        while (num != 0) {
+            System.out.println(message);
+            num--;
+        }
+    }
+
+    public static void writeToConsole(String message1, String message2, int num) {
+        while (num != 0) {
+            System.out.println(message1);
+            num--;
+        }
+        System.out.println(message2);
+    }
+
 }

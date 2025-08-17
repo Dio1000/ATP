@@ -13,4 +13,7 @@ public interface AST {
     void moveLeft();
     void moveRight();
     void moveUp();
+
+    Object getRoot();
+    AST getSubtree(int childIndex);
 }

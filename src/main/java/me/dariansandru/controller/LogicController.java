@@ -1,13 +1,16 @@
 package me.dariansandru.controller;
 
 import me.dariansandru.domain.UniverseOfDiscourse;
+import me.dariansandru.domain.proof.Proof;
 import me.dariansandru.domain.signature.Signature;
 import me.dariansandru.domain.signature.SignatureFactory;
 import me.dariansandru.io.InputDevice;
+import me.dariansandru.io.OutputDevice;
 import me.dariansandru.parser.Parser;
 import me.dariansandru.parser.parsers.FormulaParser;
 import me.dariansandru.parser.parsers.ParserFactory;
-import me.dariansandru.reflexivity.PropositionalInferenceRules;
+import me.dariansandru.parser.parsers.PropositionalParser;
+import me.dariansandru.utils.data_structures.ast.AST;
 import me.dariansandru.utils.helper.ErrorHelper;
 import me.dariansandru.utils.helper.WarningHelper;
 
@@ -24,6 +27,7 @@ public class LogicController {
     public void run() {
         List<String> lines = InputDevice.read(inputFile);
         if (!Parser.parseValidInput(lines)) return;
+
         UniverseOfDiscourse universeOfDiscourse = Parser.getUniverseOfDiscourse(lines);
         Signature signature = SignatureFactory.createSignature(universeOfDiscourse);
         FormulaParser parser = ParserFactory.createParser(signature);
@@ -32,15 +36,17 @@ public class LogicController {
         List<String> goals = Parser.getGoalsLines(lines);
 
         boolean validSyntax = parser.parse(knowledgeBase) && parser.parse(goals);
-        if (validSyntax) {
-            System.out.println("Syntax validation complete!");
-            WarningHelper.print();
-        }
-        else {
+        if (!validSyntax) {
             ErrorHelper.print();
             return;
         }
+        WarningHelper.print();
+        OutputDevice.writeToConsole("Syntax validated successfully!");
 
+        List<AST> knowledgeBaseAST = ((PropositionalParser) parser).parseAndGetASTs(knowledgeBase);
+        List<AST> goalsAST = ((PropositionalParser) parser).parseAndGetASTs(goals);
 
+        Proof proof = new Proof(signature, knowledgeBaseAST, goalsAST);
+        proof.prove();
     }
 }

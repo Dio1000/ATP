@@ -2,13 +2,16 @@ package me.dariansandru.parser.parsers;
 
 import me.dariansandru.domain.signature.PropositionalSignature;
 import me.dariansandru.domain.signature.Signature;
+import me.dariansandru.utils.data_structures.ast.AST;
 import me.dariansandru.utils.data_structures.ast.PropositionalAST;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class PropositionalParser implements FormulaParser {
 
-    PropositionalSignature propositionalSignature = new PropositionalSignature();
+    private final PropositionalSignature propositionalSignature = new PropositionalSignature();
+    private final List<AST> astList = new ArrayList<>();
 
     @Override
     public Signature getSignature() {
@@ -18,7 +21,10 @@ public class PropositionalParser implements FormulaParser {
     @Override
     public boolean parseEntry(String line, int index) {
         PropositionalAST ast = new PropositionalAST(line);
-        return ast.validate(index);
+        boolean valid = ast.validate(index);
+        if (valid) astList.add(ast);
+
+        return valid;
     }
 
     @Override
@@ -34,4 +40,14 @@ public class PropositionalParser implements FormulaParser {
         return valid;
     }
 
+    @Override
+    public List<AST> getASTList() {
+        return new ArrayList<>(astList);
+    }
+
+    public List<AST> parseAndGetASTs(List<String> lines) {
+        astList.clear();
+        parse(lines);
+        return getASTList();
+    }
 }

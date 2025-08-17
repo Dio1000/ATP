@@ -11,10 +11,7 @@ import me.dariansandru.utils.factory.PropositionalPredicateFactory;
 import me.dariansandru.utils.helper.ErrorHelper;
 import me.dariansandru.utils.helper.WarningHelper;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.StringJoiner;
+import java.util.*;
 
 public class PropositionalAST implements AST {
 
@@ -33,16 +30,20 @@ public class PropositionalAST implements AST {
         this.currentChildIndex = 0;
     }
 
+    public PropositionalAST(PropositionalASTNode node) {
+        this.formulaString = "";
+        this.root = node;
+    }
+
     @Override
     public String toString() {
         if (root.getChildren().isEmpty()) {
             return "";
         }
         String string = buildString((PropositionalASTNode) root.getChildren().getFirst());
-        if (string.startsWith(new Negation().getRepresentation())) return string;
+        if (string.startsWith(new Negation().getRepresentation()) || string.length() <= 3) return string;
         else return string.substring(1, string.length() - 1);
     }
-
 
     private String buildString(PropositionalASTNode node) {
         if (node == null || node.getKey() == null) {
@@ -91,6 +92,16 @@ public class PropositionalAST implements AST {
     @Override
     public AST simplify() {
         return null;
+    }
+
+    @Override
+    public Object evaluate() {
+        return null;
+    }
+
+    @Override
+    public boolean isEquivalentTo(AST other) {
+        return false;
     }
 
     @Override
@@ -185,8 +196,9 @@ public class PropositionalAST implements AST {
                             List<ASTNode> oldChildren = new ArrayList<>(currentNode.getChildren());
                             currentNode.getChildren().clear();
                             for (ASTNode child : oldChildren) {
-                                child.setParent(newOpNode);
-                                newOpNode.getChildren().add(child);
+                                PropositionalASTNode childCopy = cloneNode((PropositionalASTNode) child);
+                                childCopy.setParent(newOpNode);
+                                newOpNode.getChildren().add(childCopy);
                             }
                             currentNode.setKey(predicate);
 
@@ -210,6 +222,7 @@ public class PropositionalAST implements AST {
         if (!valid) {
             ErrorHelper.add(formulaString + " is not a well-formed formula!");
         }
+
         return valid;
     }
 
@@ -236,16 +249,6 @@ public class PropositionalAST implements AST {
         }
     }
 
-    @Override
-    public Object evaluate() {
-        return null;
-    }
-
-    @Override
-    public boolean isEquivalentTo(AST other) {
-        return false;
-    }
-
     private void ensureChildren(PropositionalASTNode node, int count) {
         while (node.getChildren().size() < count) {
             node.addChild();
@@ -253,6 +256,11 @@ public class PropositionalAST implements AST {
     }
 
     private void enterChildAtCurrentIndex() {
+        Predicate predicate = (Predicate) currentNode.getKey();
+        if (predicate != null && predicate.getArity() == 0) {
+            return;
+        }
+
         List<ASTNode> children = currentNode.getChildren();
         if (currentChildIndex >= children.size()) {
             ensureChildren(currentNode, currentChildIndex + 1);
@@ -268,11 +276,13 @@ public class PropositionalAST implements AST {
             throw new ASTNodeException("Current node has no parent; cannot move left.");
         }
         PropositionalASTNode parent = (PropositionalASTNode) currentNode.getParent();
-        int idx = parent.getChildren().indexOf(currentNode);
-        if (idx <= 0) {
+
+        int index = parent.getChildren().indexOf(currentNode);
+        if (index <= 0) {
             throw new ASTNodeException("Already at the leftmost sibling.");
         }
-        currentNode = (PropositionalASTNode) parent.getChildren().get(idx - 1);
+        
+        currentNode = (PropositionalASTNode) parent.getChildren().get(index - 1);
         currentChildIndex = 0;
     }
 
@@ -284,23 +294,70 @@ public class PropositionalAST implements AST {
     @Override
     public void moveUp() {
         if (currentNode.getParent() == null) {
-            throw new ASTNodeException("Current node does not have a parent.");
+            return;
         }
 
-        PropositionalASTNode parentNode = (PropositionalASTNode) currentNode.getParent();
-        int cameFromIndex = parentNode.getChildren().indexOf(currentNode);
-        currentNode = parentNode;
-        currentChildIndex = cameFromIndex + 1;
+        PropositionalASTNode parent = (PropositionalASTNode) currentNode.getParent();
+        int childIndex = parent.getChildren().indexOf(currentNode);
+        currentNode = parent;
 
-        while (currentNode.getKey() instanceof Predicate predicate && predicate.getArity() == 1) {
-            if (currentNode.getParent() == null) {
-                break;
+        while (currentNode.getKey() instanceof Predicate predicate &&
+                predicate.getArity() == 1 &&
+                currentNode.getParent() != null) {
+            parent = (PropositionalASTNode) currentNode.getParent();
+            childIndex = parent.getChildren().indexOf(currentNode);
+            currentNode = parent;
+        }
+
+        currentChildIndex = childIndex + 1;
+        if (currentChildIndex >= currentNode.getChildren().size()) {
+            currentChildIndex = currentNode.getChildren().size();
+        }
+    }
+
+    @Override
+    public Object getRoot() {
+        return this.root;
+    }
+
+    @Override
+    public AST getSubtree(int childIndex) {
+        if (root == null) {
+            throw new IllegalStateException("Root is null");
+        }
+
+        if (root.getChildren().isEmpty()) {
+            if (childIndex != 0) {
+                throw new IndexOutOfBoundsException("Leaf node has no children");
             }
-            parentNode = (PropositionalASTNode) currentNode.getParent();
-            cameFromIndex = parentNode.getChildren().indexOf(currentNode);
-            currentNode = parentNode;
-            currentChildIndex = cameFromIndex + 1;
+            return new PropositionalAST(cloneNode(root));
         }
+
+        if (childIndex < 0 || childIndex >= root.getChildren().size()) {
+            throw new IndexOutOfBoundsException(
+                    "Child index out of range: " + childIndex + " (root has " + root.getChildren().size() + " children)"
+            );
+        }
+
+        PropositionalASTNode childNode = (PropositionalASTNode) root.getChildren().get(childIndex);
+        PropositionalASTNode clone = cloneNode(childNode);
+
+        PropositionalASTNode dummyRoot = new PropositionalASTNode(null);
+        dummyRoot.addChild();
+        dummyRoot.getChildren().set(0, clone);
+        clone.setParent(dummyRoot);
+
+        return new PropositionalAST(dummyRoot);
+    }
+
+    private PropositionalASTNode cloneNode(PropositionalASTNode node) {
+        PropositionalASTNode copy = new PropositionalASTNode((Predicate) node.getKey());
+        for (ASTNode child : node.getChildren()) {
+            PropositionalASTNode childCopy = cloneNode((PropositionalASTNode) child);
+            childCopy.setParent(copy);
+            copy.getChildren().add(childCopy);
+        }
+        return copy;
     }
 
 }
