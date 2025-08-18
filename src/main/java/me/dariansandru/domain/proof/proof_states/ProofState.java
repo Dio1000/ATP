@@ -10,12 +10,12 @@ import java.util.List;
 public class ProofState {
 
     private final List<AST> knowledgeBase;
-    private final List<AST> goals;
+    private final AST goal;
     private final List<InferenceRule> inferenceRules;
 
-    public ProofState(List<AST> knowledgeBase, List<AST> goals, List<InferenceRule> inferenceRules) {
+    public ProofState(List<AST> knowledgeBase, AST goal, List<InferenceRule> inferenceRules) {
         this.knowledgeBase = new ArrayList<>(knowledgeBase);
-        this.goals = new ArrayList<>(goals);
+        this.goal = goal;
         this.inferenceRules = new ArrayList<>(inferenceRules);
     }
 
@@ -23,8 +23,8 @@ public class ProofState {
         return knowledgeBase;
     }
 
-    public List<AST> getGoals() {
-        return goals;
+    public AST getGoals() {
+        return goal;
     }
 
     public List<InferenceRule> getInferenceRules() {

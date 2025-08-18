@@ -5,6 +5,7 @@ public interface AST {
 
     AST copy();
     AST simplify();
+    void negate();
 
     boolean validate(int line);
     Object evaluate();

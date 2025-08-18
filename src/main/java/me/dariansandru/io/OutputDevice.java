@@ -26,14 +26,14 @@ public class OutputDevice {
 
     public static void writeToConsole(String message, int num) {
         while (num != 0) {
-            System.out.println(message);
+            System.out.print(message);
             num--;
         }
     }
 
     public static void writeToConsole(String message1, String message2, int num) {
-        while (num != 0) {
-            System.out.println(message1);
+        while (num > 0) {
+            System.out.print(message1);
             num--;
         }
         System.out.println(message2);

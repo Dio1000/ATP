@@ -11,6 +11,7 @@ public class Main {
 }
 
 //TODO? Refactor Signatures such that they use reflexivity.
+//TODO? Refactor Proof to be an interface.
 //TODO Implement tokenizer for functions.
 //TODO Check notation and arity of predicates / functions in all universes of discourse besides Propositional Logic
 //TODO if the AST parsing throws an error catch it and invalidate the formula.

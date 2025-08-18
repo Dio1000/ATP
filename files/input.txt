@@ -2,7 +2,8 @@ Universe:
 Propositions
 
 KB:
+A -> B
+!B
 
 Goals:
-(A AND B AND C) AND B
-//A AND B
+A -> (B -> C)
