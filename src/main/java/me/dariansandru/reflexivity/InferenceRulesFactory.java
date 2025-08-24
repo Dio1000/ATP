@@ -12,15 +12,16 @@ public class InferenceRulesFactory {
 
     public static List<InferenceRule> createRules(Signature signature) {
         UniverseOfDiscourse universeOfDiscourse = signature.getUniverseOfDiscourse();
+        List<InferenceRule> inferenceRules;
         switch (universeOfDiscourse) {
-            case PROPOSITIONS -> new PropositionalInferenceRules().get();
-            case INTEGER_NUMBERS -> new IntegerInferenceRules().get();
-            case RATIONAL_NUMBERS -> new RationalInferenceRules().get();
-            case REAL_NUMBERS -> new RealInferenceRules().get();
-            case STRINGS -> new StringInferenceRules().get();
+            case PROPOSITIONS -> inferenceRules = new PropositionalInferenceRules().get();
+            case INTEGER_NUMBERS -> inferenceRules = new IntegerInferenceRules().get();
+            case RATIONAL_NUMBERS -> inferenceRules = new RationalInferenceRules().get();
+            case REAL_NUMBERS -> inferenceRules = new RealInferenceRules().get();
+            case STRINGS -> inferenceRules = new StringInferenceRules().get();
             default -> throw new IllegalStateException("Universe of discourse '" + universeOfDiscourse + "' does not exist!");
         }
 
-        return new ArrayList<>();
+        return inferenceRules;
     }
 }

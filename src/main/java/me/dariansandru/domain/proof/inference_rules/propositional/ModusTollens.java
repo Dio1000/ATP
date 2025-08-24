@@ -6,6 +6,8 @@ import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.utils.data_structures.ast.AST;
 import me.dariansandru.utils.data_structures.ast.PropositionalASTNode;
 
+import java.util.List;
+
 public class ModusTollens implements InferenceRule {
 
     private AST implicationAST = null;
@@ -16,27 +18,37 @@ public class ModusTollens implements InferenceRule {
     }
 
     @Override
-    public boolean canInference(AST... asts) {
-        if (asts.length != 2) return false;
+    public boolean canInference(List<AST> asts) {
+        implicationAST = null;
 
-        if (((Predicate) ((PropositionalASTNode) asts[0].getRoot()).getKey()).getRepresentation().
-                equals(new Implication().getRepresentation())) {
-            implicationAST = asts[0];
-        }
-        else if (((Predicate) ((PropositionalASTNode) asts[1].getRoot()).getKey()).getRepresentation().
-                equals(new Implication().getRepresentation())) {
-            implicationAST = asts[1];
-        }
+        for (AST candidate : asts) {
+            if (!(candidate.getRoot() instanceof PropositionalASTNode)) continue;
 
-        assert implicationAST != null;
-        implicationAST.getSubtree(1).negate();
-        return implicationAST.getSubtree(1).isEquivalentTo(asts[1]);
+            Predicate predicate = (Predicate) ((PropositionalASTNode) candidate.getRoot()).getKey();
+            if (predicate == null) continue;
+
+            if (predicate.getRepresentation().equals(new Implication().getRepresentation())) {
+                AST consequent = candidate.getSubtree(1);
+                AST negatedConsequent = consequent.copy();
+                negatedConsequent.negate();
+
+                for (AST other : asts) {
+                    if (other != candidate && negatedConsequent.isEquivalentTo(other)) {
+                        implicationAST = candidate;
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     @Override
-    public AST inference(AST... asts) {
-        implicationAST.getSubtree(0).negate();
-        return implicationAST.getSubtree(0);
-    }
+    public AST inference(List<AST> asts) {
+        assert implicationAST != null;
 
+        AST antecedent = implicationAST.getSubtree(0).copy();
+        antecedent.negate();
+        return antecedent;
+    }
 }

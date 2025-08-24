@@ -16,8 +16,8 @@ public abstract class ProofTextHelper {
         };
     }
 
-    public static String getAssumption(String assumption, String conclusion) {
-        return "Assume " + assumption + " and prove " + conclusion;
+    public static String getAssumption(String implication, String assumption, String conclusion) {
+        return "To prove " + implication + ", assume " + assumption + " and prove " + conclusion;
     }
 
     public static String getInference(String conclusion, String... strings) {
@@ -46,6 +46,10 @@ public abstract class ProofTextHelper {
         builder.append(" ,we conclude ").append(conclusion);
 
         return builder.toString();
+    }
+
+    public static String getEquivalenceConclusion(String equivalence, String conclusion1, String conclusion2) {
+        return "To prove " + equivalence + ", prove " + conclusion1 + " and " + conclusion2;
     }
 
 }

@@ -54,12 +54,58 @@ public class PropositionalAST implements AST {
 
     @Override
     public String toString() {
-        if (root.getChildren().isEmpty()) {
-            return "";
+        PropositionalASTNode formula = getFormulaNode();
+        if (formula == null || formula.getKey() == null) return "";
+
+        String s = buildString(formula);
+
+        Predicate p = (Predicate) formula.getKey();
+        int arity = p.getArity();
+
+        if (arity == 0 || arity == 1) return s;
+        return stripOuter(s);
+    }
+
+    public boolean isAtomic() {
+        if (root == null || root.getKey() == null) {
+            return false;
         }
-        String string = buildString((PropositionalASTNode) root.getChildren().getFirst());
-        if (string.startsWith(new Negation().getRepresentation()) || string.length() <= 3) return string;
-        else return string.substring(1, string.length() - 1);
+
+        Predicate predicate = (Predicate) root.getKey();
+        if (predicate.getArity() == 0) {
+            return true;
+        }
+
+        if (predicate.getRepresentation().equals(new Negation().getRepresentation())
+                && root.getChildren().size() == 1) {
+
+            PropositionalASTNode child = (PropositionalASTNode) root.getChildren().getFirst();
+            if (child.getKey() instanceof Predicate childPredicate) {
+                return childPredicate.getArity() == 0;
+            }
+        }
+
+        return false;
+    }
+
+    private PropositionalASTNode getFormulaNode() {
+        if (root.getKey() != null) return root;
+        if (root.getChildren().isEmpty()) return null;
+        return (PropositionalASTNode) root.getChildren().getFirst();
+    }
+
+    private String stripOuter(String s) {
+        if (s.length() < 2) return s;
+        if (s.charAt(0) != '(' || s.charAt(s.length() - 1) != ')') return s;
+
+        int d = 0;
+        for (int i = 0; i < s.length() - 1; i++) {
+            char c = s.charAt(i);
+            if (c == '(') d++;
+            else if (c == ')') d--;
+            if (d == 0 && i < s.length() - 1) return s;
+        }
+        return s.substring(1, s.length() - 1);
     }
 
     private String buildString(PropositionalASTNode node) {
@@ -223,9 +269,17 @@ public class PropositionalAST implements AST {
         Object key1 = node1.getKey();
         Object key2 = node2.getKey();
 
-        if (key1 == null && key2 != null || key1 != null && !key1.equals(key2)) {
-            return false;
+        if (key1 == null && key2 != null) return false;
+        if (key1 != null && key2 == null) return false;
+
+        if (key1 != null) {
+            String representation1 = (key1 instanceof Predicate p1) ? p1.getRepresentation() : key1.toString();
+            String representation2 = (key2 instanceof Predicate p2) ? p2.getRepresentation() : key2.toString();
+            if (!representation1.equals(representation2)) {
+                return false;
+            }
         }
+
         if (node1.getChildren().size() != node2.getChildren().size()) {
             return false;
         }

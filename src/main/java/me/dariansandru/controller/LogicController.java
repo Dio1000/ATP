@@ -1,9 +1,7 @@
 package me.dariansandru.controller;
 
 import me.dariansandru.domain.UniverseOfDiscourse;
-import me.dariansandru.domain.proof.Proof;
-import me.dariansandru.domain.proof.inference_rules.propositional.ModusPonens;
-import me.dariansandru.domain.proof.inference_rules.propositional.ModusTollens;
+import me.dariansandru.domain.proof.proofs.PropositionalProof;
 import me.dariansandru.domain.signature.Signature;
 import me.dariansandru.domain.signature.SignatureFactory;
 import me.dariansandru.io.InputDevice;
@@ -48,11 +46,7 @@ public class LogicController {
         List<AST> knowledgeBaseAST = ((PropositionalParser) parser).parseAndGetASTs(knowledgeBase);
         List<AST> goalsAST = ((PropositionalParser) parser).parseAndGetASTs(goals);
 
-        ModusTollens modusPonens = new ModusTollens();
-        modusPonens.canInference(knowledgeBaseAST.get(0), knowledgeBaseAST.get(1));
-        System.out.println("HERE " + modusPonens.inference(knowledgeBaseAST.get(0), knowledgeBaseAST.get(1)));
-
-        Proof proof = new Proof(signature, knowledgeBaseAST, goalsAST);
+        PropositionalProof proof = new PropositionalProof(signature, knowledgeBaseAST, goalsAST);
         proof.prove();
     }
 }

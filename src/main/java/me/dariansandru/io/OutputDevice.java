@@ -9,6 +9,8 @@ import java.util.List;
 
 public class OutputDevice {
 
+    private static final String indentation = "     ";
+
     public static void write(List<String> lines, String fileName) throws OutputException {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
             for (String line : lines) {
@@ -37,6 +39,11 @@ public class OutputDevice {
             num--;
         }
         System.out.println(message2);
+    }
+
+    public static void writeIndentedToConsole(String message, int num) {
+        writeToConsole(indentation, num);
+        System.out.println(message);
     }
 
 }

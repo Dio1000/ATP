@@ -1,33 +1,23 @@
 package me.dariansandru.domain.proof.proof_states;
-
-import me.dariansandru.domain.formula.Formula;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.utils.data_structures.ast.AST;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class ProofState {
+public interface ProofState {
+    List<AST> getKnowledgeBase();
+    List<AST> getGoals();
+    List<InferenceRule> getInferenceRules();
 
-    private final List<AST> knowledgeBase;
-    private final AST goal;
-    private final List<InferenceRule> inferenceRules;
+    boolean isVisited();
+    boolean areChildrenInConjunction();
+    boolean isProven();
 
-    public ProofState(List<AST> knowledgeBase, AST goal, List<InferenceRule> inferenceRules) {
-        this.knowledgeBase = new ArrayList<>(knowledgeBase);
-        this.goal = goal;
-        this.inferenceRules = new ArrayList<>(inferenceRules);
-    }
+    void prove();
+    boolean simplify();
 
-    public List<AST> getKnowledgeBase() {
-        return knowledgeBase;
-    }
-
-    public AST getGoals() {
-        return goal;
-    }
-
-    public List<InferenceRule> getInferenceRules() {
-        return inferenceRules;
-    }
+    List<ProofState> getChildren();
+    void addChild(ProofState proofState);
+    ProofState getParent();
+    void addParent(ProofState proofState);
 }
