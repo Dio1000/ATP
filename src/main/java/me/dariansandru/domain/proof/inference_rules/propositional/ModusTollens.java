@@ -4,6 +4,7 @@ import me.dariansandru.domain.logical_operator.Implication;
 import me.dariansandru.domain.predicate.Predicate;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.utils.data_structures.ast.AST;
+import me.dariansandru.utils.data_structures.ast.PropositionalAST;
 import me.dariansandru.utils.data_structures.ast.PropositionalASTNode;
 
 import java.util.List;
@@ -29,7 +30,8 @@ public class ModusTollens implements InferenceRule {
 
             if (predicate.getRepresentation().equals(new Implication().getRepresentation())) {
                 AST consequent = candidate.getSubtree(1);
-                AST negatedConsequent = consequent.copy();
+                AST negatedConsequent = new PropositionalAST(consequent.toString());
+                negatedConsequent.validate(0);
                 negatedConsequent.negate();
 
                 for (AST other : asts) {
@@ -47,7 +49,8 @@ public class ModusTollens implements InferenceRule {
     public AST inference(List<AST> asts) {
         assert implicationAST != null;
 
-        AST antecedent = implicationAST.getSubtree(0).copy();
+        implicationAST.validate(0);
+        AST antecedent = implicationAST.getSubtree(0);
         antecedent.negate();
         return antecedent;
     }

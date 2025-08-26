@@ -1,6 +1,7 @@
 package me.dariansandru.reflexivity;
 
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
+import me.dariansandru.domain.proof.inference_rules.propositional.ConjunctionElimination;
 import me.dariansandru.domain.proof.inference_rules.propositional.ModusPonens;
 import me.dariansandru.domain.proof.inference_rules.propositional.ModusTollens;
 
@@ -14,6 +15,7 @@ public class PropositionalInferenceRules implements InferenceRules {
         List<InferenceRule> rules = new ArrayList<>();
         rules.add(new ModusPonens());
         rules.add(new ModusTollens());
+        rules.add(new ConjunctionElimination());
 
         return rules;
     }

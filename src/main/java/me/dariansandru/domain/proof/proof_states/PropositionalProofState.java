@@ -18,6 +18,7 @@ public class PropositionalProofState implements ProofState {
     boolean isVisited = false;
     boolean childrenInConjunction = false;
     boolean isProven = false;
+    boolean expanded = false;
 
     ProofState parent;
     List<ProofState> children = new ArrayList<>();
@@ -75,6 +76,7 @@ public class PropositionalProofState implements ProofState {
         if (!children.isEmpty()) {
             proveChildren();
         }
+        if (isProven) return;
 
         for (InferenceRule inferenceRule : inferenceRules) {
             if (inferenceRule.canInference(knowledgeBase)) {
@@ -84,13 +86,14 @@ public class PropositionalProofState implements ProofState {
 
         for (AST ast : knowledgeBase) {
             if (ast.isEquivalentTo(goals.getFirst())) isProven = true;
+            if (isProven) break;
         }
     }
 
     private void proveChildren() {
         while (currentChildIndex < children.size()) {
             ProofState child = children.get(currentChildIndex);
-            child.prove();
+            if (!child.isProven()) child.prove();
 
             if (childrenInConjunction) {
                 if (!child.isProven()) {
@@ -106,13 +109,7 @@ public class PropositionalProofState implements ProofState {
             }
             currentChildIndex++;
         }
-
-        if (childrenInConjunction) {
-            this.isProven = true;
-        }
-        else {
-            this.isProven = false;
-        }
+        this.isProven = childrenInConjunction;
     }
 
     @Override
@@ -145,6 +142,11 @@ public class PropositionalProofState implements ProofState {
     }
 
     public Strategy notifyProof() {
+        if (isProven) return Strategy.NO_STRATEGY;
+        if (expanded) return Strategy.NO_STRATEGY;
+
+        expanded = true;
+
         if (!simplify()) {
             return Strategy.NO_STRATEGY;
         }
@@ -178,5 +180,13 @@ public class PropositionalProofState implements ProofState {
                 return Strategy.NO_STRATEGY;
             }
         }
+    }
+
+    public void print() {
+        System.out.println("Knowledge Base:");
+        for (AST ast : knowledgeBase) System.out.println(ast);
+
+        System.out.println("\nGoals:");
+        for (AST goal : goals) System.out.println(goal);
     }
 }

@@ -416,6 +416,7 @@ public class PropositionalAST implements AST {
 
     @Override
     public void negate() {
+        // if (!validated) validate(0);
         if (root.getChildren().isEmpty()) {
             return;
         }
