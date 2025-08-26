@@ -69,10 +69,10 @@ public class PropositionalProofState implements ProofState {
 
     @Override
     public void prove() {
-        if (!simplify()) {
-            this.isProven = true;
-            return;
-        }
+//        if (!simplify()) {
+//            this.isProven = true;
+//            return;
+//        }
         if (!children.isEmpty()) {
             proveChildren();
         }
@@ -109,7 +109,6 @@ public class PropositionalProofState implements ProofState {
             }
             currentChildIndex++;
         }
-        this.isProven = childrenInConjunction;
     }
 
     @Override

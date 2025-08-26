@@ -3,6 +3,7 @@ Propositions
 
 KB:
 A
+B
 
 Goals:
-A <-> A
+A <-> B

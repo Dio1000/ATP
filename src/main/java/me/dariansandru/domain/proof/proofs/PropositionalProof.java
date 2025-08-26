@@ -95,8 +95,14 @@ public class PropositionalProof implements Proof{
         List<AST> newGoals = new ArrayList<>();
         AST goal = currentProofState.getGoal();
 
-        newKnowledgeBase.add(goal.getSubtree(0));
-        newGoals.add(goal.getSubtree(1));
+        AST newKBEntry = goal.getSubtree(0);
+        newKBEntry.validate(0);
+        newKnowledgeBase.add(newKBEntry);
+
+        AST newGoal = goal.getSubtree(1);
+        newGoal.validate(0);
+        newGoals.add(newGoal);
+
         PropositionalProofState newState = new PropositionalProofState(newKnowledgeBase, newGoals, inferenceRules);
 
         currentProofState.addChild(newState);
@@ -131,7 +137,10 @@ public class PropositionalProof implements Proof{
         PropositionalProofState newCurrentState = null;
 
         for (int i = 0 ; i < children ; i++) {
-            PropositionalProofState newState = new PropositionalProofState(knowledgeBase, List.of(goal.getSubtree(i)), inferenceRules);
+            AST newGoal = goal.getSubtree(i);
+            newGoal.validate(0);
+
+            PropositionalProofState newState = new PropositionalProofState(knowledgeBase, List.of(newGoal), inferenceRules);
             currentProofState.addChild(newState);
             if (i == 0) newCurrentState = newState;
         }

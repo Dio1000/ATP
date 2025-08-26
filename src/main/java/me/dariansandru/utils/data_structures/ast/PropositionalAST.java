@@ -67,19 +67,23 @@ public class PropositionalAST implements AST {
     }
 
     public boolean isAtomic() {
-        if (root == null || root.getKey() == null) {
-            return false;
+        if (root == null) return false;
+
+        PropositionalASTNode effectiveRoot = root;
+        if (effectiveRoot.getKey() == null && effectiveRoot.getChildren().size() == 1) {
+            effectiveRoot = (PropositionalASTNode) effectiveRoot.getChildren().getFirst();
         }
 
-        Predicate predicate = (Predicate) root.getKey();
+        if (effectiveRoot.getKey() == null) return false;
+
+        Predicate predicate = (Predicate) effectiveRoot.getKey();
         if (predicate.getArity() == 0) {
             return true;
         }
 
         if (predicate.getRepresentation().equals(new Negation().getRepresentation())
-                && root.getChildren().size() == 1) {
-
-            PropositionalASTNode child = (PropositionalASTNode) root.getChildren().getFirst();
+                && effectiveRoot.getChildren().size() == 1) {
+            PropositionalASTNode child = (PropositionalASTNode) effectiveRoot.getChildren().getFirst();
             if (child.getKey() instanceof Predicate childPredicate) {
                 return childPredicate.getArity() == 0;
             }
@@ -242,12 +246,7 @@ public class PropositionalAST implements AST {
         PropositionalASTNode childNode = (PropositionalASTNode) effectiveRoot.getChildren().get(childIndex);
         PropositionalASTNode clone = cloneNode(childNode);
 
-        PropositionalASTNode dummyRoot = new PropositionalASTNode(null);
-        dummyRoot.addChild();
-        dummyRoot.getChildren().set(0, clone);
-        clone.setParent(dummyRoot);
-
-        return new PropositionalAST(dummyRoot);
+        return new PropositionalAST(clone);
     }
 
     @Override
