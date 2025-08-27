@@ -3,6 +3,7 @@ package me.dariansandru.domain.proof.proofs;
 import me.dariansandru.domain.logical_operator.Implication;
 import me.dariansandru.domain.proof.Strategy;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
+import me.dariansandru.domain.proof.proof_states.ProofState;
 import me.dariansandru.domain.proof.proof_states.PropositionalProofState;
 import me.dariansandru.domain.signature.Signature;
 import me.dariansandru.io.OutputDevice;
@@ -25,7 +26,6 @@ public class PropositionalProof implements Proof{
     private List<String> conclusions = new ArrayList<>();
 
     private PropositionalProofState root;
-    private PropositionalProofState currentProofState;
 
     public PropositionalProof(Signature signature, List<AST> knowledgeBase, List<AST> goals) {
         this.inferenceRules = InferenceRulesFactory.createRules(signature);
@@ -33,45 +33,49 @@ public class PropositionalProof implements Proof{
         this.goals = goals;
 
         this.root = new PropositionalProofState(knowledgeBase, goals, inferenceRules);
-        this.currentProofState = root;
+    }
+
+    public void buildTree(ProofState state) {
+        Strategy strategy = ((PropositionalProofState) state).notifyProof();
+
+        if (strategy == Strategy.IMPLICATION_STRATEGY) {
+            ImplicationStrategy(state);
+            buildTree(state.getChildren().getFirst());
+        }
+        else if (strategy == Strategy.EQUIVALENCE_STRATEGY) {
+            EquivalenceStrategy(state);
+            buildTree(state.getChildren().getFirst());
+            buildTree(state.getChildren().get(1));
+        }
+        else if (strategy == Strategy.CONJUNCTION_STRATEGY) {
+            ConjunctionStrategy(state);
+            int childrenNumber = state.getChildren().size();
+            for (int i = 0 ; i < childrenNumber ; i++)
+                buildTree(state.getChildren().get(i));
+        }
+        else if (strategy == Strategy.DISJUNCTION_STRATEGY) {
+            DisjunctionStrategy(state);
+            int childrenNumber = state.getChildren().size();
+            for (int i = 0 ; i < childrenNumber ; i++)
+                buildTree(state.getChildren().get(i));
+        }
     }
 
     public void prove() {
-        while (!root.isProven()) {
-            Strategy strategy = currentProofState.notifyProof();
+        buildTree(root);
 
-            if (strategy == Strategy.IMPLICATION_STRATEGY) {
-                ImplicationStrategy();
-            }
-            else if (strategy == Strategy.EQUIVALENCE_STRATEGY) {
-                EquivalenceStrategy();
-            }
-            else if (strategy == Strategy.CONJUNCTION_STRATEGY) {
-                ConjunctionStrategy();
-            }
-            else if (strategy == Strategy.DISJUNCTION_STRATEGY) {
-                DisjunctionStrategy();
-            }
-            else if (strategy == Strategy.NO_STRATEGY) {
-                currentProofState.prove();
-                if (currentProofState.isProven()) {
-                    if (currentProofState.getParent() != null) {
-                        currentProofState = (PropositionalProofState) currentProofState.getParent();
-                    }
-                }
-                else break;
-            }
-        }
+        root.prove();
         isProven = root.isProven();
         if (isProven) System.out.println("Reached");
+
         printProof();
     }
 
-    public void EquivalenceStrategy() {
+    public void EquivalenceStrategy(ProofState state) {
         List<AST> newGoals1 = new ArrayList<>();
         List<AST> newGoals2 = new ArrayList<>();
 
-        AST goal = currentProofState.getGoal();
+        AST goal = ((PropositionalProofState) state).getGoal();
 
         AST newGoal1 = new PropositionalAST(goal.getSubtree(0) + " " + new Implication().getRepresentation() + " " + goal.getSubtree(1));
         AST newGoal2 = new PropositionalAST(goal.getSubtree(1) + " " + new Implication().getRepresentation() + " " + goal.getSubtree(0));
@@ -84,16 +88,15 @@ public class PropositionalProof implements Proof{
         PropositionalProofState newState1 = new PropositionalProofState(knowledgeBase, newGoals1, inferenceRules);
         PropositionalProofState newState2 = new PropositionalProofState(knowledgeBase, newGoals2, inferenceRules);
 
-        currentProofState.addChild(newState1);
-        currentProofState.addChild(newState2);
-
-        currentProofState = newState1;
+        state.addChild(newState1);
+        state.addChild(newState2);
     }
 
-    public void ImplicationStrategy() {
-        List<AST> newKnowledgeBase = currentProofState.getKnowledgeBase();
+    public void ImplicationStrategy(ProofState state) {
+        List<AST> newKnowledgeBase = state.getKnowledgeBase();
         List<AST> newGoals = new ArrayList<>();
-        AST goal = currentProofState.getGoal();
+
+        AST goal = ((PropositionalProofState) state).getGoal();
 
         AST newKBEntry = goal.getSubtree(0);
         newKBEntry.validate(0);
@@ -105,48 +108,42 @@ public class PropositionalProof implements Proof{
 
         PropositionalProofState newState = new PropositionalProofState(newKnowledgeBase, newGoals, inferenceRules);
 
-        currentProofState.addChild(newState);
-        currentProofState = newState;
+        state.addChild(newState);
     }
 
-    public void ConjunctionStrategy() {
-        if (currentProofState.getGoals().size() != 1) {
-            int children = currentProofState.getGoals().size();
+    public void ConjunctionStrategy(ProofState state) {
+        if (state.getGoals().size() != 1) {
+            int children = state.getGoals().size();
             PropositionalProofState newCurrentState = null;
 
             for (int i = 0 ; i < children ; i++) {
-                PropositionalProofState newState = new PropositionalProofState(knowledgeBase, List.of(currentProofState.getGoals().get(i)), inferenceRules);
-                currentProofState.addChild(newState);
+                PropositionalProofState newState = new PropositionalProofState(knowledgeBase, List.of(state.getGoals().get(i)), inferenceRules);
+                state.addChild(newState);
                 if (i == 0) newCurrentState = newState;
             }
 
             assert newCurrentState != null;
-            currentProofState = newCurrentState;
             return;
         }
-        extractGoals();
+        extractGoals(state);
     }
 
-    public void DisjunctionStrategy() {
-        extractGoals();
+    public void DisjunctionStrategy(ProofState state) {
+        extractGoals(state);
     }
 
-    private void extractGoals() {
-        AST goal = currentProofState.getGoal();
+    private void extractGoals(ProofState state) {
+        AST goal = ((PropositionalProofState) state).getGoal();
+
         int children = ((PropositionalASTNode) goal.getRoot()).getChildren().size();
-        PropositionalProofState newCurrentState = null;
 
         for (int i = 0 ; i < children ; i++) {
             AST newGoal = goal.getSubtree(i);
             newGoal.validate(0);
 
             PropositionalProofState newState = new PropositionalProofState(knowledgeBase, List.of(newGoal), inferenceRules);
-            currentProofState.addChild(newState);
-            if (i == 0) newCurrentState = newState;
+            state.addChild(newState);
         }
-
-        assert newCurrentState != null;
-        currentProofState = newCurrentState;
     }
 
     @Override
