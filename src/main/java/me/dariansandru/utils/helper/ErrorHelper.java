@@ -8,6 +8,10 @@ public abstract class ErrorHelper {
     private static List<String> errors = new ArrayList<>();
     private static int size = 0;
 
+    public static boolean notEmpty() {
+        return size != 0;
+    }
+
     public static void add(String errorMessage) {
         errors.add(errorMessage);
         size++;

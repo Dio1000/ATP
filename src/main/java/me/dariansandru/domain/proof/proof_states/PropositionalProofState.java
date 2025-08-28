@@ -1,7 +1,9 @@
 package me.dariansandru.domain.proof.proof_states;
 
 import me.dariansandru.domain.proof.Strategy;
+import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
+import me.dariansandru.domain.proof.inference_rules.propositional.PropositionalInferenceRule;
 import me.dariansandru.utils.data_structures.ast.AST;
 import me.dariansandru.utils.data_structures.ast.PropositionalAST;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
@@ -20,8 +22,9 @@ public class PropositionalProofState implements ProofState {
     boolean isProven = false;
     boolean expanded = false;
 
-    ProofState parent;
-    List<ProofState> children = new ArrayList<>();
+    private ProofState parent;
+    private List<ProofState> children = new ArrayList<>();
+    private SubGoal root;
 
     private int currentChildIndex = 0;
 
@@ -74,15 +77,33 @@ public class PropositionalProofState implements ProofState {
         }
         if (isProven) return;
 
-        for (InferenceRule inferenceRule : inferenceRules) {
-            if (inferenceRule.canInference(knowledgeBase)) {
-                knowledgeBase.add(inferenceRule.inference(knowledgeBase));
+        while (!isProven) {
+            if (containsGoal()) {
+                isProven = true;
+                break;
             }
+
+            this.root = new SubGoal(goals.getFirst(), PropositionalInferenceRule.HYPOTHESIS, goals.getFirst());
+            expandSubGoal(root);
+        }
+    }
+
+    private void expandSubGoal(SubGoal subGoal) {
+        if (containsSubGoal(subGoal)) {
+            this.isProven = true;
+            return;
         }
 
-        for (AST ast : knowledgeBase) {
-            if (ast.isEquivalentTo(goals.getFirst())) isProven = true;
-            if (isProven) break;
+        for (InferenceRule rule : inferenceRules) {
+            List<SubGoal> newSubGoals = rule.getSubGoals(knowledgeBase, subGoal.getGoal());
+            if (!newSubGoals.isEmpty()) {
+                subGoal.addChildren(newSubGoals);
+
+                for (SubGoal child : newSubGoals) {
+                    expandSubGoal(child);
+                    if (isProven) return;
+                }
+            }
         }
     }
 
@@ -185,5 +206,19 @@ public class PropositionalProofState implements ProofState {
 
         System.out.println("\nGoals:");
         for (AST goal : goals) System.out.println(goal);
+    }
+
+    private boolean containsGoal() {
+        for (AST ast : knowledgeBase) {
+            if (ast.isEquivalentTo(goals.getFirst())) return true;
+        }
+        return false;
+    }
+
+    private boolean containsSubGoal(SubGoal subGoal) {
+        for (AST ast : knowledgeBase) {
+            if (ast.isEquivalentTo(subGoal.getGoal())) return true;
+        }
+        return false;
     }
 }

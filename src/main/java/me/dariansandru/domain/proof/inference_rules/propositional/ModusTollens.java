@@ -1,12 +1,17 @@
 package me.dariansandru.domain.proof.inference_rules.propositional;
 
+import me.dariansandru.domain.LogicalOperator;
 import me.dariansandru.domain.logical_operator.Implication;
+import me.dariansandru.domain.logical_operator.Negation;
 import me.dariansandru.domain.predicate.Predicate;
+import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.utils.data_structures.ast.AST;
 import me.dariansandru.utils.data_structures.ast.PropositionalAST;
 import me.dariansandru.utils.data_structures.ast.PropositionalASTNode;
+import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ModusTollens implements InferenceRule {
@@ -54,4 +59,10 @@ public class ModusTollens implements InferenceRule {
         antecedent.negate();
         return antecedent;
     }
+
+    @Override
+    public List<SubGoal> getSubGoals(List<AST> knowledgeBase, AST... asts) {
+        return new ArrayList<>();
+    }
+
 }

@@ -2,6 +2,7 @@ package me.dariansandru.domain.proof.inference_rules.propositional;
 
 import me.dariansandru.domain.logical_operator.Conjunction;
 import me.dariansandru.domain.predicate.Predicate;
+import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.utils.data_structures.ast.AST;
 import me.dariansandru.utils.data_structures.ast.PropositionalASTNode;
@@ -51,6 +52,11 @@ public class ConjunctionElimination implements InferenceRule {
     @Override
     public AST inference(List<AST> asts) {
         return derived;
+    }
+
+    @Override
+    public List<SubGoal> getSubGoals(List<AST> knowledgeBase, AST... asts) {
+        return List.of();
     }
 
     private boolean contains(List<AST> asts, AST other) {

@@ -8,6 +8,10 @@ public abstract class WarningHelper {
     private static List<String> warnings = new ArrayList<>();
     private static int size = 0;
 
+    public static boolean notEmpty() {
+        return size != 0;
+    }
+
     public static void add(String warningMessage) {
         warnings.add(warningMessage);
         size++;

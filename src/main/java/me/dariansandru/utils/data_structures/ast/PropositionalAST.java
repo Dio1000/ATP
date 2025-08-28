@@ -6,6 +6,7 @@ import me.dariansandru.domain.signature.PropositionalSignature;
 import me.dariansandru.tokenizer.Token;
 import me.dariansandru.tokenizer.Tokenizer;
 import me.dariansandru.tokenizer.Type;
+import me.dariansandru.utils.data_structures.ast.exception.ASTException;
 import me.dariansandru.utils.data_structures.ast.exception.ASTNodeException;
 import me.dariansandru.utils.factory.PropositionalPredicateFactory;
 import me.dariansandru.utils.helper.ErrorHelper;
@@ -19,7 +20,6 @@ public class PropositionalAST implements AST {
     private final PropositionalASTNode root;
     private PropositionalASTNode currentNode;
     private int currentChildIndex;
-    private boolean validated = false;
 
     public PropositionalAST(String formulaString) {
         this.formulaString = formulaString;
@@ -57,13 +57,13 @@ public class PropositionalAST implements AST {
         PropositionalASTNode formula = getFormulaNode();
         if (formula == null || formula.getKey() == null) return "";
 
-        String s = buildString(formula);
+        String string = buildString(formula);
 
-        Predicate p = (Predicate) formula.getKey();
-        int arity = p.getArity();
+        Predicate predicate = (Predicate) formula.getKey();
+        int arity = predicate.getArity();
 
-        if (arity == 0 || arity == 1) return s;
-        return stripOuter(s);
+        if (arity == 0 || arity == 1) return string;
+        return stripOuter(string);
     }
 
     public boolean isAtomic() {
@@ -73,7 +73,6 @@ public class PropositionalAST implements AST {
         if (effectiveRoot.getKey() == null && effectiveRoot.getChildren().size() == 1) {
             effectiveRoot = (PropositionalASTNode) effectiveRoot.getChildren().getFirst();
         }
-
         if (effectiveRoot.getKey() == null) return false;
 
         Predicate predicate = (Predicate) effectiveRoot.getKey();
@@ -98,18 +97,18 @@ public class PropositionalAST implements AST {
         return (PropositionalASTNode) root.getChildren().getFirst();
     }
 
-    private String stripOuter(String s) {
-        if (s.length() < 2) return s;
-        if (s.charAt(0) != '(' || s.charAt(s.length() - 1) != ')') return s;
+    private String stripOuter(String string) {
+        if (string.length() < 2) return string;
+        if (string.charAt(0) != '(' || string.charAt(string.length() - 1) != ')') return string;
 
         int d = 0;
-        for (int i = 0; i < s.length() - 1; i++) {
-            char c = s.charAt(i);
-            if (c == '(') d++;
-            else if (c == ')') d--;
-            if (d == 0 && i < s.length() - 1) return s;
+        for (int i = 0; i < string.length() - 1; i++) {
+            char character = string.charAt(i);
+            if (character == '(') d++;
+            else if (character == ')') d--;
+            if (d == 0 && i < string.length() - 1) return string;
         }
-        return s.substring(1, s.length() - 1);
+        return string.substring(1, string.length() - 1);
     }
 
     private String buildString(PropositionalASTNode node) {
@@ -257,6 +256,11 @@ public class PropositionalAST implements AST {
         return areNodesEquivalent((PropositionalASTNode) this.getRoot(), (PropositionalASTNode) other.getRoot());
     }
 
+    @Override
+    public boolean isEmpty() {
+        return this.formulaString.isEmpty();
+    }
+
     private boolean areNodesEquivalent(PropositionalASTNode node1, PropositionalASTNode node2) {
         if (node1 == null && node2 == null) {
             return true;
@@ -297,125 +301,130 @@ public class PropositionalAST implements AST {
         List<Token> tokens = tokenizer.tokenize(formulaString);
         boolean invalid = false;
 
-        for (Token token : tokens) {
-            int position = token.position();
+        try{
+            for (Token token : tokens) {
+                int position = token.position();
 
-            if (token.type() == Type.SEPARATOR) {
-                if ("(".equals(token.lexeme())) {
-                    currentNode.addChild();
-                    currentChildIndex = currentNode.getChildren().size() - 1;
-                    currentNode = (PropositionalASTNode) currentNode.getChildren().get(currentChildIndex);
-                    currentChildIndex = 0;
-                    continue;
-                }
-                else if (")".equals(token.lexeme())) {
-                    moveUp();
-                    continue;
-                }
-            }
-
-            Predicate predicate;
-            try {
-                predicate = PropositionalPredicateFactory.createPredicate(token);
-            }
-            catch (Exception e) {
-                ErrorHelper.add(e.getMessage());
-                invalid = true;
-                continue;
-            }
-
-            int arity = predicate.getArity();
-            switch (arity) {
-                case 0 -> {
-                    if (currentNode.isEmpty()) {
-                        currentNode.setKey(predicate);
+                if (token.type() == Type.SEPARATOR) {
+                    if ("(".equals(token.lexeme())) {
+                        currentNode.addChild();
+                        currentChildIndex = currentNode.getChildren().size() - 1;
+                        currentNode = (PropositionalASTNode) currentNode.getChildren().get(currentChildIndex);
+                        currentChildIndex = 0;
+                        continue;
+                    }
+                    else if (")".equals(token.lexeme())) {
                         moveUp();
-                    }
-                    else {
-                        invalid = true;
-                        ErrorHelper.add("Unexpected proposition " + token.lexeme() + " at this position!", line, position);
-                    }
-                }
-                case 1 -> {
-                    if (currentNode.isEmpty()) {
-                        currentNode.setKey(predicate);
-                        ensureChildren(currentNode, 1);
-                        enterChildAtCurrentIndex();
-                    }
-                    else {
-                        invalid = true;
-                        ErrorHelper.add(token.lexeme() + " is a unary operator used in an invalid position!", line, position);
-                    }
-                }
-                case 2 -> {
-                    if (currentNode.isEmpty()) {
-                        currentNode.setKey(predicate);
-                        ensureChildren(currentNode, 2);
-                        enterChildAtCurrentIndex();
-                    }
-                    else {
-                        invalid = true;
-                        ErrorHelper.add(token.lexeme() + " is a binary operator used in an invalid position!", line, position);
+                        continue;
                     }
                 }
 
-                case -1 -> {
-                    if (currentNode.isEmpty()) {
-                        currentNode.setKey(predicate);
-                        ensureChildren(currentNode, 2);
-                        enterChildAtCurrentIndex();
-                    }
-                    else {
-                        Predicate currentPredicate = (Predicate) currentNode.getKey();
-                        String currentRepresentation = currentPredicate.getRepresentation();
+                Predicate predicate;
+                try {
+                    predicate = PropositionalPredicateFactory.createPredicate(token);
+                }
+                catch (Exception e) {
+                    ErrorHelper.add(e.getMessage());
+                    invalid = true;
+                    continue;
+                }
 
-                        if (Objects.equals(token.lexeme(), currentRepresentation)) {
-                            ensureChildren(currentNode, currentNode.getChildren().size() + 1);
-                            currentChildIndex = currentNode.getChildren().size() - 1;
-                            currentNode = (PropositionalASTNode) currentNode.getChildren().get(currentChildIndex);
+                int arity = predicate.getArity();
+                switch (arity) {
+                    case 0 -> {
+                        if (currentNode.isEmpty()) {
+                            currentNode.setKey(predicate);
+                            moveUp();
                         }
                         else {
-                            WarningHelper.add("Suggested parentheses around operands of logical operator " + token.lexeme(), line, position);
-                            Predicate oldOp = (Predicate) currentNode.getKey();
-
-                            PropositionalASTNode newOpNode = new PropositionalASTNode(oldOp);
-
-                            List<ASTNode> oldChildren = new ArrayList<>(currentNode.getChildren());
-                            currentNode.getChildren().clear();
-                            for (ASTNode child : oldChildren) {
-                                PropositionalASTNode childCopy = cloneNode((PropositionalASTNode) child);
-                                childCopy.setParent(newOpNode);
-                                newOpNode.getChildren().add(childCopy);
-                            }
-                            currentNode.setKey(predicate);
-
-                            newOpNode.setParent(currentNode);
-                            currentNode.getChildren().add(newOpNode);
-                            currentNode.addChild();
-
-                            currentChildIndex = 1;
-                            enterChildAtCurrentIndex();
+                            invalid = true;
+                            ErrorHelper.add("Unexpected proposition " + token.lexeme() + " at this position!", line, position);
                         }
                     }
-                }
-                default -> {
-                    invalid = true;
-                    ErrorHelper.add("Unsupported arity: " + arity + " for token " + token.lexeme(), line, position);
+                    case 1 -> {
+                        if (currentNode.isEmpty()) {
+                            currentNode.setKey(predicate);
+                            ensureChildren(currentNode, 1);
+                            enterChildAtCurrentIndex();
+                        }
+                        else {
+                            invalid = true;
+                            ErrorHelper.add(token.lexeme() + " is a unary operator used in an invalid position!", line, position);
+                        }
+                    }
+                    case 2 -> {
+                        if (currentNode.isEmpty()) {
+                            currentNode.setKey(predicate);
+                            ensureChildren(currentNode, 2);
+                            enterChildAtCurrentIndex();
+                        }
+                        else {
+                            invalid = true;
+                            ErrorHelper.add(token.lexeme() + " is a binary operator used in an invalid position!", line, position);
+                        }
+                    }
+
+                    case -1 -> {
+                        if (currentNode.isEmpty()) {
+                            currentNode.setKey(predicate);
+                            ensureChildren(currentNode, 2);
+                            enterChildAtCurrentIndex();
+                        }
+                        else {
+                            Predicate currentPredicate = (Predicate) currentNode.getKey();
+                            String currentRepresentation = currentPredicate.getRepresentation();
+
+                            if (Objects.equals(token.lexeme(), currentRepresentation)) {
+                                ensureChildren(currentNode, currentNode.getChildren().size() + 1);
+                                currentChildIndex = currentNode.getChildren().size() - 1;
+                                currentNode = (PropositionalASTNode) currentNode.getChildren().get(currentChildIndex);
+                            }
+                            else {
+                                WarningHelper.add("Suggested parentheses around operands of logical operator " + token.lexeme(), line, position);
+                                Predicate oldOp = (Predicate) currentNode.getKey();
+
+                                PropositionalASTNode newOpNode = new PropositionalASTNode(oldOp);
+
+                                List<ASTNode> oldChildren = new ArrayList<>(currentNode.getChildren());
+                                currentNode.getChildren().clear();
+                                for (ASTNode child : oldChildren) {
+                                    PropositionalASTNode childCopy = cloneNode((PropositionalASTNode) child);
+                                    childCopy.setParent(newOpNode);
+                                    newOpNode.getChildren().add(childCopy);
+                                }
+                                currentNode.setKey(predicate);
+
+                                newOpNode.setParent(currentNode);
+                                currentNode.getChildren().add(newOpNode);
+                                currentNode.addChild();
+
+                                currentChildIndex = 1;
+                                enterChildAtCurrentIndex();
+                            }
+                        }
+                    }
+                    default -> {
+                        invalid = true;
+                        ErrorHelper.add("Unsupported arity: " + arity + " for token " + token.lexeme(), line, position);
+                    }
                 }
             }
-        }
 
-        boolean valid = (currentNode.equals(root)) && !invalid;
-        if (!valid) {
-            ErrorHelper.add(formulaString + " is not a well-formed formula!");
-        }
+            boolean valid = (currentNode.equals(root)) && !invalid;
+            if (!valid) {
+                ErrorHelper.add(formulaString + " is not a well-formed formula!");
+            }
 
-        return valid;
+            return valid;
+        }
+        catch (Exception e) {
+            ErrorHelper.add("Could not validate formula: " + formulaString);
+            throw new ASTException("Could not validate formula: " + formulaString);
+        }
     }
 
     @Override
     public void negate() {
-        // if (!validated) validate(0);
         if (root.getChildren().isEmpty()) {
             return;
         }

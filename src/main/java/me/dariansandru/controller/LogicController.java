@@ -35,16 +35,16 @@ public class LogicController {
         List<String> knowledgeBase = Parser.getKBLines(lines);
         List<String> goals = Parser.getGoalsLines(lines);
 
-        boolean validSyntax = parser.parse(knowledgeBase) && parser.parse(goals);
-        if (!validSyntax) {
+        List<AST> knowledgeBaseAST = ((PropositionalParser) parser).parseAndGetASTs(knowledgeBase);
+        List<AST> goalsAST = ((PropositionalParser) parser).parseAndGetASTs(goals);
+
+        if (WarningHelper.notEmpty()) WarningHelper.print();
+        if (ErrorHelper.notEmpty()) {
+            OutputDevice.writeToConsole("Could not validate syntax!");
             ErrorHelper.print();
             return;
         }
-        WarningHelper.print();
-        OutputDevice.writeToConsole("Syntax validated successfully!");
-
-        List<AST> knowledgeBaseAST = ((PropositionalParser) parser).parseAndGetASTs(knowledgeBase);
-        List<AST> goalsAST = ((PropositionalParser) parser).parseAndGetASTs(goals);
+        OutputDevice.writeToConsole("Syntax validated!");
 
         PropositionalProof proof = new PropositionalProof(signature, knowledgeBaseAST, goalsAST);
         proof.prove();
