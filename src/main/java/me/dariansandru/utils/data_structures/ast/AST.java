@@ -9,8 +9,10 @@ public interface AST {
 
     boolean validate(int line);
     Object evaluate();
+
     boolean isEquivalentTo(AST other);
     boolean isEmpty();
+    boolean isContradiction();
 
     void moveLeft();
     void moveRight();

@@ -1,8 +1,10 @@
 package me.dariansandru.domain.proof.proof_states;
 
+import me.dariansandru.domain.LogicalOperator;
 import me.dariansandru.domain.proof.Strategy;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
+import me.dariansandru.domain.proof.inference_rules.propositional.ContradictionRule;
 import me.dariansandru.domain.proof.inference_rules.propositional.PropositionalInferenceRule;
 import me.dariansandru.utils.data_structures.ast.AST;
 import me.dariansandru.utils.data_structures.ast.PropositionalAST;
@@ -82,6 +84,11 @@ public class PropositionalProofState implements ProofState {
                 isProven = true;
                 break;
             }
+            if (goals.getFirst().toString().equals("Contradiction")
+                    && containsContradiction()) {
+                isProven = true;
+                break;
+            }
 
             this.root = new SubGoal(goals.getFirst(), PropositionalInferenceRule.HYPOTHESIS, goals.getFirst());
             expandSubGoal(root);
@@ -94,17 +101,26 @@ public class PropositionalProofState implements ProofState {
             return;
         }
 
-        for (InferenceRule rule : inferenceRules) {
-            List<SubGoal> newSubGoals = rule.getSubGoals(knowledgeBase, subGoal.getGoal());
-            if (!newSubGoals.isEmpty()) {
-                subGoal.addChildren(newSubGoals);
+        if (subGoal.getGoal().isContradiction()) {
+            ContradictionRule rule = new ContradictionRule();
+            if (processSubGoals(subGoal, rule.getSubGoals(knowledgeBase, subGoal.getGoal()))) return;
+        }
 
-                for (SubGoal child : newSubGoals) {
-                    expandSubGoal(child);
-                    if (isProven) return;
-                }
+        for (InferenceRule rule : inferenceRules) {
+            if (processSubGoals(subGoal, rule.getSubGoals(knowledgeBase, subGoal.getGoal()))) return;
+        }
+    }
+
+    private boolean processSubGoals(SubGoal subGoal, List<SubGoal> subGoals) {
+        if (!subGoals.isEmpty()) {
+            subGoal.addChildren(subGoals);
+
+            for (SubGoal child : subGoals) {
+                expandSubGoal(child);
+                if (isProven) return true;
             }
         }
+        return false;
     }
 
     private void proveChildren() {
@@ -165,6 +181,11 @@ public class PropositionalProofState implements ProofState {
 
         expanded = true;
 
+        if (PropositionalLogicHelper.getOutermostOperation(this.goals.getFirst()) == LogicalOperator.NEGATION) {
+            this.childrenInConjunction = true;
+            return Strategy.NEGATION_STRATEGY;
+        }
+
         if (!simplify()) {
             return Strategy.NO_STRATEGY;
         }
@@ -219,6 +240,25 @@ public class PropositionalProofState implements ProofState {
         for (AST ast : knowledgeBase) {
             if (ast.isEquivalentTo(subGoal.getGoal())) return true;
         }
+        return false;
+    }
+
+    // May be wrong?
+    private boolean containsContradiction() {
+        for (AST ast : knowledgeBase) {
+            if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.CONJUNCTION) {
+                PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
+                PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
+
+                PropositionalAST negatedLeft = left;
+                PropositionalAST negatedRight = right;
+                negatedLeft.negate();
+                negatedRight.negate();
+
+                if (left.isEquivalentTo(negatedLeft) && right.isEquivalentTo(negatedRight)) return true;
+            }
+        }
+
         return false;
     }
 }

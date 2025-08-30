@@ -2,6 +2,7 @@ package me.dariansandru.domain.proof.inference_rules.propositional;
 
 public enum PropositionalInferenceRule {
     HYPOTHESIS,
+    CONTRADICTION,
     MODUS_PONENS,
     MODUS_TOLLENS,
     CONJUNCTION_ELIMINATION,

@@ -1,5 +1,6 @@
 package me.dariansandru.domain.proof.proofs;
 
+import me.dariansandru.domain.logical_operator.Conjunction;
 import me.dariansandru.domain.logical_operator.Implication;
 import me.dariansandru.domain.proof.Strategy;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
@@ -11,6 +12,7 @@ import me.dariansandru.reflexivity.InferenceRulesFactory;
 import me.dariansandru.utils.data_structures.ast.AST;
 import me.dariansandru.utils.data_structures.ast.PropositionalAST;
 import me.dariansandru.utils.data_structures.ast.PropositionalASTNode;
+import me.dariansandru.utils.helper.ProofTextHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,25 +41,61 @@ public class PropositionalProof implements Proof{
         Strategy strategy = ((PropositionalProofState) state).notifyProof();
 
         if (strategy == Strategy.IMPLICATION_STRATEGY) {
+            assumptions.add(ProofTextHelper.getAssumption(
+                    ((PropositionalProofState) state).getGoal().toString(),
+                    ((PropositionalProofState) state).getGoal().getSubtree(0).toString(),
+                    ((PropositionalProofState) state).getGoal().getSubtree(1).toString()));
+            conclusions.add(ProofTextHelper.getConclusion(
+                    ((PropositionalProofState) state).getGoal().toString()));
+
             ImplicationStrategy(state);
             buildTree(state.getChildren().getFirst());
         }
         else if (strategy == Strategy.EQUIVALENCE_STRATEGY) {
+            String leftImplication = ((PropositionalProofState) state).getGoal().getSubtree(0).toString() + " " + new Implication().getRepresentation() + " " + ((PropositionalProofState) state).getGoal().getSubtree(1).toString();
+            String rightImplication = ((PropositionalProofState) state).getGoal().getSubtree(1).toString() + " " + new Implication().getRepresentation() + " " + ((PropositionalProofState) state).getGoal().getSubtree(0).toString();
+            assumptions.add(ProofTextHelper.getEquivalenceAssumption(
+                    ((PropositionalProofState) state).getGoal().toString(),
+                    leftImplication,
+                    rightImplication));
+            conclusions.add(ProofTextHelper.getConclusion(
+                    ((PropositionalProofState) state).getGoal().toString()));
+
             EquivalenceStrategy(state);
             buildTree(state.getChildren().getFirst());
             buildTree(state.getChildren().get(1));
         }
         else if (strategy == Strategy.CONJUNCTION_STRATEGY) {
-            ConjunctionStrategy(state);
+            String assumption;
+            assumption = ((PropositionalProofState) state).getGoal().toString();
+            String[] parts = assumption.split(new Conjunction().getRepresentation());
+            assumptions.add(ProofTextHelper.getConjunctionAssumption(assumption, parts));
+            conclusions.add(ProofTextHelper.getConclusion(
+                    ((PropositionalProofState) state).getGoal().toString()));
+
             int childrenNumber = state.getChildren().size();
+            ConjunctionStrategy(state);
             for (int i = 0 ; i < childrenNumber ; i++)
                 buildTree(state.getChildren().get(i));
         }
         else if (strategy == Strategy.DISJUNCTION_STRATEGY) {
-            DisjunctionStrategy(state);
+            String assumption = ((PropositionalProofState) state).getGoal().toString();
+            String[] parts = assumption.split(new Conjunction().getRepresentation());
+            assumptions.add(ProofTextHelper.getConjunctionAssumption(assumption, parts));
+            conclusions.add(ProofTextHelper.getConclusion(
+                    ((PropositionalProofState) state).getGoal().toString()));
+
             int childrenNumber = state.getChildren().size();
+            assumptions.add(ProofTextHelper.getDisjunctionAssumption(assumption, parts));
+            conclusions.add(ProofTextHelper.getConclusion(
+                    ((PropositionalProofState) state).getGoal().toString()));
+
+            DisjunctionStrategy(state);
             for (int i = 0 ; i < childrenNumber ; i++)
                 buildTree(state.getChildren().get(i));
+        }
+        else if (strategy == Strategy.NEGATION_STRATEGY) {
+            NegationStrategy(state);
         }
     }
 
@@ -105,6 +143,22 @@ public class PropositionalProof implements Proof{
         AST newGoal = goal.getSubtree(1);
         newGoal.validate(0);
         newGoals.add(newGoal);
+
+        PropositionalProofState newState = new PropositionalProofState(newKnowledgeBase, newGoals, inferenceRules);
+
+        state.addChild(newState);
+    }
+
+    private void NegationStrategy(ProofState state) {
+        List<AST> newKnowledgeBase = state.getKnowledgeBase();
+        List<AST> newGoals = new ArrayList<>();
+
+        PropositionalAST kbEntry = (PropositionalAST) state.getGoals().getFirst();
+        kbEntry.validate(0);
+        kbEntry.negate();
+
+        newKnowledgeBase.add(kbEntry);
+        newGoals.add(new PropositionalAST(true));
 
         PropositionalProofState newState = new PropositionalProofState(newKnowledgeBase, newGoals, inferenceRules);
 

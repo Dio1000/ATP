@@ -1,5 +1,6 @@
 package me.dariansandru.utils.data_structures.ast;
 
+import me.dariansandru.domain.LogicalOperator;
 import me.dariansandru.domain.logical_operator.Negation;
 import me.dariansandru.domain.predicate.Predicate;
 import me.dariansandru.domain.signature.PropositionalSignature;
@@ -10,6 +11,7 @@ import me.dariansandru.utils.data_structures.ast.exception.ASTException;
 import me.dariansandru.utils.data_structures.ast.exception.ASTNodeException;
 import me.dariansandru.utils.factory.PropositionalPredicateFactory;
 import me.dariansandru.utils.helper.ErrorHelper;
+import me.dariansandru.utils.helper.PropositionalLogicHelper;
 import me.dariansandru.utils.helper.WarningHelper;
 
 import java.util.*;
@@ -20,10 +22,12 @@ public class PropositionalAST implements AST {
     private final PropositionalASTNode root;
     private PropositionalASTNode currentNode;
     private int currentChildIndex;
+    private final boolean isContradiction;
 
     public PropositionalAST(String formulaString) {
         this.formulaString = formulaString;
         this.root = new PropositionalASTNode(null);
+        this.isContradiction = false;
 
         this.root.addChild();
         this.currentNode = (PropositionalASTNode) this.root.getChildren().getFirst();
@@ -32,6 +36,7 @@ public class PropositionalAST implements AST {
 
     public PropositionalAST(PropositionalASTNode node) {
         this.formulaString = "";
+        this.isContradiction = false;
 
         if (node != null && node.getKey() == null && !node.getChildren().isEmpty()) {
             this.root = node;
@@ -52,8 +57,16 @@ public class PropositionalAST implements AST {
         this.currentChildIndex = 0;
     }
 
+    public PropositionalAST(boolean isContradiction) {
+        this.formulaString = null;
+        this.root = null;
+        this.isContradiction = isContradiction;
+    }
+
     @Override
     public String toString() {
+        if (this.isContradiction) return "Contradiction";
+
         PropositionalASTNode formula = getFormulaNode();
         if (formula == null || formula.getKey() == null) return "";
 
@@ -428,16 +441,18 @@ public class PropositionalAST implements AST {
         if (root.getChildren().isEmpty()) {
             return;
         }
-        PropositionalASTNode formulaNode = (PropositionalASTNode) root.getChildren().get(0);
-        Predicate predicate = (Predicate) formulaNode.getKey();
 
-        if (predicate instanceof Negation) {
-            PropositionalASTNode negatedChild = (PropositionalASTNode) formulaNode.getChildren().getFirst();
-            negatedChild.setParent(root);
+        LogicalOperator operator = PropositionalLogicHelper.getOutermostOperation(this);
+        if (operator == LogicalOperator.NEGATION) {
+            PropositionalASTNode negNode = (PropositionalASTNode) root.getChildren().getFirst();
+            PropositionalASTNode inner = (PropositionalASTNode) negNode.getChildren().getFirst();
 
-            root.getChildren().set(0, negatedChild);
+            inner.setParent(root);
+            root.getChildren().set(0, inner);
         }
         else {
+            PropositionalASTNode formulaNode = (PropositionalASTNode) root.getChildren().getFirst();
+
             PropositionalASTNode negationNode = new PropositionalASTNode(new Negation());
             formulaNode.setParent(negationNode);
             negationNode.getChildren().add(formulaNode);
@@ -446,6 +461,7 @@ public class PropositionalAST implements AST {
             negationNode.setParent(root);
         }
     }
+
 
     private void ensureChildren(PropositionalASTNode node, int count) {
         while (node.getChildren().size() < count) {
@@ -478,4 +494,8 @@ public class PropositionalAST implements AST {
         return copy;
     }
 
+    @Override
+    public boolean isContradiction() {
+        return isContradiction;
+    }
 }
