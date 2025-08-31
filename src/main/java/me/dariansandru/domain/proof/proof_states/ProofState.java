@@ -7,6 +7,7 @@ import java.util.List;
 public interface ProofState {
     List<AST> getKnowledgeBase();
     List<AST> getGoals();
+    AST getGoal();
     List<InferenceRule> getInferenceRules();
 
     boolean isVisited();

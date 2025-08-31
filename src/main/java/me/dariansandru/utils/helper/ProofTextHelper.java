@@ -1,10 +1,131 @@
 package me.dariansandru.utils.helper;
 
+import me.dariansandru.domain.proof.ProofStep;
+import me.dariansandru.domain.proof.SubGoal;
+import me.dariansandru.domain.proof.inference_rules.InferenceRule;
+import me.dariansandru.domain.proof.inference_rules.propositional.PropositionalInferenceRule;
+import me.dariansandru.io.OutputDevice;
 import me.dariansandru.utils.data_structures.ast.AST;
+import me.dariansandru.utils.factory.PropositionalInferenceRuleFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public abstract class ProofTextHelper {
+
+    private static List<ProofStep> assumptionSteps = new ArrayList<>();
+    private static List<ProofStep> conclusionSteps = new ArrayList<>();
+    private static List<List<ProofStep>> proofSteps = new ArrayList<>();
+    private static int rightMostIndent = 0;
+
+    public static void addAssumptionStep(String step, int indent) {
+        ProofStep newStep = new ProofStep(step, indent);
+        assumptionSteps.add(newStep);
+        if (indent >= rightMostIndent) rightMostIndent = indent + 1;
+    }
+
+    public static void addConclusionStep(String step, int indent) {
+        ProofStep newStep = new ProofStep(step, indent);
+        conclusionSteps.add(newStep);
+        if (indent >= rightMostIndent) rightMostIndent = indent + 1;
+    }
+
+    public static void getProofText(SubGoal subGoal) {
+        List<ProofStep> proofText = new ArrayList<>();
+        while (subGoal != null) {
+            if (subGoal.getInferenceRule() == PropositionalInferenceRule.HYPOTHESIS) {
+                ProofStep proofStep = new ProofStep("We conclude " + subGoal.getGoal() + " from the hypothesis", rightMostIndent);
+                proofText.add(proofStep);
+                subGoal = subGoal.getParent();
+                continue;
+            }
+            InferenceRule inferenceRule = PropositionalInferenceRuleFactory.create(subGoal.getInferenceRule());
+            assert inferenceRule != null;
+
+            ProofStep proofStep = new ProofStep(inferenceRule.getText(subGoal), rightMostIndent);
+            proofText.add(proofStep);
+            subGoal = subGoal.getParent();
+        }
+
+        proofSteps.add(proofText);
+    }
+
+    public static void getProofTextHypothesis(SubGoal subGoal) {
+        List<ProofStep> proofText = new ArrayList<>();
+        while (subGoal != null) {
+            ProofStep proofStep = new ProofStep("We conclude " + subGoal.getGoal() + " from the hypothesis", rightMostIndent);
+            proofText.add(proofStep);
+            subGoal = subGoal.getParent();
+        }
+
+        proofSteps.add(proofText);
+    }
+
+    public static void print() {
+        boolean isAssumption = true;
+        boolean isConclusion = false;
+        boolean isProof = false;
+        int printedProofIndex = 0;
+
+        int currentIndentation = 0;
+        do {
+            if (isAssumption) {
+                ProofStep proofStep = getByIndentation(assumptionSteps, currentIndentation);
+                if (proofStep == null) break;
+                removeStep(assumptionSteps, proofStep.getText(), proofStep.getIndent());
+
+                OutputDevice.writeIndentedToConsole(proofStep.getText(), proofStep.getIndent());
+                currentIndentation++;
+
+                if (currentIndentation == rightMostIndent) {
+                    isProof = true;
+                    isAssumption = false;
+                }
+            }
+            else if (isConclusion) {
+                ProofStep proofStep = getByIndentation(conclusionSteps, currentIndentation);
+                if (proofStep == null) break;
+                removeStep(conclusionSteps, proofStep.getText(), proofStep.getIndent());
+
+                OutputDevice.writeIndentedToConsole(proofStep.getText(), proofStep.getIndent());
+                if (getByIndentation(assumptionSteps, currentIndentation) != null) {
+                    isAssumption = true;
+                    isConclusion = false;
+                }
+            }
+            else if (isProof) {
+                if (printedProofIndex == proofSteps.size()) break;
+                List<ProofStep> proof = proofSteps.remove(printedProofIndex);
+
+                for (ProofStep step : proof) {
+                    OutputDevice.writeIndentedToConsole(step.getText(), step.getIndent());
+                }
+                currentIndentation--;
+
+                isConclusion = true;
+                isProof = false;
+            }
+
+        } while (!(currentIndentation == -1 && isConclusion));
+    }
+
+    private static ProofStep getByIndentation(List<ProofStep> steps, int indentation) {
+        for (ProofStep proofStep : steps)
+            if (proofStep.getIndent() == indentation)
+                return proofStep;
+        return null;
+    }
+
+    private static void removeStep(List<ProofStep> steps, String text, int indent) {
+        for (int i = 0; i < steps.size(); i++) {
+            ProofStep step = steps.get(i);
+            if (step.getIndent() == indent && step.getText().equals(text)) {
+                steps.remove(i);
+                return;
+            }
+        }
+    }
 
     public static String getConclusion(String conclusion) {
         Random random = new Random();

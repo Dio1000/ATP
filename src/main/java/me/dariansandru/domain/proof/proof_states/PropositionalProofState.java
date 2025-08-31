@@ -8,6 +8,7 @@ import me.dariansandru.domain.proof.inference_rules.propositional.ContradictionR
 import me.dariansandru.domain.proof.inference_rules.propositional.PropositionalInferenceRule;
 import me.dariansandru.utils.data_structures.ast.AST;
 import me.dariansandru.utils.data_structures.ast.PropositionalAST;
+import me.dariansandru.utils.helper.ProofTextHelper;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
@@ -81,6 +82,8 @@ public class PropositionalProofState implements ProofState {
 
         while (!isProven) {
             if (containsGoal()) {
+                System.out.println("Goal " + this.getGoal());
+                ProofTextHelper.getProofTextHypothesis(new SubGoal(this.getGoal(), PropositionalInferenceRule.HYPOTHESIS, this.getGoal()));
                 isProven = true;
                 break;
             }
@@ -98,6 +101,7 @@ public class PropositionalProofState implements ProofState {
     private void expandSubGoal(SubGoal subGoal) {
         if (containsSubGoal(subGoal)) {
             this.isProven = true;
+            ProofTextHelper.getProofText(subGoal);
             return;
         }
 
@@ -219,14 +223,6 @@ public class PropositionalProofState implements ProofState {
                 return Strategy.NO_STRATEGY;
             }
         }
-    }
-
-    public void print() {
-        System.out.println("Knowledge Base:");
-        for (AST ast : knowledgeBase) System.out.println(ast);
-
-        System.out.println("\nGoals:");
-        for (AST goal : goals) System.out.println(goal);
     }
 
     private boolean containsGoal() {

@@ -26,4 +26,9 @@ public class DisjunctionIntroduction implements InferenceRule {
     public List<SubGoal> getSubGoals(List<AST> knowledgeBase, AST... asts) {
         return List.of();
     }
+
+    @Override
+    public String getText(SubGoal subGoal) {
+        return "";
+    }
 }

@@ -72,4 +72,9 @@ public class ModusPonens implements InferenceRule {
 
         return subGoals;
     }
+
+    @Override
+    public String getText(SubGoal subGoal) {
+        return "From " + subGoal.getGoal() + " and " + subGoal.getFormula() + ", by Modus Ponens, " + "we derive " + subGoal.getFormula().getSubtree(1);
+    }
 }

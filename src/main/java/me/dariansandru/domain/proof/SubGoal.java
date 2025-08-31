@@ -1,5 +1,6 @@
 package me.dariansandru.domain.proof;
 
+import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.proof.inference_rules.propositional.PropositionalInferenceRule;
 import me.dariansandru.utils.data_structures.ast.AST;
 

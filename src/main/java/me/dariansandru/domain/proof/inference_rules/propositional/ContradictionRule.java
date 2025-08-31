@@ -36,6 +36,11 @@ public class ContradictionRule implements InferenceRule {
         return subGoals;
     }
 
+    @Override
+    public String getText(SubGoal subGoal) {
+        return "";
+    }
+
     public List<SubGoal> directContradiction(List<AST> knowledgeBase) {
         List<SubGoal> subGoals = new ArrayList<>();
         for (AST ast : knowledgeBase) {

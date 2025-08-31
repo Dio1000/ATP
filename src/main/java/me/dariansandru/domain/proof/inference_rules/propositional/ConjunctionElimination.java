@@ -59,6 +59,11 @@ public class ConjunctionElimination implements InferenceRule {
         return List.of();
     }
 
+    @Override
+    public String getText(SubGoal subGoal) {
+        return "";
+    }
+
     private boolean contains(List<AST> asts, AST other) {
         for (AST ast : asts) {
             if (ast.isEquivalentTo(other)) return true;

@@ -76,13 +76,21 @@ public class ModusTollens implements InferenceRule {
                     right.validate(0);
                     right.negate();
 
-                    SubGoal newSubGoal = new SubGoal(right, PropositionalInferenceRule.MODUS_PONENS, ast);
+                    SubGoal newSubGoal = new SubGoal(right, PropositionalInferenceRule.MODUS_TOLLENS, ast);
                     subGoals.add(newSubGoal);
                 }
             }
         }
 
         return subGoals;
+    }
+
+    @Override
+    public String getText(SubGoal subGoal) {
+        AST negatedFormula = subGoal.getFormula().getSubtree(0);
+        negatedFormula.negate();
+        return "From " + subGoal.getGoal() + " and " + subGoal.getFormula() + ", by Modus Tollens, " + "we derive " + negatedFormula;
+
     }
 
 }

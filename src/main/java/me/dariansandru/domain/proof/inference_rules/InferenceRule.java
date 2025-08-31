@@ -7,7 +7,10 @@ import java.util.List;
 
 public interface InferenceRule {
     String getName();
+
     boolean canInference(List<AST> asts);
     AST inference(List<AST> asts);
+
     List<SubGoal> getSubGoals(List<AST> knowledgeBase, AST... asts);
+    String getText(SubGoal subGoal);
 }
