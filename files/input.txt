@@ -2,14 +2,6 @@ Universe:
 Propositions
 
 KB:
-A -> B
-B -> C
 
 Goals:
-A -> C
-
-// KB:
-
-// Goals:
-// !(P <-> !P)
-
+A -> !(P <-> !P)

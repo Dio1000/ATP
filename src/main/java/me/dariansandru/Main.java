@@ -15,5 +15,4 @@ public class Main {
 //TODO More Exceptions
 //TODO Change reflexivity package classes to actually use reflexivity.
 
-//TODO Add more rules for KB expansion (e.g. if A -> B, add !A v B)
 //TODO When you add a new KB entry, add in a global map where you got it from, that way you will also know if you already derived something.

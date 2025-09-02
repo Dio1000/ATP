@@ -5,9 +5,9 @@ import me.dariansandru.domain.logical_operator.Implication;
 import me.dariansandru.domain.predicate.Predicate;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
-import me.dariansandru.utils.data_structures.ast.AST;
-import me.dariansandru.utils.data_structures.ast.PropositionalAST;
-import me.dariansandru.utils.data_structures.ast.PropositionalASTNode;
+import me.dariansandru.domain.data_structures.ast.AST;
+import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.domain.data_structures.ast.PropositionalASTNode;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;

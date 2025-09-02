@@ -10,7 +10,7 @@ import me.dariansandru.parser.Parser;
 import me.dariansandru.parser.parsers.FormulaParser;
 import me.dariansandru.parser.parsers.ParserFactory;
 import me.dariansandru.parser.parsers.PropositionalParser;
-import me.dariansandru.utils.data_structures.ast.AST;
+import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.utils.helper.ErrorHelper;
 import me.dariansandru.utils.helper.WarningHelper;
 

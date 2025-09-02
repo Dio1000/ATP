@@ -4,8 +4,8 @@ import me.dariansandru.domain.logical_operator.Conjunction;
 import me.dariansandru.domain.logical_operator.Implication;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
-import me.dariansandru.utils.data_structures.ast.AST;
-import me.dariansandru.utils.data_structures.ast.PropositionalAST;
+import me.dariansandru.domain.data_structures.ast.AST;
+import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
@@ -76,7 +76,7 @@ public class ContradictionRule implements InferenceRule {
         List<SubGoal> subGoals = new ArrayList<>();
         for (AST ast : knowledgeBase) {
             atoms.addAll(PropositionalLogicHelper.getAtoms(ast));
-            if (ast.getSubtree(1) == null) continue;
+            if (((PropositionalAST) ast).isAtomic()) continue;
 
             PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
             PropositionalAST right = (PropositionalAST) ast.getSubtree(1);

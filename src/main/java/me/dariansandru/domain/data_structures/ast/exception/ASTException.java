@@ -1,4 +1,4 @@
-package me.dariansandru.utils.data_structures.ast.exception;
+package me.dariansandru.domain.data_structures.ast.exception;
 
 public class ASTException extends RuntimeException {
     public ASTException(String message, Throwable err) {

@@ -5,8 +5,8 @@ import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.proof.inference_rules.propositional.PropositionalInferenceRule;
 import me.dariansandru.io.OutputDevice;
-import me.dariansandru.utils.data_structures.ast.AST;
-import me.dariansandru.utils.data_structures.ast.PropositionalAST;
+import me.dariansandru.domain.data_structures.ast.AST;
+import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.utils.factory.PropositionalInferenceRuleFactory;
 
 import java.util.ArrayList;
@@ -15,9 +15,9 @@ import java.util.Random;
 
 public abstract class ProofTextHelper {
 
-    private static List<ProofStep> assumptionSteps = new ArrayList<>();
-    private static List<ProofStep> conclusionSteps = new ArrayList<>();
-    private static List<List<ProofStep>> proofSteps = new ArrayList<>();
+    private static final List<ProofStep> assumptionSteps = new ArrayList<>();
+    private static final List<ProofStep> conclusionSteps = new ArrayList<>();
+    private static final List<List<ProofStep>> proofSteps = new ArrayList<>();
     private static int rightMostIndent = 0;
 
     public static void addAssumptionStep(String step, int indent) {
@@ -40,7 +40,7 @@ public abstract class ProofTextHelper {
                     subGoal = subGoal.getParent();
                     continue;
                 }
-                ProofStep proofStep = new ProofStep("We conclude " + subGoal.getGoal() + " from the hypothesis", rightMostIndent);
+                ProofStep proofStep = new ProofStep("We conclude " + subGoal.getGoal() + " from the Knowledge Base", rightMostIndent);
                 proofText.add(proofStep);
                 subGoal = subGoal.getParent();
                 continue;
@@ -73,10 +73,32 @@ public abstract class ProofTextHelper {
 
     public static void getProofTextContradiction(AST ast) {
         List<ProofStep> proofText = new ArrayList<>();
-        ProofStep step = new ProofStep("We derive a contradiction because " + ast + ", from the hypothesis, is a direct contradiction", rightMostIndent);
+        String formula = ast.toString();
+
+        ProofStep step = new ProofStep(
+                "We derive a contradiction because " + formula +
+                        ", from the Knowledge Base, is a direct contradiction",
+                rightMostIndent
+        );
         proofText.add(step);
 
+        addDerivationSteps(formula, rightMostIndent + 1, proofText);
         proofSteps.add(proofText);
+    }
+
+    private static void addDerivationSteps(String formula, int indent, List<ProofStep> proofText) {
+        List<String> parents = KnowledgeBaseRegistry.from(formula);
+        if (parents == null || parents.isEmpty()) return;
+
+        ProofStep step = new ProofStep(
+                "We obtained " + formula + " from " + String.join(", ", parents),
+                indent
+        );
+        proofText.add(step);
+
+        for (String parent : parents) {
+            addDerivationSteps(parent, indent + 1, proofText);
+        }
     }
 
     public static void print() {
@@ -212,6 +234,14 @@ public abstract class ProofTextHelper {
         negatedAssumption.validate(0);
         negatedAssumption.negate();
         return "To prove " + assumption + ", assume " + negatedAssumption + " and prove a contradiction";
+    }
+
+    public static void printWithSymbol(String string, String symbol) {
+        System.out.println();
+        for (int i = 0 ; i < string.length() ; i++) System.out.print(symbol);
+        System.out.println();
+        System.out.println(string);
+        for (int i = 0 ; i < string.length() ; i++) System.out.print(symbol);
     }
 
 }

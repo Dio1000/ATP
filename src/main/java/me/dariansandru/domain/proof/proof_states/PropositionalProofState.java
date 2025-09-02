@@ -7,22 +7,23 @@ import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.proof.inference_rules.propositional.ContradictionRule;
 import me.dariansandru.domain.proof.inference_rules.propositional.PropositionalInferenceRule;
 import me.dariansandru.reflexivity.PropositionalInferenceRules;
-import me.dariansandru.utils.data_structures.ast.AST;
-import me.dariansandru.utils.data_structures.ast.PropositionalAST;
+import me.dariansandru.domain.data_structures.ast.AST;
+import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.utils.helper.ProofTextHelper;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class PropositionalProofState implements ProofState {
 
     private final List<AST> knowledgeBase;
+    private final List<String> knowledgeBaseStrings = new ArrayList<>();
     private final List<AST> goals;
-    private List<InferenceRule> inferenceRules;
-    private List<String> activeSubGoals = new ArrayList<>();
+    private final List<InferenceRule> inferenceRules;
+
+    private final List<String> activeSubGoals = new ArrayList<>();
+    private final List<AST> allSubGoals = new ArrayList<>();
 
     boolean isVisited = false;
     boolean childrenInConjunction = false;
@@ -30,8 +31,7 @@ public class PropositionalProofState implements ProofState {
     boolean expanded = false;
 
     private ProofState parent;
-    private List<ProofState> children = new ArrayList<>();
-    private SubGoal root;
+    private final List<ProofState> children = new ArrayList<>();
 
     private int currentChildIndex = 0;
 
@@ -96,21 +96,9 @@ public class PropositionalProofState implements ProofState {
                 break;
             }
 
-            this.root = new SubGoal(goals.getFirst(), PropositionalInferenceRule.HYPOTHESIS, goals.getFirst());
+            SubGoal root = new SubGoal(goals.getFirst(), PropositionalInferenceRule.HYPOTHESIS, goals.getFirst());
             expandSubGoal(root);
             expandKnowledgeBase();
-        }
-    }
-
-    private void expandKnowledgeBase() {
-        PropositionalInferenceRules rules = new PropositionalInferenceRules();
-        List<InferenceRule> inferenceRules = rules.get();
-
-        PropositionalAST subGoal = new PropositionalAST(activeSubGoals.getLast());
-        subGoal.validate(0);
-
-        for (InferenceRule inferenceRule : inferenceRules) {
-            knowledgeBase.addAll(inferenceRule.inference(knowledgeBase, subGoal));
         }
     }
 
@@ -125,6 +113,8 @@ public class PropositionalProofState implements ProofState {
         }
         processGoal(subGoal, subGoal.getGoal());
 
+        AST ast = subGoal.getGoal();
+        allSubGoals.add(ast);
         while (subGoal.hasMoreOtherGoals()) {
             AST otherGoal = subGoal.getCurrentOtherGoal();
             processGoal(subGoal, otherGoal);
@@ -150,10 +140,30 @@ public class PropositionalProofState implements ProofState {
 
             for (SubGoal child : subGoals) {
                 expandSubGoal(child);
-                if (isProven) return true;
+                if (isProven) {
+                    return true;
+                }
             }
         }
         return false;
+    }
+
+    private void expandKnowledgeBase() {
+        PropositionalInferenceRules rules = new PropositionalInferenceRules();
+        List<InferenceRule> inferenceRules = rules.get();
+
+        PropositionalAST subGoal = new PropositionalAST(activeSubGoals.getLast());
+        subGoal.validate(0);
+
+        for (InferenceRule inferenceRule : inferenceRules) {
+            List<AST> potentialEntries = inferenceRule.inference(knowledgeBase, subGoal);
+            for (AST ast : potentialEntries) {
+                if (!knowledgeBaseStrings.contains(ast.toString())) {
+                    knowledgeBase.add(ast);
+                    knowledgeBaseStrings.add(ast.toString());
+                }
+            }
+        }
     }
 
     private void proveChildren() {
@@ -279,12 +289,15 @@ public class PropositionalProofState implements ProofState {
                 PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
                 PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
 
-                PropositionalAST negatedLeft = left;
-                PropositionalAST negatedRight = right;
+                PropositionalAST negatedLeft = new PropositionalAST(left.toString());
+                PropositionalAST negatedRight = new PropositionalAST(right.toString());
+                negatedLeft.validate(0);
+                negatedRight.validate(0);
+
                 negatedLeft.negate();
                 negatedRight.negate();
 
-                if (left.isEquivalentTo(negatedLeft) && right.isEquivalentTo(negatedRight)) {
+                if (left.isEquivalentTo(negatedRight) && right.isEquivalentTo(negatedLeft)) {
                     ProofTextHelper.getProofTextContradiction(ast);
                     return true;
                 }

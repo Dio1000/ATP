@@ -1,8 +1,12 @@
 package me.dariansandru.domain.proof.inference_rules.propositional;
 
+import me.dariansandru.domain.LogicalOperator;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
-import me.dariansandru.utils.data_structures.ast.AST;
+import me.dariansandru.domain.data_structures.ast.AST;
+import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
+import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,12 +22,27 @@ public class DisjunctionElimination implements InferenceRule {
 
     @Override
     public boolean canInference(List<AST> asts, AST goal) {
-        return false;
+        boolean shouldDerive = false;
+        for (AST ast : asts) {
+            if (((PropositionalAST) goal).isAtomic() &&
+                    PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.DISJUNCTION) {
+                PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
+                PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
+
+                if (left.isEquivalentTo(right)) {
+                    KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + ", we derive " + left, List.of(ast.toString()));
+                    derived.add(left);
+                    shouldDerive = true;
+                }
+             }
+        }
+        return shouldDerive;
     }
 
     @Override
     public List<AST> inference(List<AST> asts, AST goal) {
-        return derived;
+        if (canInference(asts, goal)) return derived;
+        return new ArrayList<>();
     }
 
     @Override

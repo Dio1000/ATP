@@ -10,9 +10,9 @@ import me.dariansandru.domain.proof.proof_states.PropositionalProofState;
 import me.dariansandru.domain.signature.Signature;
 import me.dariansandru.io.OutputDevice;
 import me.dariansandru.reflexivity.InferenceRulesFactory;
-import me.dariansandru.utils.data_structures.ast.AST;
-import me.dariansandru.utils.data_structures.ast.PropositionalAST;
-import me.dariansandru.utils.data_structures.ast.PropositionalASTNode;
+import me.dariansandru.domain.data_structures.ast.AST;
+import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.domain.data_structures.ast.PropositionalASTNode;
 import me.dariansandru.utils.helper.ProofTextHelper;
 
 import java.util.ArrayList;
@@ -119,16 +119,17 @@ public class PropositionalProof implements Proof{
         long startTime = System.nanoTime();
 
         buildTree(root, 0);
-
         root.prove();
         isProven = root.isProven();
+
+        System.out.println();
         ProofTextHelper.print();
 
         long endTime = System.nanoTime();
         long duration = endTime - startTime;
         double durationMs = duration / 1_000_000.0;
 
-        System.out.println("Proof completed in " + durationMs + " ms");
+        ProofTextHelper.printWithSymbol("Proof completed in " + durationMs + " ms", "-");
     }
 
     public void EquivalenceStrategy(ProofState state) {

@@ -1,4 +1,4 @@
-package me.dariansandru.utils.data_structures.ast;
+package me.dariansandru.domain.data_structures.ast;
 
 import me.dariansandru.domain.LogicalOperator;
 import me.dariansandru.domain.logical_operator.Negation;
@@ -7,8 +7,8 @@ import me.dariansandru.domain.signature.PropositionalSignature;
 import me.dariansandru.tokenizer.Token;
 import me.dariansandru.tokenizer.Tokenizer;
 import me.dariansandru.tokenizer.Type;
-import me.dariansandru.utils.data_structures.ast.exception.ASTException;
-import me.dariansandru.utils.data_structures.ast.exception.ASTNodeException;
+import me.dariansandru.domain.data_structures.ast.exception.ASTException;
+import me.dariansandru.domain.data_structures.ast.exception.ASTNodeException;
 import me.dariansandru.utils.factory.PropositionalPredicateFactory;
 import me.dariansandru.utils.helper.ErrorHelper;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;

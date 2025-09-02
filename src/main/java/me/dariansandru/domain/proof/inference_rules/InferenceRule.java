@@ -1,7 +1,7 @@
 package me.dariansandru.domain.proof.inference_rules;
 
 import me.dariansandru.domain.proof.SubGoal;
-import me.dariansandru.utils.data_structures.ast.AST;
+import me.dariansandru.domain.data_structures.ast.AST;
 
 import java.util.List;
 

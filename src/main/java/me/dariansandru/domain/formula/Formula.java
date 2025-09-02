@@ -1,7 +1,7 @@
 package me.dariansandru.domain.formula;
 
 import me.dariansandru.domain.UniverseOfDiscourse;
-import me.dariansandru.utils.data_structures.ast.AST;
+import me.dariansandru.domain.data_structures.ast.AST;
 
 public interface Formula {
     String toString();

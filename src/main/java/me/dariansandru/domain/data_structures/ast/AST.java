@@ -1,4 +1,4 @@
-package me.dariansandru.utils.data_structures.ast;
+package me.dariansandru.domain.data_structures.ast;
 
 public interface AST {
     String toString();

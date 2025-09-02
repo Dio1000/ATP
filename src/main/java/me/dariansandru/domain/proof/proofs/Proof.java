@@ -1,6 +1,6 @@
 package me.dariansandru.domain.proof.proofs;
 
-import me.dariansandru.utils.data_structures.ast.AST;
+import me.dariansandru.domain.data_structures.ast.AST;
 
 import java.util.List;
 

@@ -4,8 +4,9 @@ import me.dariansandru.domain.LogicalOperator;
 import me.dariansandru.domain.logical_operator.Implication;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
-import me.dariansandru.utils.data_structures.ast.AST;
-import me.dariansandru.utils.data_structures.ast.PropositionalAST;
+import me.dariansandru.domain.data_structures.ast.AST;
+import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
@@ -37,6 +38,9 @@ public class ImplicationIntroduction implements InferenceRule {
 
                     derived.add(newAST1);
                     derived.add(newAST2);
+
+                    KnowledgeBaseRegistry.addEntry(newAST1.toString(), "From " + ast + ", we derive " + newAST1 + " (and " + newAST2 + ")", List.of(ast.toString()));
+                    KnowledgeBaseRegistry.addEntry(newAST2.toString(), "From " + ast + ", we derive " + newAST2 + " (and " + newAST1 + ")", List.of(ast.toString()));
                     shouldInference = true;
                 }
             }

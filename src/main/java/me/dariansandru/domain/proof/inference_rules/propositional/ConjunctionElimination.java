@@ -5,9 +5,10 @@ import me.dariansandru.domain.logical_operator.Conjunction;
 import me.dariansandru.domain.predicate.Predicate;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
-import me.dariansandru.utils.data_structures.ast.AST;
-import me.dariansandru.utils.data_structures.ast.PropositionalAST;
-import me.dariansandru.utils.data_structures.ast.PropositionalASTNode;
+import me.dariansandru.domain.data_structures.ast.AST;
+import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.domain.data_structures.ast.PropositionalASTNode;
+import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
@@ -15,8 +16,7 @@ import java.util.List;
 
 public class ConjunctionElimination implements InferenceRule {
 
-    private AST derived = null;
-    private List<AST> derivedList = new ArrayList<>();
+    private List<AST> derived = new ArrayList<>();
 
     @Override
     public String getName() {
@@ -25,7 +25,7 @@ public class ConjunctionElimination implements InferenceRule {
 
     @Override
     public boolean canInference(List<AST> asts, AST goal) {
-        derived = null;
+        boolean shouldInference = false;
 
         for (AST ast : asts) {
             PropositionalASTNode node = (PropositionalASTNode) ast.getRoot();
@@ -42,21 +42,24 @@ public class ConjunctionElimination implements InferenceRule {
 
             if (!hasLeft)
             {
-                derived = left;
-                return true;
+                derived.add(left);
+                KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + " we derive " + left + " (and " + right + ")", List.of(ast.toString()));
+                shouldInference = true;
             }
             if (!hasRight)
             {
-                derived = right;
-                return true;
+                derived.add(right);
+                KnowledgeBaseRegistry.addEntry(right.toString(), "From " + ast + " we derive " + right + " (and " + left + ")", List.of(ast.toString()));
+                shouldInference = true;
             }
         }
-        return false;
+        return shouldInference;
     }
 
     @Override
     public List<AST> inference(List<AST> asts, AST goal) {
-        return derivedList;
+        if (!canInference(asts, goal)) return new ArrayList<>();
+        return derived;
     }
 
     @Override

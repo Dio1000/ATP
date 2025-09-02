@@ -1,4 +1,4 @@
-package me.dariansandru.utils.data_structures.ast.exception;
+package me.dariansandru.domain.data_structures.ast.exception;
 
 public class ASTNodeException extends RuntimeException {
     public ASTNodeException(String message, Throwable err) {

@@ -1,6 +1,6 @@
-package me.dariansandru.utils.data_structures;
+package me.dariansandru.domain.data_structures;
 
-import me.dariansandru.utils.data_structures.exceptions.BiMapException;
+import me.dariansandru.domain.data_structures.exceptions.BiMapException;
 
 import java.util.HashMap;
 import java.util.Map;

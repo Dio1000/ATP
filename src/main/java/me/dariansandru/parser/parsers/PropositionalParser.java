@@ -2,8 +2,8 @@ package me.dariansandru.parser.parsers;
 
 import me.dariansandru.domain.signature.PropositionalSignature;
 import me.dariansandru.domain.signature.Signature;
-import me.dariansandru.utils.data_structures.ast.AST;
-import me.dariansandru.utils.data_structures.ast.PropositionalAST;
+import me.dariansandru.domain.data_structures.ast.AST;
+import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,6 +1,6 @@
 package me.dariansandru.domain;
 
-import me.dariansandru.utils.data_structures.BiMap;
+import me.dariansandru.domain.data_structures.BiMap;
 
 public enum Notation {
 
