@@ -16,6 +16,7 @@ import java.util.List;
 public class ModusPonens implements InferenceRule {
 
     private AST implicationAST = null;
+    private List<AST> derived = new ArrayList<>();
 
     @Override
     public String getName() {
@@ -23,7 +24,7 @@ public class ModusPonens implements InferenceRule {
     }
 
     @Override
-    public boolean canInference(List<AST> asts) {
+    public boolean canInference(List<AST> asts, AST goal) {
         implicationAST = null;
 
         for (AST candidate : asts) {
@@ -47,9 +48,8 @@ public class ModusPonens implements InferenceRule {
     }
 
     @Override
-    public AST inference(List<AST> asts) {
-        assert implicationAST != null;
-        return implicationAST.getSubtree(1);
+    public List<AST> inference(List<AST> asts, AST goal) {
+        return derived;
     }
 
     @Override

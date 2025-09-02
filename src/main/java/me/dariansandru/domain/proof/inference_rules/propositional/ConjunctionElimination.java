@@ -1,17 +1,22 @@
 package me.dariansandru.domain.proof.inference_rules.propositional;
 
+import me.dariansandru.domain.LogicalOperator;
 import me.dariansandru.domain.logical_operator.Conjunction;
 import me.dariansandru.domain.predicate.Predicate;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.utils.data_structures.ast.AST;
+import me.dariansandru.utils.data_structures.ast.PropositionalAST;
 import me.dariansandru.utils.data_structures.ast.PropositionalASTNode;
+import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ConjunctionElimination implements InferenceRule {
 
     private AST derived = null;
+    private List<AST> derivedList = new ArrayList<>();
 
     @Override
     public String getName() {
@@ -19,7 +24,7 @@ public class ConjunctionElimination implements InferenceRule {
     }
 
     @Override
-    public boolean canInference(List<AST> asts) {
+    public boolean canInference(List<AST> asts, AST goal) {
         derived = null;
 
         for (AST ast : asts) {
@@ -50,18 +55,29 @@ public class ConjunctionElimination implements InferenceRule {
     }
 
     @Override
-    public AST inference(List<AST> asts) {
-        return derived;
+    public List<AST> inference(List<AST> asts, AST goal) {
+        return derivedList;
     }
 
     @Override
     public List<SubGoal> getSubGoals(List<AST> knowledgeBase, AST... asts) {
-        return List.of();
+        if (asts.length != 1) return new ArrayList<>();
+        List<SubGoal> subGoals = new ArrayList<>();
+
+        for (AST ast : knowledgeBase) {
+            if (!(ast instanceof PropositionalAST)) continue;
+            if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.CONJUNCTION) {
+                SubGoal subGoal = new SubGoal(ast, PropositionalInferenceRule.CONJUNCTION_ELIMINATION, asts[0]);
+                subGoals.add(subGoal);
+            }
+        }
+
+        return subGoals;
     }
 
     @Override
     public String getText(SubGoal subGoal) {
-        return "";
+        return "From " + subGoal.getGoal() + " and " + subGoal.getFormula() + ", we can derive " + subGoal.getFormula();
     }
 
     private boolean contains(List<AST> asts, AST other) {

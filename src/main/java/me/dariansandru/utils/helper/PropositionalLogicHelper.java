@@ -4,7 +4,12 @@ import me.dariansandru.domain.LogicalOperator;
 import me.dariansandru.domain.logical_operator.*;
 import me.dariansandru.domain.predicate.Predicate;
 import me.dariansandru.utils.data_structures.ast.AST;
+import me.dariansandru.utils.data_structures.ast.ASTNode;
+import me.dariansandru.utils.data_structures.ast.PropositionalAST;
 import me.dariansandru.utils.data_structures.ast.PropositionalASTNode;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public abstract class PropositionalLogicHelper {
 
@@ -25,5 +30,27 @@ public abstract class PropositionalLogicHelper {
         else if (predicate.getRepresentation().equals(new Disjunction().getRepresentation())) return LogicalOperator.DISJUNCTION;
         else if (predicate.getRepresentation().equals(new Negation().getRepresentation())) return LogicalOperator.NEGATION;
         else return LogicalOperator.NOT_A_LOGICAL_OPERATOR;
+    }
+
+    public static Set<AST> getAtoms(AST ast) {
+        Set<AST> atoms = new HashSet<>();
+        collectAtoms((PropositionalASTNode) ast.getRoot(), atoms);
+        return atoms;
+    }
+
+    private static void collectAtoms(PropositionalASTNode node, Set<AST> atoms) {
+        if (node == null || node.getKey() == null) return;
+
+        Predicate predicate = (Predicate) node.getKey();
+
+        if (predicate.getArity() == 0) {
+            AST ast = new PropositionalAST(predicate.getRepresentation());
+            ast.validate(0);
+            atoms.add(ast);
+        }
+
+        for (ASTNode child : node.getChildren()) {
+            collectAtoms((PropositionalASTNode) child, atoms);
+        }
     }
 }

@@ -18,7 +18,8 @@ public class PropositionalInferenceRules implements InferenceRules {
         rules.add(new DisjunctionElimination());
         rules.add(new DisjunctionIntroduction());
         rules.add(new EquivalenceIntroduction());
-
+        rules.add(new EquivalenceElimination());
+        rules.add(new ImplicationIntroduction());
         return rules;
     }
 }

@@ -8,6 +8,7 @@ import me.dariansandru.utils.data_structures.ast.AST;
 import me.dariansandru.utils.data_structures.ast.PropositionalAST;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class EquivalenceIntroduction implements InferenceRule {
@@ -20,13 +21,15 @@ public class EquivalenceIntroduction implements InferenceRule {
     private AST leftAtom = null;
     private AST rightAtom = null;
 
+    private List<AST> derived = new ArrayList<>();
+
     @Override
     public String getName() {
         return "Equivalence Introduction";
     }
 
     @Override
-    public boolean canInference(List<AST> asts) {
+    public boolean canInference(List<AST> asts, AST goal) {
         for (AST ast : asts) {
             if (!(ast instanceof PropositionalAST)) continue;
 
@@ -56,16 +59,18 @@ public class EquivalenceIntroduction implements InferenceRule {
     }
 
     @Override
-    public AST inference(List<AST> asts) {
-        if (leftAtom != null && rightAtom != null) {
-            PropositionalAST newAST = new PropositionalAST(leftAtom + " " + new Equivalence().getRepresentation() + " " + rightAtom);
-            newAST.validate(0);
-            return newAST;
-        }
+    public List<AST> inference(List<AST> asts, AST goal) {
+//        if (leftAtom != null && rightAtom != null) {
+//            PropositionalAST newAST = new PropositionalAST(leftAtom + " " + new Equivalence().getRepresentation() + " " + rightAtom);
+//            newAST.validate(0);
+//            return List.of(newAST);
+//        }
+//
+//        PropositionalAST newAST = new PropositionalAST(leftSubtree + " " + new Equivalence().getRepresentation() + " " + rightSubtree);
+//        newAST.validate(0);
+//        return List.of(newAST);
 
-        PropositionalAST newAST = new PropositionalAST(leftSubtree + " " + new Equivalence().getRepresentation() + " " + rightSubtree);
-        newAST.validate(0);
-        return newAST;
+        return derived;
     }
 
     @Override

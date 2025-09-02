@@ -6,19 +6,23 @@ import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.proof.inference_rules.propositional.ContradictionRule;
 import me.dariansandru.domain.proof.inference_rules.propositional.PropositionalInferenceRule;
+import me.dariansandru.reflexivity.PropositionalInferenceRules;
 import me.dariansandru.utils.data_structures.ast.AST;
 import me.dariansandru.utils.data_structures.ast.PropositionalAST;
 import me.dariansandru.utils.helper.ProofTextHelper;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class PropositionalProofState implements ProofState {
 
     private final List<AST> knowledgeBase;
     private final List<AST> goals;
     private List<InferenceRule> inferenceRules;
+    private List<String> activeSubGoals = new ArrayList<>();
 
     boolean isVisited = false;
     boolean childrenInConjunction = false;
@@ -82,7 +86,6 @@ public class PropositionalProofState implements ProofState {
 
         while (!isProven) {
             if (containsGoal()) {
-                System.out.println("Goal " + this.getGoal());
                 ProofTextHelper.getProofTextHypothesis(new SubGoal(this.getGoal(), PropositionalInferenceRule.HYPOTHESIS, this.getGoal()));
                 isProven = true;
                 break;
@@ -95,23 +98,49 @@ public class PropositionalProofState implements ProofState {
 
             this.root = new SubGoal(goals.getFirst(), PropositionalInferenceRule.HYPOTHESIS, goals.getFirst());
             expandSubGoal(root);
+            expandKnowledgeBase();
+        }
+    }
+
+    private void expandKnowledgeBase() {
+        PropositionalInferenceRules rules = new PropositionalInferenceRules();
+        List<InferenceRule> inferenceRules = rules.get();
+
+        PropositionalAST subGoal = new PropositionalAST(activeSubGoals.getLast());
+        subGoal.validate(0);
+
+        for (InferenceRule inferenceRule : inferenceRules) {
+            knowledgeBase.addAll(inferenceRule.inference(knowledgeBase, subGoal));
         }
     }
 
     private void expandSubGoal(SubGoal subGoal) {
+        if (activeSubGoals.contains(subGoal.getGoal().toString())) return;
+        activeSubGoals.add(subGoal.getGoal().toString());
+
         if (containsSubGoal(subGoal)) {
             this.isProven = true;
             ProofTextHelper.getProofText(subGoal);
             return;
         }
+        processGoal(subGoal, subGoal.getGoal());
 
-        if (subGoal.getGoal().isContradiction()) {
+        while (subGoal.hasMoreOtherGoals()) {
+            AST otherGoal = subGoal.getCurrentOtherGoal();
+            processGoal(subGoal, otherGoal);
+            subGoal.incrementOtherGoalIndex();
+            if (!isProven) return;
+        }
+    }
+
+    private void processGoal(SubGoal parent, AST goal) {
+        if (goal.isContradiction()) {
             ContradictionRule rule = new ContradictionRule();
-            if (processSubGoals(subGoal, rule.getSubGoals(knowledgeBase, subGoal.getGoal()))) return;
+            if (processSubGoals(parent, rule.getSubGoals(knowledgeBase, goal))) return;
         }
 
         for (InferenceRule rule : inferenceRules) {
-            if (processSubGoals(subGoal, rule.getSubGoals(knowledgeBase, subGoal.getGoal()))) return;
+            if (processSubGoals(parent, rule.getSubGoals(knowledgeBase, goal))) return;
         }
     }
 
@@ -235,11 +264,15 @@ public class PropositionalProofState implements ProofState {
     private boolean containsSubGoal(SubGoal subGoal) {
         for (AST ast : knowledgeBase) {
             if (ast.isEquivalentTo(subGoal.getGoal())) return true;
+            if (subGoal.getOtherGoals() != null) {
+                for (AST other : subGoal.getOtherGoals()) {
+                    if (ast.isEquivalentTo(other)) return true;
+                }
+            }
         }
         return false;
     }
 
-    // May be wrong?
     private boolean containsContradiction() {
         for (AST ast : knowledgeBase) {
             if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.CONJUNCTION) {
@@ -251,7 +284,10 @@ public class PropositionalProofState implements ProofState {
                 negatedLeft.negate();
                 negatedRight.negate();
 
-                if (left.isEquivalentTo(negatedLeft) && right.isEquivalentTo(negatedRight)) return true;
+                if (left.isEquivalentTo(negatedLeft) && right.isEquivalentTo(negatedRight)) {
+                    ProofTextHelper.getProofTextContradiction(ast);
+                    return true;
+                }
             }
         }
 

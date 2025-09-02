@@ -6,12 +6,14 @@ import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.utils.data_structures.ast.AST;
 import me.dariansandru.utils.data_structures.ast.PropositionalAST;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ConjunctionIntroduction implements InferenceRule {
 
     private AST left = null;
     private AST right = null;
+    private List<AST> derived = new ArrayList<>();
 
     @Override
     public String getName() {
@@ -19,7 +21,7 @@ public class ConjunctionIntroduction implements InferenceRule {
     }
 
     @Override
-    public boolean canInference(List<AST> asts) {
+    public boolean canInference(List<AST> asts, AST goal) {
         for (AST ast : asts) {
             if (!(ast instanceof PropositionalAST)) continue;
             if (((PropositionalAST) ast).isAtomic() && left == null) left = ast;
@@ -32,10 +34,11 @@ public class ConjunctionIntroduction implements InferenceRule {
     }
 
     @Override
-    public AST inference(List<AST> asts) {
-        PropositionalAST newAST = new PropositionalAST(left + " " + new Conjunction().getRepresentation() + " " + right);
-        newAST.validate(0);
-        return newAST;
+    public List<AST> inference(List<AST> asts, AST goal) {
+//        PropositionalAST newAST = new PropositionalAST(left + " " + new Conjunction().getRepresentation() + " " + right);
+//        newAST.validate(0);
+//        return List.of(newAST);
+        return derived;
     }
 
     @Override

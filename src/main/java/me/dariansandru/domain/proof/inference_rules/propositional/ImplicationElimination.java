@@ -4,26 +4,23 @@ import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.utils.data_structures.ast.AST;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class DisjunctionElimination implements InferenceRule {
-
-    private List<AST> derived = new ArrayList<>();
+public class ImplicationElimination implements InferenceRule {
 
     @Override
     public String getName() {
-        return "Disjunction Elimination";
+        return "";
     }
 
     @Override
-    public boolean canInference(List<AST> asts, AST goal) {
+    public boolean canInference(List<AST> kb, AST goal) {
         return false;
     }
 
     @Override
-    public List<AST> inference(List<AST> asts, AST goal) {
-        return derived;
+    public List<AST> inference(List<AST> kb, AST goal) {
+        return List.of();
     }
 
     @Override

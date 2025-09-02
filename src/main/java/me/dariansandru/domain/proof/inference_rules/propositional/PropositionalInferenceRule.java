@@ -10,6 +10,9 @@ public enum PropositionalInferenceRule {
     DISJUNCTION_ELIMINATION,
     DISJUNCTION_INTRODUCTION,
     EQUIVALENCE_INTRODUCTION,
+    EQUIVALENCE_ELIMINATION,
+    IMPLICATION_INTRODUCTION,
+    IMPLICATION_ELIMINATION,
     NO_RULE;
 
     @Override
@@ -24,6 +27,9 @@ public enum PropositionalInferenceRule {
             case DISJUNCTION_ELIMINATION -> "Disjunction Elimination";
             case DISJUNCTION_INTRODUCTION -> "Disjunction Introduction";
             case EQUIVALENCE_INTRODUCTION -> "Equivalence Introduction";
+            case EQUIVALENCE_ELIMINATION ->  "Equivalence Elimination";
+            case IMPLICATION_INTRODUCTION -> "Implication Introduction";
+            case IMPLICATION_ELIMINATION -> "Implication Elimination";
             case NO_RULE -> "No Rule";
         };
     }

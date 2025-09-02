@@ -6,6 +6,7 @@ import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.proof.inference_rules.propositional.PropositionalInferenceRule;
 import me.dariansandru.io.OutputDevice;
 import me.dariansandru.utils.data_structures.ast.AST;
+import me.dariansandru.utils.data_structures.ast.PropositionalAST;
 import me.dariansandru.utils.factory.PropositionalInferenceRuleFactory;
 
 import java.util.ArrayList;
@@ -35,6 +36,10 @@ public abstract class ProofTextHelper {
         List<ProofStep> proofText = new ArrayList<>();
         while (subGoal != null) {
             if (subGoal.getInferenceRule() == PropositionalInferenceRule.HYPOTHESIS) {
+                if (subGoal.getGoal().toString().equals("Contradiction")) {
+                    subGoal = subGoal.getParent();
+                    continue;
+                }
                 ProofStep proofStep = new ProofStep("We conclude " + subGoal.getGoal() + " from the hypothesis", rightMostIndent);
                 proofText.add(proofStep);
                 subGoal = subGoal.getParent();
@@ -54,6 +59,10 @@ public abstract class ProofTextHelper {
     public static void getProofTextHypothesis(SubGoal subGoal) {
         List<ProofStep> proofText = new ArrayList<>();
         while (subGoal != null) {
+            if (subGoal.getGoal().toString().equals("Contradiction")) {
+                subGoal = subGoal.getParent();
+                continue;
+            }
             ProofStep proofStep = new ProofStep("We conclude " + subGoal.getGoal() + " from the hypothesis", rightMostIndent);
             proofText.add(proofStep);
             subGoal = subGoal.getParent();
@@ -62,11 +71,27 @@ public abstract class ProofTextHelper {
         proofSteps.add(proofText);
     }
 
+    public static void getProofTextContradiction(AST ast) {
+        List<ProofStep> proofText = new ArrayList<>();
+        ProofStep step = new ProofStep("We derive a contradiction because " + ast + ", from the hypothesis, is a direct contradiction", rightMostIndent);
+        proofText.add(step);
+
+        proofSteps.add(proofText);
+    }
+
     public static void print() {
+        if (assumptionSteps.isEmpty() && conclusionSteps.isEmpty()) {
+            for (List<ProofStep> proof : proofSteps) {
+                for (ProofStep step : proof) {
+                    OutputDevice.writeIndentedToConsole(step.getText(), step.getIndent());
+                }
+            }
+        }
+
         boolean isAssumption = true;
         boolean isConclusion = false;
         boolean isProof = false;
-        int printedProofIndex = 0;
+         int printedProofIndex = 0;
 
         int currentIndentation = 0;
         do {
@@ -93,16 +118,27 @@ public abstract class ProofTextHelper {
                     isAssumption = true;
                     isConclusion = false;
                 }
+                else currentIndentation--;
             }
             else if (isProof) {
-                if (printedProofIndex == proofSteps.size()) break;
+                if (printedProofIndex == proofSteps.size()) {
+                    isConclusion = true;
+                    isProof = false;
+                    currentIndentation--;
+                    continue;
+                }
                 List<ProofStep> proof = proofSteps.remove(printedProofIndex);
 
+                ProofStep lastStep = null;
                 for (ProofStep step : proof) {
                     OutputDevice.writeIndentedToConsole(step.getText(), step.getIndent());
+                    lastStep = step;
                 }
-                currentIndentation--;
 
+                assert lastStep != null;
+                if (lastStep.getText().endsWith("hypothesis")) continue;
+
+                currentIndentation--;
                 isConclusion = true;
                 isProof = false;
             }
@@ -143,34 +179,6 @@ public abstract class ProofTextHelper {
         return "To prove " + implication + ", assume " + assumption + " and prove " + conclusion;
     }
 
-    public static String getInference(String conclusion, String... strings) {
-        if (strings.length == 1) return "From " + strings[0] + " ,we conclude " + conclusion;
-        else if (strings.length == 2) return "From " + strings[0] + " and " + strings[1] + " ,we conclude " + conclusion;
-        else {
-            return getStringChain(conclusion, strings);
-        }
-    }
-
-    public static String getInference(String conclusion, String rule, String... strings) {
-        if (strings.length == 1) return "From " + strings[0] + " ,by " + rule + " we conclude " + conclusion;
-        else if (strings.length == 2) return "From " + strings[0] + " and " + strings[1] + " ,by " + rule + " ,we conclude " + conclusion;
-        else {
-            return getStringChain(conclusion, strings);
-        }
-    }
-
-    private static String getStringChain(String conclusion, String[] strings) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("From ");
-        for (int i = 0 ; i < strings.length ; i++) {
-            if (i != strings.length - 1) builder.append(strings[i]).append(", ");
-            else builder.append(strings[i]);
-        }
-        builder.append(" ,we conclude ").append(conclusion);
-
-        return builder.toString();
-    }
-
     public static String getEquivalenceAssumption(String equivalence, String conclusion1, String conclusion2) {
         return "To prove " + equivalence + ", prove " + conclusion1 + " and " + conclusion2;
     }
@@ -200,8 +208,10 @@ public abstract class ProofTextHelper {
     }
 
     public static String getNegationAssumption(AST assumption) {
-        assumption.negate();
-        return "To prove " + assumption + ", assume " + assumption + " and prove a contradiction";
+        AST negatedAssumption = new PropositionalAST(assumption.toString());
+        negatedAssumption.validate(0);
+        negatedAssumption.negate();
+        return "To prove " + assumption + ", assume " + negatedAssumption + " and prove a contradiction";
     }
 
 }

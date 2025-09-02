@@ -8,8 +8,8 @@ import java.util.List;
 public interface InferenceRule {
     String getName();
 
-    boolean canInference(List<AST> asts);
-    AST inference(List<AST> asts);
+    public boolean canInference(List<AST> kb, AST goal);
+    public List<AST> inference(List<AST> kb, AST goal);
 
     List<SubGoal> getSubGoals(List<AST> knowledgeBase, AST... asts);
     String getText(SubGoal subGoal);

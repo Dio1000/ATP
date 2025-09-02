@@ -1,6 +1,5 @@
 package me.dariansandru.domain.proof;
 
-import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.proof.inference_rules.propositional.PropositionalInferenceRule;
 import me.dariansandru.utils.data_structures.ast.AST;
 
@@ -9,6 +8,10 @@ import java.util.List;
 
 public class SubGoal {
     private final AST goal;
+    private final List<AST> otherGoals;
+    private int otherGoalIndex = 0;
+    private boolean isExpanded = false;
+
     private final PropositionalInferenceRule inferenceRule;
     private final AST formula;
 
@@ -23,6 +26,7 @@ public class SubGoal {
 
     public SubGoal(AST goal, PropositionalInferenceRule inferenceRule, AST formula) {
         this.goal = goal;
+        this.otherGoals = new ArrayList<>();
         this.inferenceRule = inferenceRule;
         this.formula = formula;
         this.children = new ArrayList<>();
@@ -30,8 +34,17 @@ public class SubGoal {
 
     public SubGoal() {
         this.goal = null;
+        this.otherGoals = null;
         this.inferenceRule = null;
         this.formula = null;
+    }
+
+    public SubGoal(AST goal, PropositionalInferenceRule inferenceRule, AST formula, List<AST> otherGoals) {
+        this.goal = goal;
+        this.otherGoals = otherGoals;
+        this.inferenceRule = inferenceRule;
+        this.formula = formula;
+        this.children = new ArrayList<>();
     }
 
     public boolean isEmpty() {
@@ -73,4 +86,35 @@ public class SubGoal {
     public void setParent(SubGoal parent) {
         this.parent = parent;
     }
+
+    public List<AST> getOtherGoals() {
+        return otherGoals;
+    }
+
+    public int getOtherGoalIndex() {
+        return otherGoalIndex;
+    }
+
+    public void incrementOtherGoalIndex() {
+        this.otherGoalIndex++;
+    }
+
+    public boolean hasMoreOtherGoals() {
+        assert otherGoals != null;
+        return otherGoalIndex < otherGoals.size();
+    }
+
+    public AST getCurrentOtherGoal() {
+        assert otherGoals != null;
+        return otherGoals.isEmpty() ? null : otherGoals.get(otherGoalIndex);
+    }
+
+    public void setExpanded() {
+        this.isExpanded = true;
+    }
+
+    public boolean isExpanded() {
+        return this.isExpanded;
+    }
 }
+

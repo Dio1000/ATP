@@ -8,7 +8,7 @@ public class PropositionalInferenceRuleFactory {
 
     public static InferenceRule create(PropositionalInferenceRule rule) {
         return switch (rule) {
-            case HYPOTHESIS -> null;
+            case HYPOTHESIS, NO_RULE -> null;
             case CONTRADICTION -> new ContradictionRule();
             case MODUS_PONENS -> new ModusPonens();
             case MODUS_TOLLENS -> new ModusTollens();
@@ -17,7 +17,9 @@ public class PropositionalInferenceRuleFactory {
             case DISJUNCTION_ELIMINATION -> new DisjunctionElimination();
             case DISJUNCTION_INTRODUCTION -> new DisjunctionIntroduction();
             case EQUIVALENCE_INTRODUCTION -> new EquivalenceIntroduction();
-            case NO_RULE -> null;
+            case EQUIVALENCE_ELIMINATION -> new EquivalenceElimination();
+            case IMPLICATION_INTRODUCTION -> new ImplicationIntroduction();
+            case IMPLICATION_ELIMINATION -> new ImplicationElimination();
         };
     }
 }

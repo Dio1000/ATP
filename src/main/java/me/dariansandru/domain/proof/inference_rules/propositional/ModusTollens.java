@@ -5,7 +5,6 @@ import me.dariansandru.domain.logical_operator.Implication;
 import me.dariansandru.domain.predicate.Predicate;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
-import me.dariansandru.domain.proof.proofs.PropositionalProof;
 import me.dariansandru.utils.data_structures.ast.AST;
 import me.dariansandru.utils.data_structures.ast.PropositionalAST;
 import me.dariansandru.utils.data_structures.ast.PropositionalASTNode;
@@ -17,6 +16,7 @@ import java.util.List;
 public class ModusTollens implements InferenceRule {
 
     private AST implicationAST = null;
+    private List<AST> derived = new ArrayList<>();
 
     @Override
     public String getName() {
@@ -24,7 +24,7 @@ public class ModusTollens implements InferenceRule {
     }
 
     @Override
-    public boolean canInference(List<AST> asts) {
+    public boolean canInference(List<AST> asts, AST goal) {
         implicationAST = null;
 
         for (AST candidate : asts) {
@@ -51,13 +51,8 @@ public class ModusTollens implements InferenceRule {
     }
 
     @Override
-    public AST inference(List<AST> asts) {
-        assert implicationAST != null;
-
-        implicationAST.validate(0);
-        AST antecedent = implicationAST.getSubtree(0);
-        antecedent.negate();
-        return antecedent;
+    public List<AST> inference(List<AST> asts, AST goal) {
+        return derived;
     }
 
     @Override

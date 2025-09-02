@@ -106,16 +106,29 @@ public class PropositionalProof implements Proof{
                 buildTree(state.getChildren().get(i), indent + 1);
         }
         else if (strategy == Strategy.NEGATION_STRATEGY) {
+            assumptions.add(ProofTextHelper.getNegationAssumption(state.getGoal()));
+            conclusions.add(ProofTextHelper.getConclusion(state.getGoal().toString()));
+            ProofTextHelper.addAssumptionStep(assumptions.getLast(), indent);
+            ProofTextHelper.addConclusionStep(conclusions.getLast(), indent);
+
             NegationStrategy(state);
         }
     }
 
     public void prove() {
+        long startTime = System.nanoTime();
+
         buildTree(root, 0);
 
         root.prove();
         isProven = root.isProven();
         ProofTextHelper.print();
+
+        long endTime = System.nanoTime();
+        long duration = endTime - startTime;
+        double durationMs = duration / 1_000_000.0;
+
+        System.out.println("Proof completed in " + durationMs + " ms");
     }
 
     public void EquivalenceStrategy(ProofState state) {
@@ -163,7 +176,6 @@ public class PropositionalProof implements Proof{
         List<AST> newGoals = new ArrayList<>();
 
         PropositionalAST kbEntry = (PropositionalAST) state.getGoals().getFirst();
-        kbEntry.validate(0);
         kbEntry.negate();
 
         newKnowledgeBase.add(kbEntry);

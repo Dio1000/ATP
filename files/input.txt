@@ -7,3 +7,9 @@ B -> C
 
 Goals:
 A -> C
+
+// KB:
+
+// Goals:
+// !(P <-> !P)
+

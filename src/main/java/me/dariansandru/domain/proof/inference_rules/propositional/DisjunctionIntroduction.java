@@ -1,25 +1,52 @@
 package me.dariansandru.domain.proof.inference_rules.propositional;
 
+import me.dariansandru.domain.LogicalOperator;
+import me.dariansandru.domain.logical_operator.Disjunction;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.utils.data_structures.ast.AST;
+import me.dariansandru.utils.data_structures.ast.PropositionalAST;
+import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class DisjunctionIntroduction implements InferenceRule {
+
+    private List<AST> derived = new ArrayList<>();
+
     @Override
     public String getName() {
         return "Disjunction Introduction";
     }
 
     @Override
-    public boolean canInference(List<AST> asts) {
-        return false;
+    public boolean canInference(List<AST> asts, AST goal) {
+        boolean shouldInference = false;
+
+        for (AST ast : asts) {
+            if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.IMPLICATION) {
+                PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
+                PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
+
+                PropositionalAST negatedLeft = new PropositionalAST(left.toString());
+                negatedLeft.validate(0);
+                negatedLeft.negate();
+
+                PropositionalAST newAST = new PropositionalAST(negatedLeft + " " + new Disjunction().getRepresentation() + " " + right);
+                newAST.validate(0);
+                derived.add(newAST);
+                shouldInference = true;
+            }
+        }
+
+        return shouldInference;
     }
 
     @Override
-    public AST inference(List<AST> asts) {
-        return null;
+    public List<AST> inference(List<AST> asts, AST goal) {
+        if (canInference(asts, goal)) return derived;
+        else return new ArrayList<>();
     }
 
     @Override
