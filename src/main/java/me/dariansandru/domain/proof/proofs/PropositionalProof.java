@@ -13,6 +13,7 @@ import me.dariansandru.reflexivity.InferenceRulesFactory;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.data_structures.ast.PropositionalASTNode;
+import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.ProofTextHelper;
 
 import java.util.ArrayList;
@@ -130,6 +131,7 @@ public class PropositionalProof implements Proof{
         double durationMs = duration / 1_000_000.0;
 
         ProofTextHelper.printWithSymbol("Proof completed in " + durationMs + " ms", "-");
+        System.out.println("\n" + KnowledgeBaseRegistry.getAllEntries());
     }
 
     public void EquivalenceStrategy(ProofState state) {

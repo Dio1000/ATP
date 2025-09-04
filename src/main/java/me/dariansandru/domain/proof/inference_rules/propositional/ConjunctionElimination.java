@@ -16,7 +16,7 @@ import java.util.List;
 
 public class ConjunctionElimination implements InferenceRule {
 
-    private List<AST> derived = new ArrayList<>();
+    private final List<AST> derived = new ArrayList<>();
 
     @Override
     public String getName() {
@@ -43,13 +43,13 @@ public class ConjunctionElimination implements InferenceRule {
             if (!hasLeft)
             {
                 derived.add(left);
-                KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + " we derive " + left + " (and " + right + ")", List.of(ast.toString()));
+                KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + " by " + getName() + ", we derive " + left + " (and " + right + ")", List.of(ast.toString()));
                 shouldInference = true;
             }
             if (!hasRight)
             {
                 derived.add(right);
-                KnowledgeBaseRegistry.addEntry(right.toString(), "From " + ast + " we derive " + right + " (and " + left + ")", List.of(ast.toString()));
+                KnowledgeBaseRegistry.addEntry(right.toString(), "From " + ast + " by " + getName() + ", we derive " + right + " (and " + left + ")", List.of(ast.toString()));
                 shouldInference = true;
             }
         }
@@ -80,7 +80,7 @@ public class ConjunctionElimination implements InferenceRule {
 
     @Override
     public String getText(SubGoal subGoal) {
-        return "From " + subGoal.getGoal() + " and " + subGoal.getFormula() + ", we can derive " + subGoal.getFormula();
+        return "From " + subGoal.getGoal() + " and " + subGoal.getFormula() + " by " + getName() + ", we can derive " + subGoal.getFormula();
     }
 
     private boolean contains(List<AST> asts, AST other) {

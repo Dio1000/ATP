@@ -4,10 +4,10 @@ import java.util.*;
 
 public abstract class KnowledgeBaseRegistry {
 
-    private static final Map<String, String> entryStringMap = new HashMap<>();     // formula -> origin
-    private static final Map<String, Boolean> entryIsUsedMap = new HashMap<>();    // formula -> isUsed
-    private static final Map<String, List<String>> entryFromMap = new HashMap<>(); // formula -> parents (formulas)
-    private static final Map<String, String> entryChildMap = new HashMap<>();      // parent -> child
+    private static final Map<String, String> entryStringMap = new HashMap<>();
+    private static final Map<String, Boolean> entryIsUsedMap = new HashMap<>();
+    private static final Map<String, List<String>> entryFromMap = new HashMap<>();
+    private static final Map<String, String> entryChildMap = new HashMap<>();
 
     public static List<String> getAllEntries() {
         return new ArrayList<>(entryStringMap.keySet());

@@ -15,4 +15,4 @@ public class Main {
 //TODO More Exceptions
 //TODO Change reflexivity package classes to actually use reflexivity.
 
-//TODO When you add a new KB entry, add in a global map where you got it from, that way you will also know if you already derived something.
+//TODO Look into active sub goals in PropositionalProofState

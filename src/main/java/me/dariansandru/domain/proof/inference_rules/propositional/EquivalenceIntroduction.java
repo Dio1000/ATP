@@ -20,7 +20,7 @@ public class EquivalenceIntroduction implements InferenceRule {
     private AST leftAtom = null;
     private AST rightAtom = null;
 
-    private List<AST> derived = new ArrayList<>();
+    private final List<AST> derived = new ArrayList<>();
 
     @Override
     public String getName() {
@@ -68,7 +68,6 @@ public class EquivalenceIntroduction implements InferenceRule {
 //        PropositionalAST newAST = new PropositionalAST(leftSubtree + " " + new Equivalence().getRepresentation() + " " + rightSubtree);
 //        newAST.validate(0);
 //        return List.of(newAST);
-
         return derived;
     }
 

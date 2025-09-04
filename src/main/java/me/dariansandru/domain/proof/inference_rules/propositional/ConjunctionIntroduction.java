@@ -12,7 +12,7 @@ import java.util.List;
 
 public class ConjunctionIntroduction implements InferenceRule {
 
-    private List<AST> derived = new ArrayList<>();
+    private final List<AST> derived = new ArrayList<>();
 
     @Override
     public String getName() {
@@ -30,7 +30,7 @@ public class ConjunctionIntroduction implements InferenceRule {
                         PropositionalAST newAST = new PropositionalAST(ast + " " + new Conjunction().getRepresentation() + " " + ast1);
                         newAST.validate(0);
 
-                        KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + " and " + ast1 + ", we derive " + newAST, List.of(ast.toString(), ast1.toString()));
+                        KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + " and " + ast1 + " by " + getName() + ", we derive " + newAST, List.of(ast.toString(), ast1.toString()));
                         derived.add(newAST);
                         shouldInference = true;
                     }

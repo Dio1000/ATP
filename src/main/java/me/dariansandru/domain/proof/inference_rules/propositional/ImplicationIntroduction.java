@@ -14,7 +14,7 @@ import java.util.List;
 
 public class ImplicationIntroduction implements InferenceRule {
 
-    private List<AST> derived = new ArrayList<>();
+    private final List<AST> derived = new ArrayList<>();
 
     @Override
     public String getName() {
@@ -39,8 +39,8 @@ public class ImplicationIntroduction implements InferenceRule {
                     derived.add(newAST1);
                     derived.add(newAST2);
 
-                    KnowledgeBaseRegistry.addEntry(newAST1.toString(), "From " + ast + ", we derive " + newAST1 + " (and " + newAST2 + ")", List.of(ast.toString()));
-                    KnowledgeBaseRegistry.addEntry(newAST2.toString(), "From " + ast + ", we derive " + newAST2 + " (and " + newAST1 + ")", List.of(ast.toString()));
+                    KnowledgeBaseRegistry.addEntry(newAST1.toString(), "From " + ast + " by " + getName() + ", we derive " + newAST1 + " (and " + newAST2 + ")", List.of(ast.toString()));
+                    KnowledgeBaseRegistry.addEntry(newAST2.toString(), "From " + ast + " by " + getName() + ", we derive " + newAST2 + " (and " + newAST1 + ")", List.of(ast.toString()));
                     shouldInference = true;
                 }
             }

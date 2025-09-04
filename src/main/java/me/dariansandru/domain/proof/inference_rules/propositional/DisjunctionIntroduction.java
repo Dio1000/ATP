@@ -37,7 +37,7 @@ public class DisjunctionIntroduction implements InferenceRule {
                 PropositionalAST newAST = new PropositionalAST(negatedLeft + " " + new Disjunction().getRepresentation() + " " + right);
                 newAST.validate(0);
 
-                KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + ", we derive " + newAST, List.of(ast.toString()));
+                KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + " by " + getName() + ", we derive " + newAST, List.of(ast.toString()));
                 derived.add(newAST);
                 shouldInference = true;
             }

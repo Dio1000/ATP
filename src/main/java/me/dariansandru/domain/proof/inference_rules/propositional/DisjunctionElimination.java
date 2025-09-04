@@ -30,7 +30,7 @@ public class DisjunctionElimination implements InferenceRule {
                 PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
 
                 if (left.isEquivalentTo(right)) {
-                    KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + ", we derive " + left, List.of(ast.toString()));
+                    KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + " by " + getName() + ", we derive " + left, List.of(ast.toString()));
                     derived.add(left);
                     shouldDerive = true;
                 }

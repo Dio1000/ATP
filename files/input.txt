@@ -2,6 +2,21 @@ Universe:
 Propositions
 
 KB:
+A AND (A -> B)
 
 Goals:
-A -> !(P <-> !P)
+A AND B
+
+// This one is wrong because of active sub goals infinite loop.
+// KB:
+// (A AND B) -> C
+//
+// Goals:
+// A -> (B -> C)
+
+// This one is wrong because of a missing inference rule.
+// KB:
+// !(A AND B)
+//
+// Goals:
+// !A OR !B

@@ -34,6 +34,8 @@ public abstract class ProofTextHelper {
 
     public static void getProofText(SubGoal subGoal) {
         List<ProofStep> proofText = new ArrayList<>();
+        String formula = subGoal.getGoal().toString();
+
         while (subGoal != null) {
             if (subGoal.getInferenceRule() == PropositionalInferenceRule.HYPOTHESIS) {
                 if (subGoal.getGoal().toString().equals("Contradiction")) {
@@ -53,11 +55,14 @@ public abstract class ProofTextHelper {
             subGoal = subGoal.getParent();
         }
 
+        addDerivationSteps(formula, rightMostIndent + 1, proofText);
         proofSteps.add(proofText);
     }
 
     public static void getProofTextHypothesis(SubGoal subGoal) {
         List<ProofStep> proofText = new ArrayList<>();
+        String formula = subGoal.getGoal().toString();
+
         while (subGoal != null) {
             if (subGoal.getGoal().toString().equals("Contradiction")) {
                 subGoal = subGoal.getParent();
@@ -68,6 +73,7 @@ public abstract class ProofTextHelper {
             subGoal = subGoal.getParent();
         }
 
+        addDerivationSteps(formula, rightMostIndent + 1, proofText);
         proofSteps.add(proofText);
     }
 
@@ -80,9 +86,14 @@ public abstract class ProofTextHelper {
                         ", from the Knowledge Base, is a direct contradiction",
                 rightMostIndent
         );
+        ProofStep lastStep = new ProofStep(
+                "Thus, we have derived a contradiction",
+                rightMostIndent
+        );
         proofText.add(step);
 
         addDerivationSteps(formula, rightMostIndent + 1, proofText);
+        proofText.add(lastStep);
         proofSteps.add(proofText);
     }
 
