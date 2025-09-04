@@ -55,6 +55,7 @@ public class ContradictionRule implements InferenceRule {
     public List<SubGoal> directContradiction(List<AST> knowledgeBase) {
         List<SubGoal> subGoals = new ArrayList<>();
         for (AST ast : knowledgeBase) {
+            if (!((PropositionalAST) ast).isAtomic()) continue;
             AST goal = new PropositionalAST(String.valueOf(ast));
             goal.validate(0);
             goal.negate();

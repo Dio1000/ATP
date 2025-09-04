@@ -38,8 +38,6 @@ public class ModusPonens implements InferenceRule {
             AST antecedent = pCandidate.getSubtree(0);
             AST conclusion = pCandidate.getSubtree(1);
 
-            if (!conclusion.isEquivalentTo(goal)) continue;
-
             for (AST other : asts) {
                 if (other != candidate && other.isEquivalentTo(antecedent)) {
                     KnowledgeBaseRegistry.addEntry(conclusion.toString(), "From " + candidate + " and " + antecedent + ", by " + getName() + ", we derive " + conclusion, List.of(candidate.toString()));
@@ -55,8 +53,8 @@ public class ModusPonens implements InferenceRule {
 
     @Override
     public List<AST> inference(List<AST> asts, AST goal) {
-        if (derived.isEmpty()) canInference(asts, goal);
-        return new ArrayList<>(derived);
+        if (!canInference(asts, goal)) return new ArrayList<>();
+        return derived;
     }
 
     @Override
@@ -72,6 +70,8 @@ public class ModusPonens implements InferenceRule {
                     PropositionalAST newGoal = (PropositionalAST) ast.getSubtree(0);
                     newGoal.validate(0);
                     SubGoal newSubGoal = new SubGoal(newGoal, PropositionalInferenceRule.MODUS_PONENS, ast);
+
+                    KnowledgeBaseRegistry.addEntry(right.toString(), "From " + newSubGoal.getGoal() + " and " + ast + ", by " + getName() + ", we derive " + right, List.of(ast.toString()));
                     subGoals.add(newSubGoal);
                 }
             }

@@ -4,7 +4,6 @@ import me.dariansandru.domain.proof.ProofStep;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.proof.inference_rules.propositional.PropositionalInferenceRule;
-import me.dariansandru.domain.proof.proofs.Proof;
 import me.dariansandru.io.OutputDevice;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
@@ -37,20 +36,25 @@ public abstract class ProofTextHelper {
         List<ProofStep> proofText = new ArrayList<>();
         String formula = subGoal.getGoal().toString();
 
+        ProofStep firstProofStep = new ProofStep("We derive " + subGoal.getGoal() + " from the hypothesis", rightMostIndent);
+        proofText.add(firstProofStep);
+        subGoal= subGoal.getParent();
+
         while (subGoal != null) {
-            if (subGoal.getInferenceRule() == PropositionalInferenceRule.HYPOTHESIS) {
-                if (subGoal.getGoal().toString().equals("Contradiction")) {
-                    subGoal = subGoal.getParent();
-                    continue;
-                }
-                ProofStep proofStep = new ProofStep("We conclude " + subGoal.getGoal() + " from the Knowledge Base", rightMostIndent);
-                proofText.add(proofStep);
+            if (subGoal.getGoal().toString().equals("Contradiction")) {
                 subGoal = subGoal.getParent();
                 continue;
             }
-            InferenceRule inferenceRule = PropositionalInferenceRuleFactory.create(subGoal.getInferenceRule());
-            assert inferenceRule != null;
-
+//            if (subGoal.getInferenceRule() == PropositionalInferenceRule.HYPOTHESIS) {
+//                if (subGoal.getGoal().toString().equals("Contradiction")) {
+//                    subGoal = subGoal.getParent();
+//                    continue;
+//                }
+//                ProofStep proofStep = new ProofStep("We conclude " + subGoal.getGoal() + " from the Knowledge Base", rightMostIndent);
+//                proofText.add(proofStep);
+//                subGoal = subGoal.getParent();
+//                continue;
+//            }
             ProofStep proofStep = new ProofStep(KnowledgeBaseRegistry.getString(subGoal.getGoal().toString()), rightMostIndent);
             proofText.add(proofStep);
             subGoal = subGoal.getParent();
@@ -93,7 +97,7 @@ public abstract class ProofTextHelper {
         );
         proofText.add(step);
 
-        addDerivationStepsReversed(formula, rightMostIndent + 1, proofText);
+        addDerivationSteps(formula, rightMostIndent + 1, proofText);
         proofText.add(lastStep);
         proofSteps.add(proofText);
     }
@@ -170,8 +174,7 @@ public abstract class ProofTextHelper {
                     isProof = true;
                     isAssumption = false;
                 }
-            }
-            else if (isConclusion) {
+            } else if (isConclusion) {
                 List<ProofStep> stepsAtIndent = getAllByIndentation(conclusionSteps, currentIndentation);
                 if (stepsAtIndent.isEmpty()) break;
 
@@ -186,9 +189,8 @@ public abstract class ProofTextHelper {
                 } else {
                     currentIndentation--;
                 }
-            }
-            else if (isProof) {
-                if (printedProofIndex >= proofSteps.size()) {
+            } else if (isProof) {
+                if (printedProofIndex == proofSteps.size()) {
                     isConclusion = true;
                     isProof = false;
                     currentIndentation--;
@@ -266,8 +268,8 @@ public abstract class ProofTextHelper {
         StringBuilder builder = new StringBuilder();
         builder.append("To prove ").append(conjunction).append(", prove ").append(strings[0].strip());
 
-        for (int i = 1 ; i < strings.length ; i++ ){
-            if (i == strings.length - 1 ) builder.append(" and ").append(strings[i].strip());
+        for (int i = 1; i < strings.length; i++) {
+            if (i == strings.length - 1) builder.append(" and ").append(strings[i].strip());
             else builder.append(", ").append(strings[i].strip());
         }
 
@@ -278,8 +280,8 @@ public abstract class ProofTextHelper {
         StringBuilder builder = new StringBuilder();
         builder.append("To prove ").append(disjunction).append(", prove ").append(strings[0].strip());
 
-        for (int i = 1 ; i < strings.length ; i++ ){
-            if (i == strings.length - 1 ) builder.append(" or ").append(strings[i].strip());
+        for (int i = 1; i < strings.length; i++) {
+            if (i == strings.length - 1) builder.append(" or ").append(strings[i].strip());
             builder.append(", ").append(strings[i].strip());
         }
 
@@ -295,10 +297,10 @@ public abstract class ProofTextHelper {
 
     public static void printWithSymbol(String string, String symbol) {
         System.out.println();
-        for (int i = 0 ; i < string.length() ; i++) System.out.print(symbol);
+        for (int i = 0; i < string.length(); i++) System.out.print(symbol);
         System.out.println();
         System.out.println(string);
-        for (int i = 0 ; i < string.length() ; i++) System.out.print(symbol);
+        for (int i = 0; i < string.length(); i++) System.out.print(symbol);
     }
 
 }

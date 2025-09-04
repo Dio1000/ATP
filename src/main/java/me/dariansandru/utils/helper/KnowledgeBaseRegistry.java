@@ -11,7 +11,7 @@ public abstract class KnowledgeBaseRegistry {
 
     public static void getAllEntries() {
         for (String string : entryStringMap.keySet()) {
-            System.out.println(entryStringMap.get(string));
+            System.out.println(string + " " + entryStringMap.get(string));
         }
     }
 

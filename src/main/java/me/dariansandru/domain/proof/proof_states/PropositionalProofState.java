@@ -9,6 +9,7 @@ import me.dariansandru.domain.proof.inference_rules.propositional.PropositionalI
 import me.dariansandru.reflexivity.PropositionalInferenceRules;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.ProofTextHelper;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
@@ -24,6 +25,7 @@ public class PropositionalProofState implements ProofState {
 
     private final List<String> activeSubGoals = new ArrayList<>();
     private final List<AST> allSubGoals = new ArrayList<>();
+    private SubGoal finalSubGoal;
 
     boolean isVisited = false;
     boolean childrenInConjunction = false;
@@ -108,6 +110,7 @@ public class PropositionalProofState implements ProofState {
 
         if (containsSubGoal(subGoal)) {
             this.isProven = true;
+            finalSubGoal = subGoal;
             ProofTextHelper.getProofText(subGoal);
             return;
         }

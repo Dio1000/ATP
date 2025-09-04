@@ -41,13 +41,13 @@ public class ConjunctionElimination implements InferenceRule {
             if (!hasLeft)
             {
                 derived.add(left);
-                KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + " by " + getName() + ", we derive " + left + " (and " + right + ")", List.of(ast.toString()));
+                KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + " by " + getName() + ", we derive " + left, List.of(ast.toString()));
                 shouldInference = true;
             }
             if (!hasRight)
             {
                 derived.add(right);
-                KnowledgeBaseRegistry.addEntry(right.toString(), "From " + ast + " by " + getName() + ", we derive " + right + " (and " + left + ")", List.of(ast.toString()));
+                KnowledgeBaseRegistry.addEntry(right.toString(), "From " + ast + " by " + getName() + ", we derive " + right, List.of(ast.toString()));
                 shouldInference = true;
             }
         }

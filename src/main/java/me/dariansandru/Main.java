@@ -1,6 +1,7 @@
 package me.dariansandru;
 
 import me.dariansandru.controller.LogicController;
+import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 
 public class Main {
     public static void main(String[] args) {

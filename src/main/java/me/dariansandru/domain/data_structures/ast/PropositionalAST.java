@@ -1,6 +1,9 @@
 package me.dariansandru.domain.data_structures.ast;
 
 import me.dariansandru.domain.LogicalOperator;
+import me.dariansandru.domain.logical_operator.Conjunction;
+import me.dariansandru.domain.logical_operator.Disjunction;
+import me.dariansandru.domain.logical_operator.Implication;
 import me.dariansandru.domain.logical_operator.Negation;
 import me.dariansandru.domain.predicate.Predicate;
 import me.dariansandru.domain.signature.PropositionalSignature;
@@ -462,7 +465,6 @@ public class PropositionalAST implements AST {
         }
     }
 
-
     private void ensureChildren(PropositionalASTNode node, int count) {
         while (node.getChildren().size() < count) {
             node.addChild();
@@ -498,4 +500,5 @@ public class PropositionalAST implements AST {
     public boolean isContradiction() {
         return isContradiction;
     }
+
 }
