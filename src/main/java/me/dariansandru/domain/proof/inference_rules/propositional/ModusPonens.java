@@ -8,6 +8,7 @@ import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.data_structures.ast.PropositionalASTNode;
+import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
@@ -16,7 +17,7 @@ import java.util.List;
 public class ModusPonens implements InferenceRule {
 
     private AST implicationAST = null;
-    private List<AST> derived = new ArrayList<>();
+    private final List<AST> derived = new ArrayList<>();
 
     @Override
     public String getName() {
@@ -25,33 +26,37 @@ public class ModusPonens implements InferenceRule {
 
     @Override
     public boolean canInference(List<AST> asts, AST goal) {
+        derived.clear();
         implicationAST = null;
 
         for (AST candidate : asts) {
-            if (!(candidate.getRoot() instanceof PropositionalASTNode)) continue;
+            if (!(candidate instanceof PropositionalAST)) continue;
 
-            Predicate predicate = (Predicate) ((PropositionalASTNode) candidate.getRoot()).getKey();
-            if (predicate == null) continue;
+            PropositionalAST pCandidate = (PropositionalAST) candidate;
+            if (PropositionalLogicHelper.getOutermostOperation(pCandidate) != LogicalOperator.IMPLICATION) continue;
 
-            if (predicate.getRepresentation().equals(new Implication().getRepresentation())) {
-                AST antecedent = candidate.getSubtree(0);
+            AST antecedent = pCandidate.getSubtree(0);
+            AST conclusion = pCandidate.getSubtree(1);
 
-                for (AST other : asts) {
-                    if (other != candidate && antecedent.isEquivalentTo(other)) {
-                        implicationAST = candidate;
-                        return true;
-                    }
+            if (!conclusion.isEquivalentTo(goal)) continue;
+
+            for (AST other : asts) {
+                if (other != candidate && other.isEquivalentTo(antecedent)) {
+                    KnowledgeBaseRegistry.addEntry(conclusion.toString(), "From " + candidate + " and " + antecedent + ", by " + getName() + ", we derive " + conclusion, List.of(candidate.toString()));
+                    derived.add(conclusion);
+                    implicationAST = candidate;
+                    break;
                 }
             }
         }
-        return false;
+
+        return !derived.isEmpty();
     }
 
     @Override
     public List<AST> inference(List<AST> asts, AST goal) {
-        if (implicationAST == null) return derived;
-        derived.add(implicationAST.getSubtree(1));
-        return derived;
+        if (derived.isEmpty()) canInference(asts, goal);
+        return new ArrayList<>(derived);
     }
 
     @Override

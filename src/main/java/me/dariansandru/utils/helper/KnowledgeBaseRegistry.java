@@ -9,8 +9,10 @@ public abstract class KnowledgeBaseRegistry {
     private static final Map<String, List<String>> entryFromMap = new HashMap<>();
     private static final Map<String, String> entryChildMap = new HashMap<>();
 
-    public static List<String> getAllEntries() {
-        return new ArrayList<>(entryStringMap.keySet());
+    public static void getAllEntries() {
+        for (String string : entryStringMap.keySet()) {
+            System.out.println(entryStringMap.get(string));
+        }
     }
 
     public static void addEntry(String formula, String origin, List<String> from) {

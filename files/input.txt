@@ -12,7 +12,8 @@ A AND B
 // (A AND B) -> C
 //
 // Goals:
-// A -> (B -> C)
+// A -> (B -> C) | A AND (A -> B) | A AND B
+// !(P <-> !P)
 
 // This one is wrong because of a missing inference rule.
 // KB:

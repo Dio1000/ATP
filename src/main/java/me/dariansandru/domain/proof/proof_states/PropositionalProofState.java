@@ -86,7 +86,7 @@ public class PropositionalProofState implements ProofState {
 
         while (!isProven) {
             if (containsGoal()) {
-                ProofTextHelper.getProofTextHypothesis(new SubGoal(this.getGoal(), PropositionalInferenceRule.HYPOTHESIS, this.getGoal()));
+                ProofTextHelper.getProofText(new SubGoal(this.getGoal(), PropositionalInferenceRule.HYPOTHESIS, this.getGoal()));
                 isProven = true;
                 break;
             }
@@ -273,12 +273,12 @@ public class PropositionalProofState implements ProofState {
 
     private boolean containsSubGoal(SubGoal subGoal) {
         for (AST ast : knowledgeBase) {
-            if (ast.isEquivalentTo(subGoal.getGoal())) return true;
             if (subGoal.getOtherGoals() != null) {
                 for (AST other : subGoal.getOtherGoals()) {
                     if (ast.isEquivalentTo(other)) return true;
                 }
             }
+            if (ast.isEquivalentTo(subGoal.getGoal())) return true;
         }
         return false;
     }

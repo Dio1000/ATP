@@ -6,10 +6,8 @@ import me.dariansandru.domain.predicate.Predicate;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
-import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.data_structures.ast.PropositionalASTNode;
 import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
-import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,19 +62,29 @@ public class ConjunctionElimination implements InferenceRule {
 
     @Override
     public List<SubGoal> getSubGoals(List<AST> knowledgeBase, AST... asts) {
-        if (asts.length != 1) return new ArrayList<>();
-        List<SubGoal> subGoals = new ArrayList<>();
-
-        for (AST ast : knowledgeBase) {
-            if (!(ast instanceof PropositionalAST)) continue;
-            if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.CONJUNCTION) {
-                SubGoal subGoal = new SubGoal(ast, PropositionalInferenceRule.CONJUNCTION_ELIMINATION, asts[0]);
-                subGoals.add(subGoal);
-            }
-        }
-
-        return subGoals;
+//        if (asts.length != 1) return new ArrayList<>();
+//        AST goal = asts[0];
+//        List<SubGoal> subGoals = new ArrayList<>();
+//
+//        for (AST ast : knowledgeBase) {
+//            if (!(ast instanceof PropositionalAST)) continue;
+//            if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.CONJUNCTION) {
+//                PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
+//                PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
+//
+//                if (goal.isEquivalentTo(left)) {
+//                    subGoals.add(new SubGoal(left, PropositionalInferenceRule.CONJUNCTION_ELIMINATION, goal));
+//                }
+//                if (goal.isEquivalentTo(right)) {
+//                    subGoals.add(new SubGoal(right, PropositionalInferenceRule.CONJUNCTION_ELIMINATION, goal));
+//                }
+//            }
+//        }
+//
+//        return subGoals;
+        return new ArrayList<>();
     }
+
 
     @Override
     public String getText(SubGoal subGoal) {

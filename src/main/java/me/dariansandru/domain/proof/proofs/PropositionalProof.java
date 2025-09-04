@@ -131,7 +131,6 @@ public class PropositionalProof implements Proof{
         double durationMs = duration / 1_000_000.0;
 
         ProofTextHelper.printWithSymbol("Proof completed in " + durationMs + " ms", "-");
-        System.out.println("\n" + KnowledgeBaseRegistry.getAllEntries());
     }
 
     public void EquivalenceStrategy(ProofState state) {

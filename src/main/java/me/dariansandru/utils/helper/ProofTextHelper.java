@@ -4,6 +4,7 @@ import me.dariansandru.domain.proof.ProofStep;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.proof.inference_rules.propositional.PropositionalInferenceRule;
+import me.dariansandru.domain.proof.proofs.Proof;
 import me.dariansandru.io.OutputDevice;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
@@ -50,7 +51,7 @@ public abstract class ProofTextHelper {
             InferenceRule inferenceRule = PropositionalInferenceRuleFactory.create(subGoal.getInferenceRule());
             assert inferenceRule != null;
 
-            ProofStep proofStep = new ProofStep(inferenceRule.getText(subGoal), rightMostIndent);
+            ProofStep proofStep = new ProofStep(KnowledgeBaseRegistry.getString(subGoal.getGoal().toString()), rightMostIndent);
             proofText.add(proofStep);
             subGoal = subGoal.getParent();
         }
@@ -68,7 +69,7 @@ public abstract class ProofTextHelper {
                 subGoal = subGoal.getParent();
                 continue;
             }
-            ProofStep proofStep = new ProofStep("We conclude " + subGoal.getGoal() + " from the hypothesis", rightMostIndent);
+            ProofStep proofStep = new ProofStep("We conclude " + subGoal.getGoal() + " from the Knowledge Base", rightMostIndent);
             proofText.add(proofStep);
             subGoal = subGoal.getParent();
         }
@@ -92,7 +93,7 @@ public abstract class ProofTextHelper {
         );
         proofText.add(step);
 
-        addDerivationSteps(formula, rightMostIndent + 1, proofText);
+        addDerivationStepsReversed(formula, rightMostIndent + 1, proofText);
         proofText.add(lastStep);
         proofSteps.add(proofText);
     }
@@ -102,7 +103,7 @@ public abstract class ProofTextHelper {
         if (parents == null || parents.isEmpty()) return;
 
         ProofStep step = new ProofStep(
-                "We obtained " + formula + " from " + String.join(", ", parents),
+                KnowledgeBaseRegistry.getString(formula),
                 indent
         );
         proofText.add(step);
@@ -112,6 +113,32 @@ public abstract class ProofTextHelper {
         }
     }
 
+    private static void addDerivationStepsReversed(String formula, int indent, List<ProofStep> steps) {
+        List<String> parents = KnowledgeBaseRegistry.from(formula);
+        if (parents == null || parents.isEmpty()) return;
+
+        for (String parent : parents) {
+            addDerivationStepsReversed(parent, indent + 1, steps);
+        }
+
+        steps.add(new ProofStep(
+                KnowledgeBaseRegistry.getString(formula),
+                indent
+        ));
+    }
+
+    private static List<ProofStep> getAllByIndentation(List<ProofStep> steps, int indent) {
+        List<ProofStep> result = new ArrayList<>();
+        for (ProofStep step : steps) {
+            if (step.getIndent() == indent) result.add(step);
+        }
+        return result;
+    }
+
+    private static void removeSteps(List<ProofStep> steps, List<ProofStep> toRemove) {
+        steps.removeAll(toRemove);
+    }
+
     public static void print() {
         if (assumptionSteps.isEmpty() && conclusionSteps.isEmpty()) {
             for (List<ProofStep> proof : proofSteps) {
@@ -119,63 +146,82 @@ public abstract class ProofTextHelper {
                     OutputDevice.writeIndentedToConsole(step.getText(), step.getIndent());
                 }
             }
+            return;
         }
 
         boolean isAssumption = true;
         boolean isConclusion = false;
         boolean isProof = false;
-         int printedProofIndex = 0;
-
+        int printedProofIndex = 0;
         int currentIndentation = 0;
+
         do {
             if (isAssumption) {
-                ProofStep proofStep = getByIndentation(assumptionSteps, currentIndentation);
-                if (proofStep == null) break;
-                removeStep(assumptionSteps, proofStep.getText(), proofStep.getIndent());
+                List<ProofStep> stepsAtIndent = getAllByIndentation(assumptionSteps, currentIndentation);
+                if (stepsAtIndent.isEmpty()) break;
 
-                OutputDevice.writeIndentedToConsole(proofStep.getText(), proofStep.getIndent());
+                for (ProofStep step : stepsAtIndent) {
+                    OutputDevice.writeIndentedToConsole(step.getText(), step.getIndent());
+                }
+                removeSteps(assumptionSteps, stepsAtIndent);
+
                 currentIndentation++;
-
                 if (currentIndentation == rightMostIndent) {
                     isProof = true;
                     isAssumption = false;
                 }
             }
             else if (isConclusion) {
-                ProofStep proofStep = getByIndentation(conclusionSteps, currentIndentation);
-                if (proofStep == null) break;
-                removeStep(conclusionSteps, proofStep.getText(), proofStep.getIndent());
+                List<ProofStep> stepsAtIndent = getAllByIndentation(conclusionSteps, currentIndentation);
+                if (stepsAtIndent.isEmpty()) break;
 
-                OutputDevice.writeIndentedToConsole(proofStep.getText(), proofStep.getIndent());
-                if (getByIndentation(assumptionSteps, currentIndentation) != null) {
+                for (ProofStep step : stepsAtIndent) {
+                    OutputDevice.writeIndentedToConsole(step.getText(), step.getIndent());
+                }
+                removeSteps(conclusionSteps, stepsAtIndent);
+
+                if (!getAllByIndentation(assumptionSteps, currentIndentation).isEmpty()) {
                     isAssumption = true;
                     isConclusion = false;
+                } else {
+                    currentIndentation--;
                 }
-                else currentIndentation--;
             }
             else if (isProof) {
-                if (printedProofIndex == proofSteps.size()) {
+                if (printedProofIndex >= proofSteps.size()) {
                     isConclusion = true;
                     isProof = false;
                     currentIndentation--;
                     continue;
                 }
-                List<ProofStep> proof = proofSteps.remove(printedProofIndex);
 
-                ProofStep lastStep = null;
-                for (ProofStep step : proof) {
-                    OutputDevice.writeIndentedToConsole(step.getText(), step.getIndent());
-                    lastStep = step;
+                List<List<ProofStep>> proofsAtIndent = new ArrayList<>();
+                for (int i = printedProofIndex; i < proofSteps.size(); i++) {
+                    List<ProofStep> proof = proofSteps.get(i);
+                    if (!proof.isEmpty() && proof.getFirst().getIndent() == currentIndentation) {
+                        proofsAtIndent.add(proof);
+                    } else {
+                        break;
+                    }
                 }
 
-                assert lastStep != null;
-                if (lastStep.getText().endsWith("hypothesis")) continue;
+                for (List<ProofStep> proof : proofsAtIndent) {
+                    ProofStep lastStep = null;
+                    for (ProofStep step : proof) {
+                        OutputDevice.writeIndentedToConsole(step.getText(), step.getIndent());
+                        lastStep = step;
+                    }
+
+                    assert lastStep != null;
+                    if (lastStep.getText().endsWith("hypothesis")) continue;
+                }
+
+                proofSteps.subList(printedProofIndex, printedProofIndex + proofsAtIndent.size()).clear();
 
                 currentIndentation--;
-                isConclusion = true;
                 isProof = false;
+                isConclusion = true;
             }
-
         } while (!(currentIndentation == -1 && isConclusion));
     }
 
