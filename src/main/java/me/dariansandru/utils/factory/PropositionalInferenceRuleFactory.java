@@ -20,6 +20,7 @@ public class PropositionalInferenceRuleFactory {
             case EQUIVALENCE_ELIMINATION -> new EquivalenceElimination();
             case IMPLICATION_INTRODUCTION -> new ImplicationIntroduction();
             case IMPLICATION_ELIMINATION -> new ImplicationElimination();
+            case DEMORGAN -> new DeMorgan();
         };
     }
 }

@@ -1,13 +1,11 @@
 package me.dariansandru.domain.proof.inference_rules.propositional;
 
 import me.dariansandru.domain.LogicalOperator;
-import me.dariansandru.domain.logical_operator.Implication;
-import me.dariansandru.domain.predicate.Predicate;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
-import me.dariansandru.domain.data_structures.ast.PropositionalASTNode;
+import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
@@ -16,7 +14,7 @@ import java.util.List;
 public class ModusTollens implements InferenceRule {
 
     private AST implicationAST = null;
-    private List<AST> derived = new ArrayList<>();
+    private final List<AST> derived = new ArrayList<>();
 
     @Override
     public String getName() {
@@ -25,33 +23,47 @@ public class ModusTollens implements InferenceRule {
 
     @Override
     public boolean canInference(List<AST> asts, AST goal) {
+        derived.clear();
         implicationAST = null;
 
         for (AST candidate : asts) {
-            if (!(candidate.getRoot() instanceof PropositionalASTNode)) continue;
+            if (!(candidate instanceof PropositionalAST)) continue;
 
-            Predicate predicate = (Predicate) ((PropositionalASTNode) candidate.getRoot()).getKey();
-            if (predicate == null) continue;
+            PropositionalAST pCandidate = (PropositionalAST) candidate;
+            if (PropositionalLogicHelper.getOutermostOperation(pCandidate) != LogicalOperator.IMPLICATION) continue;
 
-            if (predicate.getRepresentation().equals(new Implication().getRepresentation())) {
-                AST consequent = candidate.getSubtree(1);
-                AST negatedConsequent = new PropositionalAST(consequent.toString());
-                negatedConsequent.validate(0);
-                negatedConsequent.negate();
+            AST antecedent = pCandidate.getSubtree(0);
+            AST consequent = pCandidate.getSubtree(1);
 
-                for (AST other : asts) {
-                    if (other != candidate && negatedConsequent.isEquivalentTo(other)) {
-                        implicationAST = candidate;
-                        return true;
-                    }
+            PropositionalAST negatedConsequent = new PropositionalAST(consequent.toString());
+            negatedConsequent.validate(0);
+            negatedConsequent.negate();
+
+            for (AST other : asts) {
+                if (other != candidate && other.isEquivalentTo(negatedConsequent)) {
+                    PropositionalAST negatedAntecedent = new PropositionalAST(antecedent.toString());
+                    negatedAntecedent.validate(0);
+                    negatedAntecedent.negate();
+
+                    KnowledgeBaseRegistry.addEntry(
+                            negatedAntecedent.toString(),
+                            "From " + other + " and " + candidate + ", by " + getName() + ", we derive " + negatedAntecedent,
+                            List.of(candidate.toString())
+                    );
+
+                    derived.add(negatedAntecedent);
+                    implicationAST = candidate;
+                    break;
                 }
             }
         }
-        return false;
+
+        return !derived.isEmpty();
     }
 
     @Override
     public List<AST> inference(List<AST> asts, AST goal) {
+        if (!canInference(asts, goal)) return new ArrayList<>();
         return derived;
     }
 
@@ -62,16 +74,21 @@ public class ModusTollens implements InferenceRule {
 
         for (AST ast : knowledgeBase) {
             if (!(ast instanceof PropositionalAST)) continue;
+
             if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.IMPLICATION) {
-                PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
-                PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
-                left.negate();
+                PropositionalAST antecedent = (PropositionalAST) ast.getSubtree(0);
+                PropositionalAST consequent = (PropositionalAST) ast.getSubtree(1);
 
-                if (left.isEquivalentTo(asts[0])) {
-                    right.validate(0);
-                    right.negate();
+                PropositionalAST negatedConsequent = new PropositionalAST(consequent.toString());
+                negatedConsequent.validate(0);
+                negatedConsequent.negate();
 
-                    SubGoal newSubGoal = new SubGoal(right, PropositionalInferenceRule.MODUS_TOLLENS, ast);
+                if (negatedConsequent.isEquivalentTo(asts[0])) {
+                    PropositionalAST negatedAntecedent = new PropositionalAST(antecedent.toString());
+                    negatedAntecedent.validate(0);
+                    negatedAntecedent.negate();
+
+                    SubGoal newSubGoal = new SubGoal(negatedAntecedent, PropositionalInferenceRule.MODUS_TOLLENS, ast);
                     subGoals.add(newSubGoal);
                 }
             }
@@ -82,10 +99,7 @@ public class ModusTollens implements InferenceRule {
 
     @Override
     public String getText(SubGoal subGoal) {
-        AST negatedFormula = subGoal.getFormula().getSubtree(0);
-        negatedFormula.negate();
-        return "From " + subGoal.getGoal() + " and " + subGoal.getFormula() + ", by Modus Tollens, " + "we derive " + negatedFormula;
-
+        AST negatedAntecedent = subGoal.getGoal();
+        return "From " + subGoal.getGoal() + " and " + subGoal.getFormula() + ", by Modus Tollens, we derive " + negatedAntecedent;
     }
-
 }

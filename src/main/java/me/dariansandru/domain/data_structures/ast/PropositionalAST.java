@@ -22,7 +22,7 @@ import java.util.*;
 public class PropositionalAST implements AST {
 
     private final String formulaString;
-    private final PropositionalASTNode root;
+    private PropositionalASTNode root;
     private PropositionalASTNode currentNode;
     private int currentChildIndex;
     private final boolean isContradiction;
@@ -441,7 +441,17 @@ public class PropositionalAST implements AST {
 
     @Override
     public void negate() {
-        if (root.getChildren().isEmpty()) {
+        if (this.isAtomic()) {
+            if (Objects.equals(((Predicate)this.root.getChildren().getFirst().getKey()).getRepresentation(), new Negation().getRepresentation())) {
+                root = (PropositionalASTNode) this.root.getChildren().getFirst().getChildren().getFirst();
+                return;
+            }
+
+            PropositionalASTNode negationNode = new PropositionalASTNode(new Negation());
+            negationNode.getChildren().add(root.getChildren().getFirst());
+            root.setParent(negationNode);
+            root = negationNode;
+            root.setParent(null);
             return;
         }
 
@@ -454,14 +464,11 @@ public class PropositionalAST implements AST {
             root.getChildren().set(0, inner);
         }
         else {
-            PropositionalASTNode formulaNode = (PropositionalASTNode) root.getChildren().getFirst();
-
             PropositionalASTNode negationNode = new PropositionalASTNode(new Negation());
-            formulaNode.setParent(negationNode);
-            negationNode.getChildren().add(formulaNode);
-
-            root.getChildren().set(0, negationNode);
-            negationNode.setParent(root);
+            negationNode.getChildren().add(root);
+            root.setParent(negationNode);
+            root = negationNode;
+            root.setParent(null);
         }
     }
 

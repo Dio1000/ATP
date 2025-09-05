@@ -12,6 +12,7 @@ import me.dariansandru.parser.parsers.ParserFactory;
 import me.dariansandru.parser.parsers.PropositionalParser;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.utils.helper.ErrorHelper;
+import me.dariansandru.utils.helper.ProofTextHelper;
 import me.dariansandru.utils.helper.WarningHelper;
 
 import java.util.List;
@@ -25,6 +26,8 @@ public class LogicController {
     }
 
     public void run() {
+        ProofTextHelper.clear();
+
         List<String> lines = InputDevice.read(inputFile);
         if (!Parser.parseValidInput(lines)) return;
 

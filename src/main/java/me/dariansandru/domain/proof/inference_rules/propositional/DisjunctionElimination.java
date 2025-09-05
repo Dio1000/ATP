@@ -20,6 +20,7 @@ public class DisjunctionElimination implements InferenceRule {
         return "Disjunction Elimination";
     }
 
+    // TODO: Change logic of else branch, you cannot conclude A and B from A OR B
     @Override
     public boolean canInference(List<AST> asts, AST goal) {
         boolean shouldDerive = false;
@@ -31,6 +32,12 @@ public class DisjunctionElimination implements InferenceRule {
 
                 if (left.isEquivalentTo(right)) {
                     KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + " by " + getName() + ", we derive " + left, List.of(ast.toString()));
+                    derived.add(left);
+                    shouldDerive = true;
+                }
+                else {
+                    KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + " by " + getName() + ", we derive " + left + " and " + right, List.of(ast.toString()));
+                    KnowledgeBaseRegistry.addEntry(right.toString(), "From " + ast + " by " + getName() + ", we derive " + right + " and " + left, List.of(ast.toString()));
                     derived.add(left);
                     shouldDerive = true;
                 }

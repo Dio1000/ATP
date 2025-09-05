@@ -2,15 +2,10 @@ Universe:
 Propositions
 
 KB:
-A -> B
-B -> C
+(A AND W) -> !E
+!A -> I
+!W -> M
+E
 
 Goals:
-(A AND B) -> C
-
-// DeMorgan missing
-// KB:
-// !(A AND B)
-
-// Goals:
-// !A OR !B
+S -> (!I AND !M)

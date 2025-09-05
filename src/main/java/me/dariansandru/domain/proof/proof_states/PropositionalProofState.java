@@ -9,12 +9,12 @@ import me.dariansandru.domain.proof.inference_rules.propositional.PropositionalI
 import me.dariansandru.reflexivity.PropositionalInferenceRules;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
-import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.ProofTextHelper;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class PropositionalProofState implements ProofState {
 
@@ -111,6 +111,7 @@ public class PropositionalProofState implements ProofState {
         if (containsSubGoal(subGoal)) {
             this.isProven = true;
             finalSubGoal = subGoal;
+            if (addSubGoalToKnowledgeBase(subGoal)) return;
             ProofTextHelper.getProofText(subGoal);
             return;
         }
@@ -308,5 +309,31 @@ public class PropositionalProofState implements ProofState {
         }
 
         return false;
+    }
+
+    private boolean addSubGoalToKnowledgeBase(SubGoal subGoal) {
+        if (subGoal == null) return false;
+
+        SubGoal current = subGoal;
+        while (current != null && current.getParent() != null) {
+            if ("Contradiction".equals(current.getParent().getGoal().toString())) {
+                break;
+            }
+            current = current.getParent();
+        }
+        if (current == null || current.getParent() == null) return false;
+
+        for (InferenceRule inferenceRule : inferenceRules) {
+            List<AST> potentialEntries = inferenceRule.inference(knowledgeBase, current.getGoal());
+
+            for (AST ast : potentialEntries) {
+                String astStr = ast.toString();
+                if (!knowledgeBaseStrings.contains(astStr)) {
+                    knowledgeBase.add(ast);
+                    knowledgeBaseStrings.add(astStr);
+                }
+            }
+        }
+        return containsContradiction();
     }
 }

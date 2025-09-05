@@ -3,18 +3,19 @@ package me.dariansandru.utils.helper;
 import me.dariansandru.domain.proof.ProofStep;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
-import me.dariansandru.domain.proof.inference_rules.propositional.PropositionalInferenceRule;
+import me.dariansandru.domain.proof.inference_rules.propositional.ContradictionRule;
 import me.dariansandru.io.OutputDevice;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
-import me.dariansandru.utils.factory.PropositionalInferenceRuleFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 public abstract class ProofTextHelper {
 
+    private static final List<ProofStep> fullProof = new ArrayList<>();
     private static final List<ProofStep> assumptionSteps = new ArrayList<>();
     private static final List<ProofStep> conclusionSteps = new ArrayList<>();
     private static final List<List<ProofStep>> proofSteps = new ArrayList<>();
@@ -36,7 +37,7 @@ public abstract class ProofTextHelper {
         List<ProofStep> proofText = new ArrayList<>();
         String formula = subGoal.getGoal().toString();
 
-        ProofStep firstProofStep = new ProofStep("We derive " + subGoal.getGoal() + " from the hypothesis", rightMostIndent);
+        ProofStep firstProofStep = new ProofStep("We derive " + subGoal.getGoal() + " from the Knowledge Base", rightMostIndent);
         proofText.add(firstProofStep);
         subGoal= subGoal.getParent();
 
@@ -45,16 +46,6 @@ public abstract class ProofTextHelper {
                 subGoal = subGoal.getParent();
                 continue;
             }
-//            if (subGoal.getInferenceRule() == PropositionalInferenceRule.HYPOTHESIS) {
-//                if (subGoal.getGoal().toString().equals("Contradiction")) {
-//                    subGoal = subGoal.getParent();
-//                    continue;
-//                }
-//                ProofStep proofStep = new ProofStep("We conclude " + subGoal.getGoal() + " from the Knowledge Base", rightMostIndent);
-//                proofText.add(proofStep);
-//                subGoal = subGoal.getParent();
-//                continue;
-//            }
             ProofStep proofStep = new ProofStep(KnowledgeBaseRegistry.getString(subGoal.getGoal().toString()), rightMostIndent);
             proofText.add(proofStep);
             subGoal = subGoal.getParent();
@@ -148,6 +139,7 @@ public abstract class ProofTextHelper {
             for (List<ProofStep> proof : proofSteps) {
                 for (ProofStep step : proof) {
                     OutputDevice.writeIndentedToConsole(step.getText(), step.getIndent());
+                    fullProof.add(step);
                 }
             }
             return;
@@ -166,6 +158,7 @@ public abstract class ProofTextHelper {
 
                 for (ProofStep step : stepsAtIndent) {
                     OutputDevice.writeIndentedToConsole(step.getText(), step.getIndent());
+                    fullProof.add(step);
                 }
                 removeSteps(assumptionSteps, stepsAtIndent);
 
@@ -180,6 +173,7 @@ public abstract class ProofTextHelper {
 
                 for (ProofStep step : stepsAtIndent) {
                     OutputDevice.writeIndentedToConsole(step.getText(), step.getIndent());
+                    fullProof.add(step);
                 }
                 removeSteps(conclusionSteps, stepsAtIndent);
 
@@ -189,7 +183,8 @@ public abstract class ProofTextHelper {
                 } else {
                     currentIndentation--;
                 }
-            } else if (isProof) {
+            }
+            else if (isProof) {
                 if (printedProofIndex == proofSteps.size()) {
                     isConclusion = true;
                     isProof = false;
@@ -202,15 +197,14 @@ public abstract class ProofTextHelper {
                     List<ProofStep> proof = proofSteps.get(i);
                     if (!proof.isEmpty() && proof.getFirst().getIndent() == currentIndentation) {
                         proofsAtIndent.add(proof);
-                    } else {
-                        break;
-                    }
+                    } else break;
                 }
 
                 for (List<ProofStep> proof : proofsAtIndent) {
                     ProofStep lastStep = null;
                     for (ProofStep step : proof) {
                         OutputDevice.writeIndentedToConsole(step.getText(), step.getIndent());
+                        fullProof.add(step);
                         lastStep = step;
                     }
 
@@ -303,4 +297,33 @@ public abstract class ProofTextHelper {
         for (int i = 0; i < string.length(); i++) System.out.print(symbol);
     }
 
+    public static String getProofString() {
+        StringBuilder builder = new StringBuilder();
+        for (ProofStep proofStep : fullProof) {
+            builder.append(buildProofStep(proofStep)).append("\n");
+        }
+        return builder.toString();
+    }
+
+    private static String buildProofStep(ProofStep step) {
+        int indentation = step.getIndent();
+        StringBuilder builder = new StringBuilder();
+        String indent = "     ";
+
+        while (indentation != 0) {
+            builder.append(indent);
+            indentation--;
+        }
+        builder.append(step.getText());
+
+        return builder.toString();
+    }
+
+    public static void clear() {
+        fullProof.clear();
+        assumptionSteps.clear();
+        conclusionSteps.clear();
+        proofSteps.clear();
+        rightMostIndent = 0;
+    }
 }

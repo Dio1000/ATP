@@ -1,12 +1,26 @@
 package me.dariansandru;
 
+import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.util.SystemInfo;
 import me.dariansandru.controller.LogicController;
-import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.gui.GUIController;
+import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
+
+import javax.swing.*;
 
 public class Main {
+
     public static void main(String[] args) {
-        String inputText = "files/input.txt";
-        LogicController logicController = new LogicController(inputText);
+//        if (SystemInfo.isMacOS) {
+//            System.setProperty( "apple.laf.useScreenMenuBar", "true" );
+//            System.setProperty( "apple.awt.application.name", "Automated Theorem Prover" );
+//            System.setProperty( "apple.awt.application.appearance", "NSAppearanceNameDarkAqua" );
+//        }
+//
+//        FlatDarkLaf.setup();
+//        SwingUtilities.invokeLater(GUIController::new);
+
+        LogicController logicController = new LogicController("files/input.txt");
         logicController.run();
     }
 }
@@ -16,4 +30,4 @@ public class Main {
 //TODO More Exceptions
 //TODO Change reflexivity package classes to actually use reflexivity.
 
-//TODO Look into active sub goals in PropositionalProofState
+//TODO Look into why Disjunction assumption and conclusion prints twice.
