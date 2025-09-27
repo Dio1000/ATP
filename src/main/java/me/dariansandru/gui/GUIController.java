@@ -173,13 +173,7 @@ public class GUIController extends JFrame {
         buttonPanel.add(clearButton);
 
         JButton clearAllButton = createStyledButton("Clear All", 140, 45);
-        clearAllButton.addActionListener(e -> {
-            kbEntries.clear();
-            kbListModel.clear();
-            goalEntries.clear();
-            goalListModel.clear();
-            outputArea.setText("");
-        });
+        clearAllButton.addActionListener(e -> clearAll());
         buttonPanel.add(clearAllButton);
 
         mainPanel.add(inputPanel, BorderLayout.NORTH);
@@ -189,6 +183,18 @@ public class GUIController extends JFrame {
         getContentPane().add(mainPanel);
         setLocationRelativeTo(null);
         setVisible(true);
+    }
+
+    private void clearAll() {
+        kbEntries.clear();
+        goalEntries.clear();
+
+        kbListModel.clear();
+        goalListModel.clear();
+        outputArea.setText("");
+
+        universeGroup.clearSelection();
+        universeGroup.getElements().nextElement().setSelected(true);
     }
 
     private void refreshKbList() {

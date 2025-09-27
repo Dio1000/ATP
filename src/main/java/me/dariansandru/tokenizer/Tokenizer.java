@@ -4,6 +4,7 @@ import me.dariansandru.domain.function.Function;
 import me.dariansandru.domain.logical_operator.*;
 import me.dariansandru.domain.predicate.Predicate;
 import me.dariansandru.domain.signature.Signature;
+import me.dariansandru.utils.helper.ErrorHelper;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -73,7 +74,8 @@ public class Tokenizer {
                 tokens.add(new Token(lex, Type.PREDICATE, index));
             }
             else {
-                throw new IllegalArgumentException("Unknown symbol at position " + index + ": " + c);
+                ErrorHelper.add("Unknown symbol at position " + index + ": " + c);
+                index++;
             }
         }
 

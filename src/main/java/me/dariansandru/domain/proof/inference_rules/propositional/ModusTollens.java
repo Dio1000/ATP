@@ -88,6 +88,12 @@ public class ModusTollens implements InferenceRule {
                     negatedAntecedent.validate(0);
                     negatedAntecedent.negate();
 
+                    KnowledgeBaseRegistry.addEntry(
+                            negatedAntecedent.toString(),
+                            "From " + ast + " and " + consequent + ", by " + getName() + ", we derive " + negatedAntecedent,
+                            List.of(ast.toString())
+                    );
+
                     SubGoal newSubGoal = new SubGoal(negatedAntecedent, PropositionalInferenceRule.MODUS_TOLLENS, ast);
                     subGoals.add(newSubGoal);
                 }

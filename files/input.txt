@@ -2,10 +2,7 @@ Universe:
 Propositions
 
 KB:
-(A AND W) -> !E
-!A -> I
-!W -> M
-E
+x > y
 
 Goals:
-S -> (!I AND !M)
+x^2 > y^2

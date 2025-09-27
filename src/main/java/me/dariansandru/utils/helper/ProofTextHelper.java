@@ -2,15 +2,12 @@ package me.dariansandru.utils.helper;
 
 import me.dariansandru.domain.proof.ProofStep;
 import me.dariansandru.domain.proof.SubGoal;
-import me.dariansandru.domain.proof.inference_rules.InferenceRule;
-import me.dariansandru.domain.proof.inference_rules.propositional.ContradictionRule;
 import me.dariansandru.io.OutputDevice;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Random;
 
 public abstract class ProofTextHelper {

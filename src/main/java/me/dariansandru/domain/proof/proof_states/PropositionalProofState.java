@@ -5,6 +5,7 @@ import me.dariansandru.domain.proof.Strategy;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.proof.inference_rules.propositional.ContradictionRule;
+import me.dariansandru.domain.proof.inference_rules.propositional.DisjunctionElimination;
 import me.dariansandru.domain.proof.inference_rules.propositional.PropositionalInferenceRule;
 import me.dariansandru.reflexivity.PropositionalInferenceRules;
 import me.dariansandru.domain.data_structures.ast.AST;
@@ -134,6 +135,10 @@ public class PropositionalProofState implements ProofState {
         }
 
         for (InferenceRule rule : inferenceRules) {
+            DisjunctionElimination disjunctionElimination = new DisjunctionElimination();
+            if (Objects.equals(rule.getName(), disjunctionElimination.getName())) {
+                if (processSubGoals(parent, rule.getSubGoals(knowledgeBase, goals.getFirst()))) return;
+            }
             if (processSubGoals(parent, rule.getSubGoals(knowledgeBase, goal))) return;
         }
     }
