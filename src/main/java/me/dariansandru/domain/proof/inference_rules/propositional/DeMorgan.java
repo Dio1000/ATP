@@ -6,6 +6,7 @@ import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.logical_operator.Disjunction;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
+import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
 import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
@@ -47,9 +48,7 @@ public class DeMorgan implements InferenceRule {
                     left.negate();
                     right.negate();
 
-                    PropositionalAST newAST = new PropositionalAST(left + " " + new Disjunction().getRepresentation() + " " + right);
-                    newAST.validate(0);
-
+                    PropositionalAST newAST = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + right, true);
                     derived.add(newAST);
                     KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + ", by applying " + getName() + ", we derive " + newAST, List.of(ast.toString()));
                     shouldInference = true;

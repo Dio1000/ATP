@@ -26,7 +26,6 @@ public class PropositionalProofState implements ProofState {
 
     private final List<String> activeSubGoals = new ArrayList<>();
     private final List<AST> allSubGoals = new ArrayList<>();
-    private SubGoal finalSubGoal;
 
     boolean isVisited = false;
     boolean childrenInConjunction = false;
@@ -82,6 +81,13 @@ public class PropositionalProofState implements ProofState {
 
     @Override
     public void prove() {
+        if (!knowledgeBase.isEmpty()) {
+            for (AST ast : knowledgeBase) {
+                String astString = ast.toString();
+                if (!knowledgeBaseStrings.contains(astString)) knowledgeBaseStrings.add(astString);
+            }
+        }
+
         if (!children.isEmpty()) {
             proveChildren();
         }
@@ -111,7 +117,6 @@ public class PropositionalProofState implements ProofState {
 
         if (containsSubGoal(subGoal)) {
             this.isProven = true;
-            finalSubGoal = subGoal;
             if (addSubGoalToKnowledgeBase(subGoal)) return;
             ProofTextHelper.getProofText(subGoal);
             return;
@@ -340,5 +345,9 @@ public class PropositionalProofState implements ProofState {
             }
         }
         return containsContradiction();
+    }
+
+    public void setUnproven() {
+        this.isProven = false;
     }
 }

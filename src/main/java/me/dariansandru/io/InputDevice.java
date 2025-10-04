@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 public abstract class InputDevice {
 
@@ -23,6 +24,12 @@ public abstract class InputDevice {
         }
 
         return lines;
+    }
+
+    public static String read() {
+        System.out.print("Enter command: ");
+        Scanner keyboard = new Scanner(System.in);
+        return keyboard.nextLine();
     }
 
 }

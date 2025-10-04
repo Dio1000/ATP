@@ -1,5 +1,6 @@
 package me.dariansandru.utils.helper;
 
+import java.rmi.MarshalledObject;
 import java.util.*;
 
 public abstract class KnowledgeBaseRegistry {
@@ -8,6 +9,9 @@ public abstract class KnowledgeBaseRegistry {
     private static final Map<String, Boolean> entryIsUsedMap = new HashMap<>();
     private static final Map<String, List<String>> entryFromMap = new HashMap<>();
     private static final Map<String, String> entryChildMap = new HashMap<>();
+
+    private static final Map<String, List<String>> entryObtainedMap = new HashMap<>();
+    private static final Map<String, String> entryRuleMap = new HashMap<>();
 
     public static void getAllEntries() {
         for (String string : entryStringMap.keySet()) {
@@ -24,6 +28,35 @@ public abstract class KnowledgeBaseRegistry {
         for (String parent : from) {
             entryChildMap.put(parent, formula);
         }
+    }
+
+    public static void addObtainedFrom(String formula, List<String> from, String rule) {
+        entryObtainedMap.put(formula, from);
+        entryRuleMap.put(formula, rule);
+    }
+
+    public static void addObtainedFrom(String formula, String rule) {
+        entryObtainedMap.put(formula, List.of());
+        entryRuleMap.put(formula, rule);
+    }
+
+    public static String getObtainedFrom(String formula) {
+        StringBuilder builder = new StringBuilder();
+        List<String> obtained = entryObtainedMap.get(formula);
+        if (obtained.isEmpty()) {
+            builder.append(formula).append(" (").append(entryRuleMap.get(formula)).append(")");
+            return builder.toString();
+        }
+        else builder.append(formula).append(" (").append(entryRuleMap.get(formula)).append(" - ");
+
+        int index = 0;
+        while (index < obtained.size()) {
+            if (index == obtained.size() - 1) builder.append(obtained.get(index));
+            else builder.append(obtained.get(index)).append(", ");
+            index++;
+        }
+
+        return builder.append(")").toString();
     }
 
     public static boolean hasEntry(String formula) {

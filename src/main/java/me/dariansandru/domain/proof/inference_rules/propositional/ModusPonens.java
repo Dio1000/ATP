@@ -13,7 +13,6 @@ import java.util.List;
 
 public class ModusPonens implements InferenceRule {
 
-    private AST implicationAST = null;
     private final List<AST> derived = new ArrayList<>();
 
     @Override
@@ -24,12 +23,10 @@ public class ModusPonens implements InferenceRule {
     @Override
     public boolean canInference(List<AST> asts, AST goal) {
         derived.clear();
-        implicationAST = null;
 
         for (AST candidate : asts) {
-            if (!(candidate instanceof PropositionalAST)) continue;
+            if (!(candidate instanceof PropositionalAST pCandidate)) continue;
 
-            PropositionalAST pCandidate = (PropositionalAST) candidate;
             if (PropositionalLogicHelper.getOutermostOperation(pCandidate) != LogicalOperator.IMPLICATION) continue;
 
             AST antecedent = pCandidate.getSubtree(0);
@@ -39,7 +36,6 @@ public class ModusPonens implements InferenceRule {
                 if (other != candidate && other.isEquivalentTo(antecedent)) {
                     KnowledgeBaseRegistry.addEntry(conclusion.toString(), "From " + candidate + " and " + antecedent + ", by " + getName() + ", we derive " + conclusion, List.of(candidate.toString()));
                     derived.add(conclusion);
-                    implicationAST = candidate;
                     break;
                 }
             }
@@ -65,7 +61,7 @@ public class ModusPonens implements InferenceRule {
                 PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
                 if (right.isEquivalentTo(asts[0])) {
                     PropositionalAST newGoal = (PropositionalAST) ast.getSubtree(0);
-                    newGoal.validate(0);
+                    // newGoal.validate(0);
                     SubGoal newSubGoal = new SubGoal(newGoal, PropositionalInferenceRule.MODUS_PONENS, ast);
 
                     KnowledgeBaseRegistry.addEntry(right.toString(), "From " + newSubGoal.getGoal() + " and " + ast + ", by " + getName() + ", we derive " + right, List.of(ast.toString()));

@@ -6,6 +6,7 @@ import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
 import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
@@ -31,10 +32,8 @@ public class ImplicationIntroduction implements InferenceRule {
                 PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
 
                 if (left.isEquivalentTo(goal) || right.isEquivalentTo(goal)) {
-                    PropositionalAST newAST1 = new PropositionalAST(left + " " + new Implication().getRepresentation() + " " + right);
-                    PropositionalAST newAST2 = new PropositionalAST(right + " " + new Implication().getRepresentation() + " " + left);
-                    newAST1.validate(0);
-                    newAST2.validate(0);
+                    PropositionalAST newAST1 = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getImplicationString() + " " + right, true);
+                    PropositionalAST newAST2 = new PropositionalAST(right + " " + LogicalOperatorFlyweight.getImplicationString() + " " + left, true);
 
                     derived.add(newAST1);
                     derived.add(newAST2);

@@ -5,6 +5,7 @@ import java.util.List;
 public interface ASTNode {
     Object getKey();
     void setKey(Object key);
+
     boolean isEmpty();
 
     ASTNode getParent();

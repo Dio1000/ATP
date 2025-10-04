@@ -59,15 +59,7 @@ public class EquivalenceIntroduction implements InferenceRule {
 
     @Override
     public List<AST> inference(List<AST> asts, AST goal) {
-//        if (leftAtom != null && rightAtom != null) {
-//            PropositionalAST newAST = new PropositionalAST(leftAtom + " " + new Equivalence().getRepresentation() + " " + rightAtom);
-//            newAST.validate(0);
-//            return List.of(newAST);
-//        }
-//
-//        PropositionalAST newAST = new PropositionalAST(leftSubtree + " " + new Equivalence().getRepresentation() + " " + rightSubtree);
-//        newAST.validate(0);
-//        return List.of(newAST);
+
         return derived;
     }
 

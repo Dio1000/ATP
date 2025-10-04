@@ -12,7 +12,7 @@ import java.util.List;
 
 public class EquivalenceElimination implements InferenceRule {
 
-    private List<AST> derived = new ArrayList<>();
+    private final List<AST> derived = new ArrayList<>();
 
     @Override
     public String getName() {

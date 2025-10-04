@@ -6,6 +6,7 @@ import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
@@ -15,7 +16,7 @@ import java.util.Set;
 
 public class ContradictionRule implements InferenceRule {
 
-    private List<AST> derived = new ArrayList<>();
+    private final List<AST> derived = new ArrayList<>();
 
     @Override
     public String getName() {
@@ -56,8 +57,7 @@ public class ContradictionRule implements InferenceRule {
         List<SubGoal> subGoals = new ArrayList<>();
         for (AST ast : knowledgeBase) {
             if (!((PropositionalAST) ast).isAtomic()) continue;
-            AST goal = new PropositionalAST(String.valueOf(ast));
-            goal.validate(0);
+            AST goal = new PropositionalAST(String.valueOf(ast), true);
             goal.negate();
 
             SubGoal subGoal = new SubGoal(goal, PropositionalInferenceRule.CONTRADICTION, ast);
@@ -87,12 +87,10 @@ public class ContradictionRule implements InferenceRule {
         }
 
         for (AST atom : atoms) {
-            AST negatedAtom = new PropositionalAST(atom.toString());
-            negatedAtom.validate(0);
+            AST negatedAtom = new PropositionalAST(atom.toString(), true);
             negatedAtom.negate();
 
-            PropositionalAST newSubGoal = new PropositionalAST(atom + " " + new Conjunction().getRepresentation() + " " + negatedAtom);
-            newSubGoal.validate(0);
+            PropositionalAST newSubGoal = new PropositionalAST(atom + " " + LogicalOperatorFlyweight.getConjunctionString() + " " + negatedAtom, true);
             SubGoal subGoal = new SubGoal(newSubGoal, PropositionalInferenceRule.CONTRADICTION, newSubGoal);
             subGoal.addChild(subGoal);
         }
@@ -100,14 +98,10 @@ public class ContradictionRule implements InferenceRule {
     }
 
     private static PropositionalAST getConjunctionAST(PropositionalAST left, PropositionalAST right) {
-        PropositionalAST implicationLeft = new PropositionalAST(left + " " + new Implication().getRepresentation() + " " + right);
-        PropositionalAST implicationRight = new PropositionalAST(right + " " + new Implication().getRepresentation() + " " + left);
-        implicationLeft.validate(0);
-        implicationRight.validate(0);
+        PropositionalAST implicationLeft = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getImplicationString() + " " + right, true);
+        PropositionalAST implicationRight = new PropositionalAST(right + " " + LogicalOperatorFlyweight.getImplicationString() + " " + left, true);
 
-        String formula = "(" + implicationLeft + ") " + new Conjunction().getRepresentation() + " (" + implicationRight + ")";
-        PropositionalAST newSubGoal = new PropositionalAST(formula);
-        newSubGoal.validate(0);
-        return newSubGoal;
+        String formula = "(" + implicationLeft + ") " + LogicalOperatorFlyweight.getConjunctionString() + " (" + implicationRight + ")";
+        return new PropositionalAST(formula, true);
     }
 }

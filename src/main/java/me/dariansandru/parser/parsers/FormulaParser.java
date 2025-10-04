@@ -7,8 +7,10 @@ import java.util.List;
 
 public interface FormulaParser {
     Signature getSignature();
-    boolean parseEntry(String line, int index);
-    boolean parse(List<String> lines);
+
+    void parseEntry(String line, int index);
+    void parse(List<String> lines);
 
     List<AST> getASTList();
+    List<AST> parseAndGetASTs(List<String> lines);
 }

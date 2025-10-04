@@ -6,6 +6,7 @@ import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
 import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
@@ -14,14 +15,13 @@ import java.util.List;
 
 public class DisjunctionElimination implements InferenceRule {
 
-    private List<AST> derived = new ArrayList<>();
+    private final List<AST> derived = new ArrayList<>();
 
     @Override
     public String getName() {
         return "Disjunction Elimination";
     }
 
-    // TODO: Change logic of else branch, you cannot conclude A and B from A OR B
     @Override
     public boolean canInference(List<AST> asts, AST goal) {
         boolean shouldDerive = false;
@@ -31,18 +31,12 @@ public class DisjunctionElimination implements InferenceRule {
                 PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
                 PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
 
-                if (left.isEquivalentTo(right)) {
+                if (left.isEquivalentTo(right) || right.isEquivalentTo(left)) {
                     KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + " by " + getName() + ", we derive " + left, List.of(ast.toString()));
-                    derived.add(left);
-                    shouldDerive = true;
                 }
-                else {
-                    KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + " by " + getName() + ", we derive " + left + " and " + right, List.of(ast.toString()));
-                    KnowledgeBaseRegistry.addEntry(right.toString(), "From " + ast + " by " + getName() + ", we derive " + right + " and " + left, List.of(ast.toString()));
-                    derived.add(left);
-                    shouldDerive = true;
-                }
-             }
+                derived.add(left);
+                shouldDerive = true;
+            }
         }
         return shouldDerive;
     }
@@ -63,10 +57,8 @@ public class DisjunctionElimination implements InferenceRule {
                 PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
                 PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
 
-                PropositionalAST newAST1 = new PropositionalAST(left + " " + new Implication().getRepresentation() + " " + asts[0]);
-                PropositionalAST newAST2 = new PropositionalAST(right + " " + new Implication().getRepresentation() + " " + asts[0]);
-                newAST1.validate(0);
-                newAST2.validate(0);
+                PropositionalAST newAST1 = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getImplicationString() + " " + asts[0], true);
+                PropositionalAST newAST2 = new PropositionalAST(right + " " + LogicalOperatorFlyweight.getImplicationString() + " " + asts[0], true);
 
                 KnowledgeBaseRegistry.addEntry(newAST1.toString(), "From " + ast + ", to prove " + asts[0] + ", assume " + left + " and prove " + asts[0], List.of(ast.toString()));
                 KnowledgeBaseRegistry.addEntry(newAST2.toString(), "From " + ast + ", to prove " + asts[0] + ", assume " + right + " and prove " + asts[0], List.of(ast.toString()));

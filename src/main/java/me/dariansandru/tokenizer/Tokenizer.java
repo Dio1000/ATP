@@ -1,9 +1,11 @@
 package me.dariansandru.tokenizer;
 
 import me.dariansandru.domain.function.Function;
-import me.dariansandru.domain.logical_operator.*;
 import me.dariansandru.domain.predicate.Predicate;
+import me.dariansandru.domain.signature.PropositionalSignature;
 import me.dariansandru.domain.signature.Signature;
+import me.dariansandru.parser.command.Command;
+import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
 import me.dariansandru.utils.helper.ErrorHelper;
 
 import java.util.ArrayList;
@@ -11,10 +13,12 @@ import java.util.Comparator;
 import java.util.List;
 
 public class Tokenizer {
+    private final Signature signature;
     private final List<Predicate> predicates;
     private final List<Function> functions;
 
     public Tokenizer(Signature signature) {
+        this.signature = signature;
         this.predicates = signature.getPredicates();
         this.functions = signature.getFunctions();
     }
@@ -23,26 +27,29 @@ public class Tokenizer {
         List<Token> tokens = new ArrayList<>();
         String input = line.trim();
 
-        List<Matchable> matchables = new ArrayList<>();
+        List<Matchable> matchableList = new ArrayList<>();
 
-        for (Predicate p : predicates) {
-            matchables.add(new Matchable(p.getRepresentation(), Type.PREDICATE));
+        for (Predicate predicate : predicates) {
+            matchableList.add(new Matchable(predicate.getRepresentation(), Type.PREDICATE));
         }
-        for (Function f : functions) {
-            matchables.add(new Matchable(f.getRepresentation(), Type.FUNCTION));
+        for (Function function : functions) {
+            matchableList.add(new Matchable(function.getRepresentation(), Type.FUNCTION));
+        }
+        for (Command command : Command.getAllCommands()) {
+            matchableList.add(new Matchable(command.toString(), Type.COMMAND));
         }
 
-        matchables.add(new Matchable("(", Type.SEPARATOR));
-        matchables.add(new Matchable(")", Type.SEPARATOR));
-        matchables.add(new Matchable(",", Type.SEPARATOR));
+        matchableList.add(new Matchable("(", Type.SEPARATOR));
+        matchableList.add(new Matchable(")", Type.SEPARATOR));
+        matchableList.add(new Matchable(",", Type.SEPARATOR));
 
-        matchables.add(new Matchable(new Conjunction().getRepresentation(), Type.LOGICAL_OPERATOR));
-        matchables.add(new Matchable(new Disjunction().getRepresentation(), Type.LOGICAL_OPERATOR));
-        matchables.add(new Matchable(new Implication().getRepresentation(), Type.LOGICAL_OPERATOR));
-        matchables.add(new Matchable(new Equivalence().getRepresentation(), Type.LOGICAL_OPERATOR));
-        matchables.add(new Matchable(new Negation().getRepresentation(), Type.LOGICAL_OPERATOR));
+        matchableList.add(new Matchable(LogicalOperatorFlyweight.getConjunctionString(), Type.LOGICAL_OPERATOR));
+        matchableList.add(new Matchable(LogicalOperatorFlyweight.getDisjunctionString(), Type.LOGICAL_OPERATOR));
+        matchableList.add(new Matchable(LogicalOperatorFlyweight.getImplicationString(), Type.LOGICAL_OPERATOR));
+        matchableList.add(new Matchable(LogicalOperatorFlyweight.getEquivalenceString(), Type.LOGICAL_OPERATOR));
+        matchableList.add(new Matchable(LogicalOperatorFlyweight.getNegationString(), Type.LOGICAL_OPERATOR));
 
-        matchables.sort(Comparator.comparingInt((Matchable m) -> m.lexeme.length()).reversed());
+        matchableList.sort(Comparator.comparingInt((Matchable m) -> m.lexeme.length()).reversed());
 
         int index = 0;
         while (index < input.length()) {
@@ -54,7 +61,7 @@ public class Tokenizer {
             }
 
             boolean matched = false;
-            for (Matchable m : matchables) {
+            for (Matchable m : matchableList) {
                 String lex = m.lexeme;
                 if (input.startsWith(lex, index)) {
                     tokens.add(new Token(lex, m.type, index));
@@ -70,8 +77,10 @@ public class Tokenizer {
                 while (index < input.length() && Character.isLetterOrDigit(input.charAt(index))) {
                     index++;
                 }
+
                 String lex = input.substring(start, index);
-                tokens.add(new Token(lex, Type.PREDICATE, index));
+                if (signature instanceof PropositionalSignature) tokens.add(new Token(lex, Type.PREDICATE, index));
+                else tokens.add(new Token(lex, Type.IDENTIFIER, index));
             }
             else {
                 ErrorHelper.add("Unknown symbol at position " + index + ": " + c);

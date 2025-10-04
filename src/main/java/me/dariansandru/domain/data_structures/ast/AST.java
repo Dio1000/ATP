@@ -5,9 +5,9 @@ public interface AST {
 
     AST copy();
     AST simplify();
-    void negate();
 
     boolean validate(int line);
+    void negate();
     Object evaluate();
 
     boolean isEquivalentTo(AST other);

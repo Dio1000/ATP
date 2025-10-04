@@ -13,7 +13,6 @@ import java.util.List;
 
 public class ModusTollens implements InferenceRule {
 
-    private AST implicationAST = null;
     private final List<AST> derived = new ArrayList<>();
 
     @Override
@@ -24,25 +23,21 @@ public class ModusTollens implements InferenceRule {
     @Override
     public boolean canInference(List<AST> asts, AST goal) {
         derived.clear();
-        implicationAST = null;
 
         for (AST candidate : asts) {
-            if (!(candidate instanceof PropositionalAST)) continue;
+            if (!(candidate instanceof PropositionalAST pCandidate)) continue;
 
-            PropositionalAST pCandidate = (PropositionalAST) candidate;
             if (PropositionalLogicHelper.getOutermostOperation(pCandidate) != LogicalOperator.IMPLICATION) continue;
 
             AST antecedent = pCandidate.getSubtree(0);
             AST consequent = pCandidate.getSubtree(1);
 
-            PropositionalAST negatedConsequent = new PropositionalAST(consequent.toString());
-            negatedConsequent.validate(0);
+            PropositionalAST negatedConsequent = new PropositionalAST(consequent.toString(), true);
             negatedConsequent.negate();
 
             for (AST other : asts) {
                 if (other != candidate && other.isEquivalentTo(negatedConsequent)) {
-                    PropositionalAST negatedAntecedent = new PropositionalAST(antecedent.toString());
-                    negatedAntecedent.validate(0);
+                    PropositionalAST negatedAntecedent = new PropositionalAST(antecedent.toString(), true);
                     negatedAntecedent.negate();
 
                     KnowledgeBaseRegistry.addEntry(
@@ -52,7 +47,6 @@ public class ModusTollens implements InferenceRule {
                     );
 
                     derived.add(negatedAntecedent);
-                    implicationAST = candidate;
                     break;
                 }
             }
@@ -79,13 +73,11 @@ public class ModusTollens implements InferenceRule {
                 PropositionalAST antecedent = (PropositionalAST) ast.getSubtree(0);
                 PropositionalAST consequent = (PropositionalAST) ast.getSubtree(1);
 
-                PropositionalAST negatedConsequent = new PropositionalAST(consequent.toString());
-                negatedConsequent.validate(0);
+                PropositionalAST negatedConsequent = new PropositionalAST(consequent.toString(), true);
                 negatedConsequent.negate();
 
                 if (negatedConsequent.isEquivalentTo(asts[0])) {
-                    PropositionalAST negatedAntecedent = new PropositionalAST(antecedent.toString());
-                    negatedAntecedent.validate(0);
+                    PropositionalAST negatedAntecedent = new PropositionalAST(antecedent.toString(), true);
                     negatedAntecedent.negate();
 
                     KnowledgeBaseRegistry.addEntry(

@@ -5,7 +5,7 @@ import java.util.List;
 
 public abstract class ErrorHelper {
 
-    private static List<String> errors = new ArrayList<>();
+    private static final List<String> errors = new ArrayList<>();
     private static int size = 0;
 
     public static boolean notEmpty() {
@@ -37,6 +37,13 @@ public abstract class ErrorHelper {
             System.out.println(index + ". " + errors.get(index - 1));
             index++;
         }
+    }
+
+    public static void printAndReset() {
+        print();
+
+        errors.clear();
+        size = 0;
     }
 
 }

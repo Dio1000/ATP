@@ -6,6 +6,7 @@ import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
 import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
@@ -14,7 +15,7 @@ import java.util.List;
 
 public class DisjunctionIntroduction implements InferenceRule {
 
-    private List<AST> derived = new ArrayList<>();
+    private final List<AST> derived = new ArrayList<>();
 
     @Override
     public String getName() {
@@ -30,13 +31,10 @@ public class DisjunctionIntroduction implements InferenceRule {
                 PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
                 PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
 
-                PropositionalAST negatedLeft = new PropositionalAST(left.toString());
-                negatedLeft.validate(0);
+                PropositionalAST negatedLeft = new PropositionalAST(left.toString(), true);
                 negatedLeft.negate();
 
-                PropositionalAST newAST = new PropositionalAST(negatedLeft + " " + new Disjunction().getRepresentation() + " " + right);
-                newAST.validate(0);
-
+                PropositionalAST newAST = new PropositionalAST(negatedLeft + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + right, true);
                 KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + " by " + getName() + ", we derive " + newAST, List.of(ast.toString()));
                 derived.add(newAST);
                 shouldInference = true;

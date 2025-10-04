@@ -13,6 +13,8 @@ import java.util.Set;
 
 public abstract class PropositionalLogicHelper {
 
+    private static int NArityConstant = 1_000_000_000;
+
     public static LogicalOperator getOutermostOperation(AST ast) {
         PropositionalASTNode node;
         try {
@@ -52,5 +54,9 @@ public abstract class PropositionalLogicHelper {
         for (ASTNode child : node.getChildren()) {
             collectAtoms((PropositionalASTNode) child, atoms);
         }
+    }
+
+    public static int getNArityConstant() {
+        return NArityConstant;
     }
 }

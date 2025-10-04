@@ -1,11 +1,10 @@
-package me.dariansandru.reflexivity;
+package me.dariansandru.utils.factory;
 
 import me.dariansandru.domain.UniverseOfDiscourse;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.signature.Signature;
-import me.dariansandru.tokenizer.Type;
+import me.dariansandru.reflexivity.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class InferenceRulesFactory {

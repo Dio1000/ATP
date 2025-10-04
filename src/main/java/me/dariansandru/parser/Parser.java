@@ -59,11 +59,7 @@ public abstract class Parser {
             }
             else if (line.equals("Goals:")) inKB = false;
 
-            if (inKB) {
-//                if (!line.startsWith("(") && !line.endsWith(")")) kbLines.add("(" + line + ")");
-//                else kbLines.add(line);
-                kbLines.add(line);
-            }
+            if (inKB) kbLines.add(line);
             index++;
         }
 
@@ -85,11 +81,7 @@ public abstract class Parser {
             }
             else if (line.equals("KB")) inGoals = false;
 
-            if (inGoals) {
-//                if (!line.startsWith("(") && !line.endsWith(")")) goalLines.add("(" + line + ")");
-//                else goalLines.add(line);
-                goalLines.add(line);
-            }
+            if (inGoals) goalLines.add(line);
             index++;
         }
 

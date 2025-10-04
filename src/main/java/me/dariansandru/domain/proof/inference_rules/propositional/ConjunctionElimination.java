@@ -1,16 +1,16 @@
 package me.dariansandru.domain.proof.inference_rules.propositional;
 
-import me.dariansandru.domain.LogicalOperator;
-import me.dariansandru.domain.logical_operator.Conjunction;
 import me.dariansandru.domain.predicate.Predicate;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalASTNode;
+import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
 import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class ConjunctionElimination implements InferenceRule {
 
@@ -30,7 +30,7 @@ public class ConjunctionElimination implements InferenceRule {
             if (node == null || node.getKey() == null) continue;
 
             Predicate predicate = (Predicate) node.getKey();
-            if (!predicate.getRepresentation().equals(new Conjunction().getRepresentation())) continue;
+            if (!predicate.getRepresentation().equals(LogicalOperatorFlyweight.getConjunctionString())) continue;
 
             AST left = ast.getSubtree(0);
             AST right = ast.getSubtree(1);

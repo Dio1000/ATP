@@ -13,17 +13,20 @@ public class StringParser implements FormulaParser {
     }
 
     @Override
-    public boolean parseEntry(String line, int index) {
-        return false;
+    public void parseEntry(String line, int index) {
     }
 
     @Override
-    public boolean parse(List<String> lines) {
-        return false;
+    public void parse(List<String> lines) {
     }
 
     @Override
     public List<AST> getASTList() {
+        return List.of();
+    }
+
+    @Override
+    public List<AST> parseAndGetASTs(List<String> lines) {
         return List.of();
     }
 

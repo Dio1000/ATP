@@ -8,9 +8,9 @@ import java.util.List;
 
 public class PropositionalASTNode implements ASTNode {
 
-    ASTNode parent;
-    List<ASTNode> children;
-    Predicate key;
+    private ASTNode parent;
+    private final List<ASTNode> children;
+    private Predicate key;
 
     public PropositionalASTNode(Predicate key) {
         this.parent = null;

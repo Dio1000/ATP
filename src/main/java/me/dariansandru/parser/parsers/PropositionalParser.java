@@ -19,25 +19,20 @@ public class PropositionalParser implements FormulaParser {
     }
 
     @Override
-    public boolean parseEntry(String line, int index) {
+    public void parseEntry(String line, int index) {
         PropositionalAST ast = new PropositionalAST(line);
         boolean valid = ast.validate(index);
         if (valid) astList.add(ast);
 
-        return valid;
     }
 
     @Override
-    public boolean parse(List<String> lines) {
-        boolean valid = true;
+    public void parse(List<String> lines) {
         int index = 1;
-
         for (String line : lines) {
-            if (!parseEntry(line, index)) valid = false;
+            parseEntry(line, index);
             index++;
         }
-
-        return valid;
     }
 
     @Override
@@ -45,6 +40,7 @@ public class PropositionalParser implements FormulaParser {
         return new ArrayList<>(astList);
     }
 
+    @Override
     public List<AST> parseAndGetASTs(List<String> lines) {
         astList.clear();
         parse(lines);

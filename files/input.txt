@@ -2,7 +2,9 @@ Universe:
 Propositions
 
 KB:
-x > y
+P
+!P
+P AND !P
 
 Goals:
-x^2 > y^2
+!P

@@ -1,6 +1,8 @@
 package me.dariansandru.io;
 
+import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.io.exception.OutputException;
+import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -26,6 +28,10 @@ public class OutputDevice {
         System.out.println(message);
     }
 
+    public static void writeNewLine() {
+        System.out.println();
+    }
+
     public static void writeToConsole(String message, int num) {
         while (num != 0) {
             System.out.print(message);
@@ -44,6 +50,16 @@ public class OutputDevice {
     public static void writeIndentedToConsole(String message, int num) {
         writeToConsole(indentation, num);
         System.out.println(message);
+    }
+
+    public static void writeNumberedToConsole(List<AST> list, int startIndex, String prefix) {
+        StringBuilder builder = new StringBuilder();
+        for (AST string : list) {
+            builder.append(prefix).append(startIndex).append(". ").append(KnowledgeBaseRegistry.getObtainedFrom(string.toString())).append("\n");
+            startIndex++;
+        }
+
+        System.out.println(builder);
     }
 
 }

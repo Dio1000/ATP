@@ -20,6 +20,7 @@ public class PropositionalInferenceRules implements InferenceRules {
         rules.add(new EquivalenceIntroduction());
         rules.add(new EquivalenceElimination());
         rules.add(new ImplicationIntroduction());
+        rules.add(new ImplicationElimination());
         rules.add(new DeMorgan());
 
         return rules;

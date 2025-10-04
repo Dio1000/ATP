@@ -5,7 +5,7 @@ import java.util.List;
 
 public abstract class WarningHelper {
 
-    private static List<String> warnings = new ArrayList<>();
+    private static final List<String> warnings = new ArrayList<>();
     private static int size = 0;
 
     public static boolean notEmpty() {
@@ -37,6 +37,13 @@ public abstract class WarningHelper {
             System.out.println(index + ". " + warnings.get(index - 1));
             index++;
         }
+    }
+
+    public static void printAndReset() {
+        print();
+
+        warnings.clear();
+        size = 0;
     }
 
 }

@@ -253,7 +253,7 @@ public class GUIController extends JFrame {
             @Override
             protected Void doInBackground() throws Exception {
                 LogicController logicController = new LogicController("files/input.txt");
-                logicController.run();
+                logicController.automatedRun();
                 return null;
             }
 

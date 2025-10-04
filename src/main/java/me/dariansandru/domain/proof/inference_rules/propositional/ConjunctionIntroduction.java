@@ -1,14 +1,15 @@
 package me.dariansandru.domain.proof.inference_rules.propositional;
 
-import me.dariansandru.domain.logical_operator.Conjunction;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
 import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class ConjunctionIntroduction implements InferenceRule {
 
@@ -27,9 +28,17 @@ public class ConjunctionIntroduction implements InferenceRule {
             if (((PropositionalAST) ast).isAtomic()) {
                 for (AST ast1 : asts) {
                     if (((PropositionalAST) ast1).isAtomic() && !ast.isEquivalentTo(ast1)) {
-                        PropositionalAST newAST = new PropositionalAST(ast + " " + new Conjunction().getRepresentation() + " " + ast1);
-                        newAST.validate(0);
+                        PropositionalAST newAST = new PropositionalAST(ast + " " + LogicalOperatorFlyweight.getConjunctionString() + " " + ast1, true);
 
+                        boolean duplicate = false;
+                        for (AST astString : asts) {
+                            if (Objects.equals(astString.toString(), newAST.toString())) {
+                                duplicate = true;
+                                break;
+                            }
+                        }
+
+                        if (duplicate) continue;
                         KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + " and " + ast1 + " by " + getName() + ", we derive " + newAST, List.of(ast.toString(), ast1.toString()));
                         derived.add(newAST);
                         shouldInference = true;

@@ -122,7 +122,7 @@ public abstract class ProofTextHelper {
     private static List<ProofStep> getAllByIndentation(List<ProofStep> steps, int indent) {
         List<ProofStep> result = new ArrayList<>();
         for (ProofStep step : steps) {
-            if (step.getIndent() == indent) result.add(step);
+            if (step.indent() == indent) result.add(step);
         }
         return result;
     }
@@ -135,7 +135,7 @@ public abstract class ProofTextHelper {
         if (assumptionSteps.isEmpty() && conclusionSteps.isEmpty()) {
             for (List<ProofStep> proof : proofSteps) {
                 for (ProofStep step : proof) {
-                    OutputDevice.writeIndentedToConsole(step.getText(), step.getIndent());
+                    OutputDevice.writeIndentedToConsole(step.text(), step.indent());
                     fullProof.add(step);
                 }
             }
@@ -154,7 +154,7 @@ public abstract class ProofTextHelper {
                 if (stepsAtIndent.isEmpty()) break;
 
                 for (ProofStep step : stepsAtIndent) {
-                    OutputDevice.writeIndentedToConsole(step.getText(), step.getIndent());
+                    OutputDevice.writeIndentedToConsole(step.text(), step.indent());
                     fullProof.add(step);
                 }
                 removeSteps(assumptionSteps, stepsAtIndent);
@@ -169,7 +169,7 @@ public abstract class ProofTextHelper {
                 if (stepsAtIndent.isEmpty()) break;
 
                 for (ProofStep step : stepsAtIndent) {
-                    OutputDevice.writeIndentedToConsole(step.getText(), step.getIndent());
+                    OutputDevice.writeIndentedToConsole(step.text(), step.indent());
                     fullProof.add(step);
                 }
                 removeSteps(conclusionSteps, stepsAtIndent);
@@ -192,7 +192,7 @@ public abstract class ProofTextHelper {
                 List<List<ProofStep>> proofsAtIndent = new ArrayList<>();
                 for (int i = printedProofIndex; i < proofSteps.size(); i++) {
                     List<ProofStep> proof = proofSteps.get(i);
-                    if (!proof.isEmpty() && proof.getFirst().getIndent() == currentIndentation) {
+                    if (!proof.isEmpty() && proof.getFirst().indent() == currentIndentation) {
                         proofsAtIndent.add(proof);
                     } else break;
                 }
@@ -200,13 +200,13 @@ public abstract class ProofTextHelper {
                 for (List<ProofStep> proof : proofsAtIndent) {
                     ProofStep lastStep = null;
                     for (ProofStep step : proof) {
-                        OutputDevice.writeIndentedToConsole(step.getText(), step.getIndent());
+                        OutputDevice.writeIndentedToConsole(step.text(), step.indent());
                         fullProof.add(step);
                         lastStep = step;
                     }
 
                     assert lastStep != null;
-                    if (lastStep.getText().endsWith("hypothesis")) continue;
+                    if (lastStep.text().endsWith("hypothesis")) continue;
                 }
 
                 proofSteps.subList(printedProofIndex, printedProofIndex + proofsAtIndent.size()).clear();
@@ -220,7 +220,7 @@ public abstract class ProofTextHelper {
 
     private static ProofStep getByIndentation(List<ProofStep> steps, int indentation) {
         for (ProofStep proofStep : steps)
-            if (proofStep.getIndent() == indentation)
+            if (proofStep.indent() == indentation)
                 return proofStep;
         return null;
     }
@@ -228,7 +228,7 @@ public abstract class ProofTextHelper {
     private static void removeStep(List<ProofStep> steps, String text, int indent) {
         for (int i = 0; i < steps.size(); i++) {
             ProofStep step = steps.get(i);
-            if (step.getIndent() == indent && step.getText().equals(text)) {
+            if (step.indent() == indent && step.text().equals(text)) {
                 steps.remove(i);
                 return;
             }
@@ -303,7 +303,7 @@ public abstract class ProofTextHelper {
     }
 
     private static String buildProofStep(ProofStep step) {
-        int indentation = step.getIndent();
+        int indentation = step.indent();
         StringBuilder builder = new StringBuilder();
         String indent = "     ";
 
@@ -311,7 +311,7 @@ public abstract class ProofTextHelper {
             builder.append(indent);
             indentation--;
         }
-        builder.append(step.getText());
+        builder.append(step.text());
 
         return builder.toString();
     }
