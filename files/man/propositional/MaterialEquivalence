@@ -1,0 +1,6 @@
+name: Material Equivalence
+commandName: mateq
+aliases: MaterialEquivalence
+arity: 1
+description: If P <-> Q is true, then P -> Q is true and Q -> P is also true.
+inference: P <-> Q; P -> Q, Q -> P

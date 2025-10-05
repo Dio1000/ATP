@@ -1,0 +1,6 @@
+name: Negation Strategy
+commandName: negstr
+aliases: NegationStrategy
+arity: 1
+description: To prove a proposition, assume its negation and prove a contradiction.
+inference: P; !P

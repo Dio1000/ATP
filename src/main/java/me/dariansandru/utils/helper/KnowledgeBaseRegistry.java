@@ -1,6 +1,5 @@
 package me.dariansandru.utils.helper;
 
-import java.rmi.MarshalledObject;
 import java.util.*;
 
 public abstract class KnowledgeBaseRegistry {

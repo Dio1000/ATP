@@ -1,0 +1,6 @@
+name: Disjunction Simplification
+commandName: dissimpl
+aliases: DisjunctionSimplification
+arity: 1
+description: P OR P is equivalent to P.
+inference: P OR P; P

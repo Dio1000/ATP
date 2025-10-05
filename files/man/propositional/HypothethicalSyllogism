@@ -1,0 +1,6 @@
+name: Hypothetical Syllogism
+commandName: hypsyll
+aliases: HypotheticalSyllogism
+arity: 2
+description: If P implies Q and Q implies R, then P must also imply R.
+inference: P -> Q, Q -> R; P -> R

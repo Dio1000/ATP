@@ -1,0 +1,6 @@
+name: Conjunction Elimination
+commandName: conelim
+aliases: ConjunctionElimination
+arity: 1
+description: If A AND B is true, then A is true and B is true.
+inference: A AND B; A, B

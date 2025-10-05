@@ -1,0 +1,6 @@
+name: Constructive Dilemma
+commandName: constrdil
+aliases: ConstructiveDilemma
+arity: 3
+description: If P -> Q is true, R -> S is true and at least one of their antecedents is true, then at least one of their consequents must be true.
+inference: P -> Q, R -> S, P OR R; Q OR S

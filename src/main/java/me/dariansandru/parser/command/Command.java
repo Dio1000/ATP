@@ -8,34 +8,43 @@ import java.util.List;
 
 public enum Command {
 
-    // PROPOSITIONAL LOGIC
+    // -- PROPOSITIONAL LOGIC --
+
+    // Strategies
     IMPLICATION_STRATEGY("implstr", 1, true),
     EQUIVALENCE_STRATEGY("eqstr", 1, true),
     CONJUNCTION_STRATEGY("constr", 1, true),
     DISJUNCTION_STRATEGY("disstr", 1, true),
     NEGATION_STRATEGY("negstr", 1, true),
-    MODUS_PONENS("modpon", 2, true),
-    MODUS_TOLLENS("modtol", 2, true),
-    HYPOTHETICAL_SYLLOGISM("hypsyll", 2, true),
-    DISJUNCTIVE_SYLLOGISM("dissyll", 2, true),
-    CONSTRUCTIVE_DILEMMA("constrdil", 3, true),
-    DESTRUCTIVE_DILEMMA("destrdil", 3, true),
+
+    // Rules of Inference
     ABSORPTION("absor", 1, true),
     CONJUNCTION_INTRODUCTION("conintro", PropositionalLogicHelper.getNArityConstant(), false),
     CONJUNCTION_ELIMINATION("conelim", 1, true),
+    CONSTRUCTIVE_DILEMMA("constrdil", 3, true),
+    DESTRUCTIVE_DILEMMA("destrdil", 3, true),
     DISJUNCTION_INTRODUCTION("disintro", PropositionalLogicHelper.getNArityConstant(), false),
     DISJUNCTION_ELIMINATION("diselim", 1, true),
-    TRANSPOSITION("trans", 1, true),
-    MATERIAL_EQUIVALENCE("mateq", 1, true),
-    MATERIAL_IMPLICATION("matimpl", 1, true),
+    DISJUNCTIVE_SYLLOGISM("dissyll", 2, true),
+    EQUIVALENCE_INTRODUCTION("eqintro", 2, true),
+    EQUIVALENCE_SIMPLIFICATION("eqelim", 1, true),
+    HYPOTHETICAL_SYLLOGISM("hypsyll", 2, true),
     IMPLICATION_INTRODUCTION("implintro", 2, true),
     IMPLICATION_ELIMINATION("implsimpl", 1, true),
-    EQUIVALENCE_INTRODUCTION("eqintro", 2, true),
-    EQUIVALENCE_ELIMINATION("eqsimpl", 1, true),
+    MODUS_PONENS("modpon", 2, true),
+    MODUS_TOLLENS("modtol", 2, true),
+
+    // Rules of Replacement
+    DISJUNCTION_SIMPLIFICATION("dissimpl", 1, true),
+    MATERIAL_EQUIVALENCE("mateq", 1, true),
+    MATERIAL_IMPLICATION("matimpl", 1, true),
     DEMORGAN("demorgan", 1, true),
-    CONTRADICTION("contr", 2, false),
+    TRANSPOSITION("trans", 1, true),
+
+    // Other
     DONE("done", 0, true),
-    ERROR("error", -1, true);
+    ERROR("error", -1, true),
+    CONTRADICTION("contr", 2, false);
 
     private final String commandString;
     private final int arity;

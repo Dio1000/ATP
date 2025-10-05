@@ -11,6 +11,7 @@ import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
 import me.dariansandru.utils.helper.ErrorHelper;
 import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
+import me.dariansandru.utils.helper.WarningHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,8 +25,8 @@ public class ManualPropositionalProof {
     private final String kbName = "KB";
     private final String goalName = "G";
 
-    private final List<String> assumptions = new ArrayList<>();
-    private final List<String> conclusions = new ArrayList<>();
+    // private final List<String> assumptions = new ArrayList<>();
+    // private final List<String> conclusions = new ArrayList<>();
     private List<String> arguments = new ArrayList<>();
 
     public ManualPropositionalProof(List<AST> knowledgeBase, List<AST> goals) {
@@ -61,6 +62,7 @@ public class ManualPropositionalProof {
                 OutputDevice.writeNewLine();
                 arguments.clear();
             }
+            WarningHelper.printAndReset();
         }
         OutputDevice.writeToConsole("Proof completed!");
     }
@@ -296,7 +298,7 @@ public class ManualPropositionalProof {
 
                 return handleEquivalenceIntroduction(index1, index2);
             }
-            case EQUIVALENCE_ELIMINATION -> {
+            case EQUIVALENCE_SIMPLIFICATION -> {
                 String argument = arguments.getFirst();
                 String type = getArgumentType(argument);
                 int index = getArgumentIndex(argument);
@@ -338,6 +340,17 @@ public class ManualPropositionalProof {
             }
             case DISJUNCTION_ELIMINATION -> {
 
+            }
+            case DISJUNCTION_SIMPLIFICATION -> {
+                String argument = arguments.getFirst();
+                String type = getArgumentType(argument);
+                int index = getArgumentIndex(argument);
+
+                if (!type.equals(kbName)) {
+                    addKBError(command);
+                }
+
+                return handleDisjunctionSimplification(index);
             }
             case DEMORGAN -> {
 
@@ -399,7 +412,7 @@ public class ManualPropositionalProof {
 
         AST newAST1 = ast.getSubtree(0);
         AST newAST2 = ast.getSubtree(1);
-        knowledgeBase.add(newAST1);
+        if (!containsEntry(newAST1)) knowledgeBase.add(newAST1);
 
         goals.remove(ast);
         goals.add(newAST2);
@@ -455,7 +468,7 @@ public class ManualPropositionalProof {
         AST ast = goals.get(index);
         ast.negate();
         AST contradictionAST = new PropositionalAST(true);
-        knowledgeBase.add(ast);
+        if (!containsEntry(ast)) knowledgeBase.add(ast);
         goals.remove(ast);
         goals.add(contradictionAST);
 
@@ -475,27 +488,25 @@ public class ManualPropositionalProof {
         AST ast2 = knowledgeBase.get(index2);
 
         if (PropositionalLogicHelper.getOutermostOperation(ast1) == LogicalOperator.IMPLICATION) {
-            AST antecedent1 = ast1.getSubtree(0);
-            AST conclusion1 = ast1.getSubtree(1);
-
-            if (antecedent1.isEquivalentTo(ast2)) {
-                KnowledgeBaseRegistry.addObtainedFrom(conclusion1.toString(), List.of(antecedent1.toString(), ast1.toString()), "Modus Ponens");
-                knowledgeBase.add(conclusion1);
-                return true;
-            }
+            if (canApplyModusPonens(ast1, ast2)) return true;
         }
         else if (PropositionalLogicHelper.getOutermostOperation(ast2) == LogicalOperator.IMPLICATION) {
-            AST antecedent2 = ast2.getSubtree(0);
-            AST conclusion2 = ast2.getSubtree(1);
-
-            if (antecedent2.isEquivalentTo(ast1)) {
-                KnowledgeBaseRegistry.addObtainedFrom(conclusion2.toString(), List.of(antecedent2.toString(), ast2.toString()), "Modus Ponens");
-                knowledgeBase.add(conclusion2);
-                return true;
-            }
+            if (canApplyModusPonens(ast2, ast1)) return true;
         }
 
         ErrorHelper.add("Cannot apply Modus Ponens on " + ast1 + " and " + ast2 + "!");
+        return false;
+    }
+
+    private boolean canApplyModusPonens(AST ast1, AST ast2) {
+        AST antecedent1 = ast1.getSubtree(0);
+        AST conclusion1 = ast1.getSubtree(1);
+
+        if (antecedent1.isEquivalentTo(ast2)) {
+            KnowledgeBaseRegistry.addObtainedFrom(conclusion1.toString(), List.of(antecedent1.toString(), ast1.toString()), "Modus Ponens");
+            if (!containsEntry(conclusion1)) knowledgeBase.add(conclusion1);
+            return true;
+        }
         return false;
     }
 
@@ -504,31 +515,27 @@ public class ManualPropositionalProof {
         AST ast2 = knowledgeBase.get(index2);
 
         if (PropositionalLogicHelper.getOutermostOperation(ast1) == LogicalOperator.IMPLICATION) {
-            AST antecedent1 = ast1.getSubtree(0);
-            AST conclusion1 = ast1.getSubtree(1);
-            conclusion1.negate();
-
-            if (conclusion1.isEquivalentTo(ast2)) {
-                antecedent1.negate();
-                KnowledgeBaseRegistry.addObtainedFrom(antecedent1.toString(), List.of(conclusion1.toString(), ast1.toString()), "Modus Tollens");
-                knowledgeBase.add(antecedent1);
-                return true;
-            }
+            if (canApplyModusTollens(ast1, ast2)) return true;
         }
         else if (PropositionalLogicHelper.getOutermostOperation(ast2) == LogicalOperator.IMPLICATION) {
-            AST antecedent2 = ast2.getSubtree(0);
-            AST conclusion2 = ast2.getSubtree(1);
-            conclusion2.negate();
-
-            if (conclusion2.isEquivalentTo(ast1)) {
-                antecedent2.negate();
-                KnowledgeBaseRegistry.addObtainedFrom(antecedent2.toString(), List.of(conclusion2.toString(), ast2.toString()), "Modus Tollens");
-                knowledgeBase.add(antecedent2);
-                return true;
-            }
+            if (canApplyModusTollens(ast2, ast1)) return true;
         }
 
         ErrorHelper.add("Cannot apply Modus Tollens on " + ast1 + " and " + ast2 + "!");
+        return false;
+    }
+
+    private boolean canApplyModusTollens(AST ast1, AST ast2) {
+        AST antecedent1 = ast1.getSubtree(0);
+        AST conclusion1 = ast1.getSubtree(1);
+        conclusion1.negate();
+
+        if (conclusion1.isEquivalentTo(ast2)) {
+            antecedent1.negate();
+            KnowledgeBaseRegistry.addObtainedFrom(antecedent1.toString(), List.of(conclusion1.toString(), ast1.toString()), "Modus Tollens");
+            if (!containsEntry(antecedent1)) knowledgeBase.add(antecedent1);
+            return true;
+        }
         return false;
     }
 
@@ -550,13 +557,13 @@ public class ManualPropositionalProof {
         if (conclusion1.isEquivalentTo(antecedent2)) {
             AST newAST = new PropositionalAST(antecedent1.toString() + " " + LogicalOperatorFlyweight.getImplicationString() + " " + conclusion2.toString(), true);
             KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast1.toString(), ast2.toString()), "Hypothetical Syllogism");
-            knowledgeBase.add(newAST);
+            if (!containsEntry(newAST)) knowledgeBase.add(newAST);
             return true;
         }
         else if (conclusion2.isEquivalentTo(antecedent1)) {
-            AST newAST = new PropositionalAST(antecedent2.toString() + " " + LogicalOperatorFlyweight.getImplicationString() + " " + conclusion1.toString(), true);
+            AST newAST = new PropositionalAST(antecedent2 + " " + LogicalOperatorFlyweight.getImplicationString() + " " + conclusion1, true);
             KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast1.toString(), ast2.toString()), "Hypothetical Syllogism");
-            knowledgeBase.add(newAST);
+            if (!containsEntry(newAST)) knowledgeBase.add(newAST);
             return true;
         }
 
@@ -575,49 +582,36 @@ public class ManualPropositionalProof {
         }
 
         if (PropositionalLogicHelper.getOutermostOperation(ast1) == LogicalOperator.DISJUNCTION) {
-            AST left = ast1.getSubtree(0);
-            AST leftCopy = new PropositionalAST(left.toString(), true);
-
-            AST right = ast1.getSubtree(1);
-            AST rightCopy = new PropositionalAST(right.toString(), true);
-
-            left.negate();
-            right.negate();
-
-            if (left.isEquivalentTo(ast2)) {
-                KnowledgeBaseRegistry.addObtainedFrom(rightCopy.toString(), List.of(ast1.toString(), ast2.toString()), "Disjunctive Syllogism");
-                knowledgeBase.add(rightCopy);
-                return true;
-            }
-            else if (right.isEquivalentTo(ast2)) {
-                KnowledgeBaseRegistry.addObtainedFrom(leftCopy.toString(), List.of(ast1.toString(), ast2.toString()), "Disjunctive Syllogism");
-                knowledgeBase.add(leftCopy);
-                return true;
-            }
+            if (canApplyDisjunctiveSyllogism(ast2, ast1, ast1.toString(), ast2.toString())) return true;
         }
         else if (PropositionalLogicHelper.getOutermostOperation(ast2) == LogicalOperator.DISJUNCTION) {
-            AST left = ast2.getSubtree(0);
-            AST leftCopy = new PropositionalAST(left.toString(), true);
-
-            AST right = ast2.getSubtree(1);
-            AST rightCopy = new PropositionalAST(right.toString(), true);
-
-            left.negate();
-            right.negate();
-
-            if (left.isEquivalentTo(ast1)) {
-                KnowledgeBaseRegistry.addObtainedFrom(rightCopy.toString(), List.of(ast1.toString(), ast2.toString()), "Disjunctive Syllogism");
-                knowledgeBase.add(rightCopy);
-                return true;
-            }
-            else if (right.isEquivalentTo(ast1)) {
-                KnowledgeBaseRegistry.addObtainedFrom(leftCopy.toString(), List.of(ast1.toString(), ast2.toString()), "Disjunctive Syllogism");
-                knowledgeBase.add(leftCopy);
-                return true;
-            }
+            if (canApplyDisjunctiveSyllogism(ast1, ast2, ast1.toString(), ast2.toString())) return true;
         }
 
         ErrorHelper.add("Cannot apply Disjunctive Syllogism on " + ast1 + " and " + ast2 + "!");
+        return false;
+    }
+
+    private boolean canApplyDisjunctiveSyllogism(AST ast1, AST ast2, String string, String string2) {
+        AST left = ast2.getSubtree(0);
+        AST leftCopy = new PropositionalAST(left.toString(), true);
+
+        AST right = ast2.getSubtree(1);
+        AST rightCopy = new PropositionalAST(right.toString(), true);
+
+        left.negate();
+        right.negate();
+
+        if (left.isEquivalentTo(ast1)) {
+            KnowledgeBaseRegistry.addObtainedFrom(rightCopy.toString(), List.of(string, string2), "Disjunctive Syllogism");
+            if (!containsEntry(rightCopy)) knowledgeBase.add(rightCopy);
+            return true;
+        }
+        else if (right.isEquivalentTo(ast1)) {
+            KnowledgeBaseRegistry.addObtainedFrom(leftCopy.toString(), List.of(string, string2), "Disjunctive Syllogism");
+            if (!containsEntry(left)) knowledgeBase.add(leftCopy);
+            return true;
+        }
         return false;
     }
 
@@ -629,38 +623,12 @@ public class ManualPropositionalProof {
         if (PropositionalLogicHelper.getOutermostOperation(ast1) == LogicalOperator.IMPLICATION &&
             PropositionalLogicHelper.getOutermostOperation(ast2) == LogicalOperator.IMPLICATION &&
             PropositionalLogicHelper.getOutermostOperation(ast3) == LogicalOperator.DISJUNCTION) {
-            AST antecedent1 = ast1.getSubtree(0);
-            AST conclusion1 = ast1.getSubtree(1);
-            AST antecedent2 = ast2.getSubtree(0);
-            AST conclusion2 = ast2.getSubtree(1);
-            AST left = ast3.getSubtree(0);
-            AST right = ast3.getSubtree(1);
-
-            if (antecedent1.isEquivalentTo(left) && antecedent2.isEquivalentTo(right) ||
-                    antecedent1.isEquivalentTo(right) && antecedent2.isEquivalentTo(left)) {
-                AST newAST = new PropositionalAST(conclusion1.toString() + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + conclusion2.toString(), true);
-                KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast1.toString(), ast2.toString(), ast3.toString()), "Constructive Dilemma");
-                knowledgeBase.add(newAST);
-                return true;
-            }
+            if (canApplyConstructiveSyllogism(ast1, ast2, ast3, ast2.toString(), ast3.toString())) return true;
         }
         else if (PropositionalLogicHelper.getOutermostOperation(ast1) == LogicalOperator.IMPLICATION &&
                 PropositionalLogicHelper.getOutermostOperation(ast2) == LogicalOperator.DISJUNCTION &&
                 PropositionalLogicHelper.getOutermostOperation(ast3) == LogicalOperator.IMPLICATION) {
-            AST antecedent1 = ast1.getSubtree(0);
-            AST conclusion1 = ast1.getSubtree(1);
-            AST antecedent2 = ast3.getSubtree(0);
-            AST conclusion2 = ast3.getSubtree(1);
-            AST left = ast2.getSubtree(0);
-            AST right = ast2.getSubtree(1);
-
-            if (antecedent1.isEquivalentTo(left) && antecedent2.isEquivalentTo(right) ||
-                    antecedent1.isEquivalentTo(right) && antecedent2.isEquivalentTo(left)) {
-                AST newAST = new PropositionalAST(conclusion1.toString() + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + conclusion2.toString(), true);
-                KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast1.toString(), ast2.toString(), ast3.toString()), "Constructive Dilemma");
-                knowledgeBase.add(newAST);
-                return true;
-            }
+            if (canApplyConstructiveSyllogism(ast1, ast3, ast2, ast2.toString(), ast3.toString())) return true;
         }
         else if (PropositionalLogicHelper.getOutermostOperation(ast1) == LogicalOperator.DISJUNCTION &&
                 PropositionalLogicHelper.getOutermostOperation(ast2) == LogicalOperator.IMPLICATION &&
@@ -676,11 +644,29 @@ public class ManualPropositionalProof {
                     antecedent1.isEquivalentTo(right) && antecedent2.isEquivalentTo(left)) {
                 AST newAST = new PropositionalAST(conclusion1.toString() + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + conclusion2.toString(), true);
                 KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast1.toString(), ast2.toString(), ast3.toString()), "Constructive Dilemma");
-                knowledgeBase.add(newAST);
+                if (!containsEntry(newAST)) knowledgeBase.add(newAST);
                 return true;
             }
         }
         ErrorHelper.add("Cannot apply Constructive Dilemma on " + ast1 + ", " + ast2 + " and " + ast3 + "!");
+        return false;
+    }
+
+    private boolean canApplyConstructiveSyllogism(AST ast1, AST ast2, AST ast3, String string, String string2) {
+        AST antecedent1 = ast1.getSubtree(0);
+        AST conclusion1 = ast1.getSubtree(1);
+        AST antecedent2 = ast2.getSubtree(0);
+        AST conclusion2 = ast2.getSubtree(1);
+        AST left = ast3.getSubtree(0);
+        AST right = ast3.getSubtree(1);
+
+        if (antecedent1.isEquivalentTo(left) && antecedent2.isEquivalentTo(right) ||
+                antecedent1.isEquivalentTo(right) && antecedent2.isEquivalentTo(left)) {
+            AST newAST = new PropositionalAST(conclusion1.toString() + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + conclusion2.toString(), true);
+            KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast1.toString(), string, string2), "Constructive Dilemma");
+            if (!containsEntry(newAST)) knowledgeBase.add(newAST);
+            return true;
+        }
         return false;
     }
 
@@ -692,52 +678,12 @@ public class ManualPropositionalProof {
         if (PropositionalLogicHelper.getOutermostOperation(ast1) == LogicalOperator.IMPLICATION &&
                 PropositionalLogicHelper.getOutermostOperation(ast2) == LogicalOperator.IMPLICATION &&
                 PropositionalLogicHelper.getOutermostOperation(ast3) == LogicalOperator.DISJUNCTION) {
-            AST antecedent1 = ast1.getSubtree(0);
-            AST conclusion1 = ast1.getSubtree(1);
-            conclusion1.negate();
-
-            AST antecedent2 = ast2.getSubtree(0);
-            AST conclusion2 = ast2.getSubtree(1);
-            conclusion2.negate();
-
-            AST left = ast3.getSubtree(0);
-            AST right = ast3.getSubtree(1);
-
-            if (conclusion1.isEquivalentTo(left) && conclusion2.isEquivalentTo(right) ||
-                    conclusion1.isEquivalentTo(right) && conclusion2.isEquivalentTo(left)) {
-                antecedent1.negate();
-                antecedent2.negate();
-
-                AST newAST = new PropositionalAST(antecedent1.toString() + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + antecedent2.toString(), true);
-                KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast1.toString(), ast2.toString(), ast3.toString()), "Destructive Dilemma");
-                knowledgeBase.add(newAST);
-                return true;
-            }
+            if (canApplyDestructiveDilemma(ast1, ast2, ast3, ast2.toString(), ast3.toString())) return true;
         }
         else if (PropositionalLogicHelper.getOutermostOperation(ast1) == LogicalOperator.IMPLICATION &&
                 PropositionalLogicHelper.getOutermostOperation(ast2) == LogicalOperator.DISJUNCTION &&
                 PropositionalLogicHelper.getOutermostOperation(ast3) == LogicalOperator.IMPLICATION) {
-            AST antecedent1 = ast1.getSubtree(0);
-            AST conclusion1 = ast1.getSubtree(1);
-            conclusion1.negate();
-
-            AST antecedent2 = ast3.getSubtree(0);
-            AST conclusion2 = ast3.getSubtree(1);
-            conclusion2.negate();
-
-            AST left = ast2.getSubtree(0);
-            AST right = ast2.getSubtree(1);
-
-            if (conclusion1.isEquivalentTo(left) && conclusion2.isEquivalentTo(right) ||
-                    conclusion1.isEquivalentTo(right) && conclusion2.isEquivalentTo(left)) {
-                antecedent1.negate();
-                antecedent2.negate();
-
-                AST newAST = new PropositionalAST(antecedent1.toString() + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + antecedent2.toString(), true);
-                KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast1.toString(), ast2.toString(), ast3.toString()), "Destructive Dilemma");
-                knowledgeBase.add(newAST);
-                return true;
-            }
+            if (canApplyDestructiveDilemma(ast1, ast3, ast2, ast2.toString(), ast3.toString())) return true;
         }
         else if (PropositionalLogicHelper.getOutermostOperation(ast1) == LogicalOperator.DISJUNCTION &&
                 PropositionalLogicHelper.getOutermostOperation(ast2) == LogicalOperator.IMPLICATION &&
@@ -758,13 +704,38 @@ public class ManualPropositionalProof {
                 antecedent1.negate();
                 antecedent2.negate();
 
-                AST newAST = new PropositionalAST(antecedent1.toString() + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + antecedent2.toString(), true);
+                AST newAST = new PropositionalAST(antecedent1 + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + antecedent2, true);
                 KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast1.toString(), ast2.toString(), ast3.toString()), "Destructive Dilemma");
-                knowledgeBase.add(newAST);
+                if (!containsEntry(newAST)) knowledgeBase.add(newAST);
                 return true;
             }
         }
         ErrorHelper.add("Cannot apply Destructive Dilemma on " + ast1 + ", " + ast2 + " and " + ast3 + "!");
+        return false;
+    }
+
+    private boolean canApplyDestructiveDilemma(AST ast1, AST ast2, AST ast3, String string, String string2) {
+        AST antecedent1 = ast1.getSubtree(0);
+        AST conclusion1 = ast1.getSubtree(1);
+        conclusion1.negate();
+
+        AST antecedent2 = ast2.getSubtree(0);
+        AST conclusion2 = ast2.getSubtree(1);
+        conclusion2.negate();
+
+        AST left = ast3.getSubtree(0);
+        AST right = ast3.getSubtree(1);
+
+        if (conclusion1.isEquivalentTo(left) && conclusion2.isEquivalentTo(right) ||
+                conclusion1.isEquivalentTo(right) && conclusion2.isEquivalentTo(left)) {
+            antecedent1.negate();
+            antecedent2.negate();
+
+            AST newAST = new PropositionalAST(antecedent1 + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + antecedent2, true);
+            KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast1.toString(), string, string2), "Destructive Dilemma");
+            if (!containsEntry(newAST)) knowledgeBase.add(newAST);
+            return true;
+        }
         return false;
     }
 
@@ -781,7 +752,7 @@ public class ManualPropositionalProof {
         AST newAST = new PropositionalAST(antecedent + " " + LogicalOperatorFlyweight.getImplicationString() + " ("
                             + antecedent + " " + LogicalOperatorFlyweight.getConjunctionString() + " " + conclusion + ")", true);
         KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast.toString()), "Absorption");
-        knowledgeBase.add(newAST);
+        if (!containsEntry(newAST)) knowledgeBase.add(newAST);
         return true;
     }
 
@@ -800,7 +771,7 @@ public class ManualPropositionalProof {
 
         AST newAST = new PropositionalAST(conclusion + " " + LogicalOperatorFlyweight.getImplicationString() + " " + antecedent, true);
         KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast.toString()), "Transposition");
-        knowledgeBase.add(newAST);
+        if (!containsEntry(newAST)) knowledgeBase.add(newAST);
         return true;
     }
 
@@ -817,7 +788,7 @@ public class ManualPropositionalProof {
         AST newAST = new PropositionalAST("(" + left + " " + LogicalOperatorFlyweight.getImplicationString() + " " + right + ") " +
                     LogicalOperatorFlyweight.getConjunctionString() + "(" + right + " " + LogicalOperatorFlyweight.getImplicationString() + " " + left + ")", true);
         KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast.toString()), "Material Equivalence");
-        knowledgeBase.add(newAST);
+        if (!containsEntry(newAST)) knowledgeBase.add(newAST);
         return true;
     }
 
@@ -834,7 +805,7 @@ public class ManualPropositionalProof {
         antecedent.negate();
         AST newAST = new PropositionalAST(antecedent + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + conclusion, true);
         KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast.toString()), "Material Equivalence");
-        knowledgeBase.add(newAST);
+        if (!containsEntry(newAST)) knowledgeBase.add(newAST);
         return true;
     }
 
@@ -844,7 +815,7 @@ public class ManualPropositionalProof {
 
         AST ast = new PropositionalAST(ast1 + " " + LogicalOperatorFlyweight.getImplicationString() + " " + ast2, true);
         KnowledgeBaseRegistry.addObtainedFrom(ast.toString(), List.of(ast1.toString(), ast2.toString()), "Implication Introduction");
-        knowledgeBase.add(ast);
+        if (!containsEntry(ast)) knowledgeBase.add(ast);
         return true;
     }
 
@@ -861,8 +832,8 @@ public class ManualPropositionalProof {
         KnowledgeBaseRegistry.addObtainedFrom(ast1.toString(), List.of(ast.toString()), "Implication Simplification");
         KnowledgeBaseRegistry.addObtainedFrom(ast2.toString(), List.of(ast.toString()), "Implication Simplification");
 
-        knowledgeBase.add(ast1);
-        knowledgeBase.add(ast2);
+        if (!containsEntry(ast1)) knowledgeBase.add(ast1);
+        if (!containsEntry(ast2)) knowledgeBase.add(ast2);
         return true;
     }
 
@@ -881,7 +852,7 @@ public class ManualPropositionalProof {
             if (antecedent1.isEquivalentTo(conclusion2) && antecedent2.isEquivalentTo(conclusion1)) {
                 AST ast = new PropositionalAST(antecedent1 + " " + LogicalOperatorFlyweight.getEquivalenceString() + " " + conclusion1, true);
                 KnowledgeBaseRegistry.addObtainedFrom(ast.toString(), List.of(ast1.toString(), ast2.toString()), "Equivalence Introduction");
-                knowledgeBase.add(ast);
+                if (!containsEntry(ast)) knowledgeBase.add(ast);
                 return true;
             }
         }
@@ -902,8 +873,8 @@ public class ManualPropositionalProof {
         KnowledgeBaseRegistry.addObtainedFrom(ast1.toString(), List.of(ast.toString()), "Equivalence Simplification");
         KnowledgeBaseRegistry.addObtainedFrom(ast2.toString(), List.of(ast.toString()), "Equivalence Simplification");
 
-        knowledgeBase.add(ast1);
-        knowledgeBase.add(ast2);
+        if (!containsEntry(ast1)) knowledgeBase.add(ast1);
+        if (!containsEntry(ast2)) knowledgeBase.add(ast2);
         return true;
     }
 
@@ -913,7 +884,7 @@ public class ManualPropositionalProof {
 
         AST ast = new PropositionalAST(ast1 + " " + LogicalOperatorFlyweight.getConjunctionString() + " " + ast2, true);
         KnowledgeBaseRegistry.addObtainedFrom(ast.toString(), List.of(ast1.toString(), ast2.toString()), "Conjunction Introduction");
-        knowledgeBase.add(ast);
+        if (!containsEntry(ast)) knowledgeBase.add(ast);
         return true;
     }
 
@@ -930,8 +901,8 @@ public class ManualPropositionalProof {
         KnowledgeBaseRegistry.addObtainedFrom(ast1.toString(), List.of(ast.toString()), "Conjunction Elimination");
         KnowledgeBaseRegistry.addObtainedFrom(ast2.toString(), List.of(ast.toString()), "Conjunction Elimination");
 
-        knowledgeBase.add(ast1);
-        knowledgeBase.add(ast2);
+        if (!containsEntry(ast1)) knowledgeBase.add(ast1);
+        if (!containsEntry(ast2)) knowledgeBase.add(ast2);
         return true;
     }
 
@@ -962,6 +933,24 @@ public class ManualPropositionalProof {
             return false;
         }
 
+        return false;
+    }
+
+    private boolean handleDisjunctionSimplification(int index) {
+        AST ast = knowledgeBase.get(index);
+
+        if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.DISJUNCTION) {
+            AST left = ast.getSubtree(0);
+            AST right = ast.getSubtree(1);
+
+            if (left.isEquivalentTo(right)) {
+                KnowledgeBaseRegistry.addObtainedFrom(left.toString(), List.of(ast.toString()), "Disjunction Simplification");
+                if (!containsEntry(left)) knowledgeBase.add(left);
+                return true;
+            }
+        }
+
+        ErrorHelper.add("Cannot apply Disjunction Simplification on " + ast + "!");
         return false;
     }
 
@@ -1014,6 +1003,13 @@ public class ManualPropositionalProof {
     private void addOutOfBoundsError(int index) {
         if (knowledgeBase.size() == 1) ErrorHelper.add("Knowledge Base has " + knowledgeBase.size() + " entry, index " + (index + 1) + " is out of bounds!");
         else ErrorHelper.add("Knowledge Base has " + knowledgeBase.size() + " entries, index " + (index + 1) + " is out of bounds!");
+    }
+
+    private boolean containsEntry(AST entry) {
+        for (AST ast : knowledgeBase) {
+            if (ast.isEquivalentTo(entry)) return true;
+        }
+        return false;
     }
 
 }

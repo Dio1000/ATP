@@ -44,7 +44,7 @@ public class LogicController {
         knowledgeBaseAST = parser.parseAndGetASTs(knowledgeBase);
         goalsAST = parser.parseAndGetASTs(goals);
 
-        if (WarningHelper.notEmpty()) WarningHelper.print();
+        if (WarningHelper.notEmpty()) WarningHelper.printAndReset();
         if (ErrorHelper.notEmpty()) {
             OutputDevice.writeToConsole("Could not validate syntax!");
             ErrorHelper.print();

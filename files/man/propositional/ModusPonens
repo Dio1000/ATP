@@ -1,0 +1,6 @@
+name: Modus Ponens
+commandName: modpon
+aliases: ModusPonens, ModPon
+arity: 2
+description: P implies Q. P is true. Therefore Q must also be true.
+inference: P -> Q, P; Q

@@ -1,0 +1,6 @@
+name: Disjunctive Syllogism
+commandName: dissyl
+aliases: DisjunctiveSyllogism
+arity: 2
+description: If P OR Q is true, and P is false, then Q is true.
+inference: P OR Q, !P; Q

@@ -1,0 +1,6 @@
+name: Equivalence Simplification
+commandName: eqsimpl
+aliases: EquivalenceSimplification
+arity: 1
+description: If P <-> Q is true, P and Q are also true.
+inference: P <-> Q; P, Q

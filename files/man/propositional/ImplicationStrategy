@@ -1,0 +1,6 @@
+name: Implication Strategy
+commandName: implstr
+aliases: ImplicationStrategy
+arity: 1
+description: To prove P implies Q, assume P and prove Q.
+inference: P -> Q; P

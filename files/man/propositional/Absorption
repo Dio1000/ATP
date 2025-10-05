@@ -1,0 +1,6 @@
+name: Absorption
+commandName: absor
+aliases: Absorption, Absor
+arity: 1
+description: If P implies Q, then P implies P and Q.
+inference: P -> Q; P -> (P AND Q)

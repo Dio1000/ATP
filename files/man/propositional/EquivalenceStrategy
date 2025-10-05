@@ -1,0 +1,6 @@
+name: Equivalence Strategy
+commandName: eqstr
+aliases: EquivalenceStrategy
+arity: 1
+description: To prove P <-> Q, prove P -> Q and Q -> P
+inference: P <-> Q; P -> Q, Q -> P

@@ -1,0 +1,6 @@
+name: Material Implication
+commandName: matimpl
+aliases: MaterialImplication
+arity: 1
+description: If P implies Q is true, then !P or Q must be true
+inference: P -> Q; !P or Q

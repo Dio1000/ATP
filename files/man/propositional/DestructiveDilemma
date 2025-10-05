@@ -1,0 +1,6 @@
+name: Destructive Dilemma
+commandName: destrdil
+aliases: DestructiveDilemma
+arity: 3
+description: If P -> Q is true, R -> S is true and at least one of their consequents is false, then at least one of their antecedents must be false.
+inference: P -> Q, R -> S, !Q OR !S; !P OR !R

@@ -1,0 +1,6 @@
+name: Conjunction Introduction
+commandName: conintro
+aliases: ConjunctionIntroduction
+arity: 2
+description: If A and B are true, then A AND B is also true.
+inference: A, B; A AND B

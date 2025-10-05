@@ -1,0 +1,6 @@
+name: Transposition
+commandName: trans
+aliases: Transposition, Trans
+arity: 1
+description: If P implies Q is true, then !Q implies !P is also true.
+inference: P -> Q; !Q -> !P

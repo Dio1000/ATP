@@ -1,0 +1,6 @@
+name: Done
+commandName: done
+aliases: Done, end, End, stop, Stop
+arity: 1
+description: Checks that all goals are present in the Knowledge Base.
+inference:

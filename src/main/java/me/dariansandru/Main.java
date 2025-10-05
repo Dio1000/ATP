@@ -4,7 +4,7 @@ import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.util.SystemInfo;
 import me.dariansandru.controller.LogicController;
 import me.dariansandru.gui.GUIController;
-import me.dariansandru.parser.command.CommandParser;
+import me.dariansandru.utils.manual.PropositionalLogicManual;
 
 import javax.swing.*;
 import java.util.Objects;
@@ -39,7 +39,8 @@ public class Main {
             logicController.manualRun();
         }
         else if (Objects.equals(args[0], testString)) {
-            // Do whatever
+            PropositionalLogicManual manual = new PropositionalLogicManual();
+            System.out.println(manual.getEntries().get(1).inference());
         }
         else {
             throw new IllegalStateException("Argument: " + args[0] + " could not be found!");
@@ -53,12 +54,11 @@ public class Main {
 //TODO More Exceptions.
 //TODO Change reflexivity package classes to actually use reflexivity.
 //TODO Look into how collections are kept (inference rules, universes, enums in general).
-//TODO Make conjunction introduction take n arguments.
+//TODO Change arity of Conjunction introduction
 
 // -- BUGS --
 //TODO Look into why Disjunction assumption and conclusion prints twice.
 //TODO Inference rules should not add potential entries if they are already in the KB.
-//TODO Check in Manual Theorem Proving that the KB / Goals does not already contain the entry.
 
 // -- NEW FEATURES --
 //TODO Add Proof by Cases.

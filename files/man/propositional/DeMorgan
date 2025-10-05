@@ -1,0 +1,6 @@
+name: DeMorgan
+commandName: demorgan
+aliases: DeMorgan, Demorgan
+arity: 1
+description: The negation of A AND B is !A OR !B. The negation of A OR B is !A AND !B.
+inference:

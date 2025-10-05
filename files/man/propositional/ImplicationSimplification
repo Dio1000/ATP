@@ -1,0 +1,6 @@
+name: Implication Simplification
+commandName: implsimpl
+aliases: ImplicationSimplification
+arity: 1
+description: If P implies Q, then P and Q must be true.
+inference: P -> Q; P, Q

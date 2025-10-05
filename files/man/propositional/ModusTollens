@@ -1,0 +1,6 @@
+name: Modus Tollens
+commandName: modtol
+aliases:
+arity: 2
+description: P implies Q. Q is false. Therefore P must also be false.
+inference: P -> Q, !Q; !P

@@ -1,0 +1,6 @@
+name: Conjunction Strategy
+commandName: constr
+aliases: ConjunctionStrategy
+arity: 1
+description: To prove A AND B, prove A and B.
+inference: A AND B; A, B

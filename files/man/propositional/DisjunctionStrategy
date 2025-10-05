@@ -1,0 +1,6 @@
+name: Disjunction Strategy
+commandName: disstr
+aliases: DisjunctionStrategy
+arity: 1
+description: To prove P OR Q, prove either P or Q.
+inference: P OR Q; P, Q
