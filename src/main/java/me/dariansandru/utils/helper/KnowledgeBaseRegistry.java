@@ -87,4 +87,5 @@ public abstract class KnowledgeBaseRegistry {
     public static boolean isUsed(String formula) {
         return entryIsUsedMap.getOrDefault(formula, false);
     }
+
 }

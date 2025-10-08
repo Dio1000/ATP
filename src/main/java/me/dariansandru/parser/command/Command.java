@@ -24,7 +24,7 @@ public enum Command {
     CONSTRUCTIVE_DILEMMA("constrdil", 3, true),
     DESTRUCTIVE_DILEMMA("destrdil", 3, true),
     DISJUNCTION_INTRODUCTION("disintro", PropositionalLogicHelper.getNArityConstant(), false),
-    DISJUNCTION_ELIMINATION("diselim", 1, true),
+    DISJUNCTION_ELIMINATION("diselim", 2, true),
     DISJUNCTIVE_SYLLOGISM("dissyll", 2, true),
     EQUIVALENCE_INTRODUCTION("eqintro", 2, true),
     EQUIVALENCE_SIMPLIFICATION("eqelim", 1, true),
@@ -33,6 +33,7 @@ public enum Command {
     IMPLICATION_ELIMINATION("implsimpl", 1, true),
     MODUS_PONENS("modpon", 2, true),
     MODUS_TOLLENS("modtol", 2, true),
+    PROOF_BY_CASES("cases", 1, true),
 
     // Rules of Replacement
     DISJUNCTION_SIMPLIFICATION("dissimpl", 1, true),
@@ -44,7 +45,8 @@ public enum Command {
     // Other
     DONE("done", 0, true),
     ERROR("error", -1, true),
-    CONTRADICTION("contr", 2, false);
+    CONTRADICTION("contr", 2, false),
+    CHANGE_STATE("chstate", 1, true);
 
     private final String commandString;
     private final int arity;

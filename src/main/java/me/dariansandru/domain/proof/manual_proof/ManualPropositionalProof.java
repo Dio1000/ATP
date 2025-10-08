@@ -12,6 +12,7 @@ import me.dariansandru.utils.helper.ErrorHelper;
 import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 import me.dariansandru.utils.helper.WarningHelper;
+import me.dariansandru.utils.manual.Manual;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,18 +21,42 @@ public class ManualPropositionalProof {
 
     private final List<AST> knowledgeBase;
     private final List<AST> goals;
+    private final List<ManualPropositionalProof> stateGoals = new ArrayList<>();
     private boolean isProven = false;
 
     private final String kbName = "KB";
     private final String goalName = "G";
+    private final String stateName = "S";
 
     // private final List<String> assumptions = new ArrayList<>();
     // private final List<String> conclusions = new ArrayList<>();
     private List<String> arguments = new ArrayList<>();
 
-    public ManualPropositionalProof(List<AST> knowledgeBase, List<AST> goals) {
+    private final List<ManualPropositionalProof> childStates = new ArrayList<>();
+    private final ManualPropositionalProof parent;
+    private final int stateIndex;
+
+    public ManualPropositionalProof(List<AST> knowledgeBase, List<AST> goals, ManualPropositionalProof parent, int index) {
         this.knowledgeBase = knowledgeBase;
         this.goals = goals;
+        this.parent = parent;
+        this.stateIndex = index;
+    }
+
+    public ManualPropositionalProof getParent() {
+        return parent;
+    }
+
+    public ManualPropositionalProof getChild(int index) {
+        return childStates.get(index);
+    }
+
+    public int getStateIndex() {
+        return stateIndex;
+    }
+
+    public boolean isProven() {
+        return isProven;
     }
 
     private void addHypothesis() {
@@ -63,8 +88,27 @@ public class ManualPropositionalProof {
                 arguments.clear();
             }
             WarningHelper.printAndReset();
+
+            if (this.isProven) break;
         }
-        OutputDevice.writeToConsole("Proof completed!");
+
+        if (this.parent == null) {
+            OutputDevice.writeToConsole("Proof completed!");
+        }
+        else {
+            OutputDevice.writeToConsole("Proof State completed!");
+        }
+    }
+
+    int getIntegerIndex(Command command) {
+        String argument = arguments.getFirst();
+        String type = getArgumentType(argument);
+        int index = getArgumentIndex(argument);
+
+        if (!type.isEmpty()) {
+            return -1;
+        }
+        return index + 1;
     }
 
     int getIndexOfStrategy(Command command) {
@@ -197,6 +241,12 @@ public class ManualPropositionalProof {
 
                 return handleNegationStrategy(index);
             }
+            case PROOF_BY_CASES -> {
+                int index = getIndexOfArityOne(command);
+                if (index == -1) return false;
+
+                return handleProofByCases(index);
+            }
             case MODUS_PONENS -> {
                 List<Integer> indices = getIndexOfArityTwo(command);
                 if (indices.isEmpty()) return false;
@@ -258,80 +308,38 @@ public class ManualPropositionalProof {
                 return handleMaterialImplication(index);
             }
             case IMPLICATION_INTRODUCTION -> {
-                String argument1 = arguments.getFirst();
-                String type1 = getArgumentType(argument1);
-                int index1 = getArgumentIndex(argument1);
+                List<Integer> indices = getIndexOfArityTwo(command);
+                if (indices.isEmpty()) return false;
 
-                String argument2 = arguments.get(1);
-                String type2 = getArgumentType(argument2);
-                int index2 = getArgumentIndex(argument2);
-
-                if (!type1.equals(kbName) || !type2.equals(kbName)) {
-                    addKBError(command);
-                }
-
-                return handleImplicationIntroduction(index1, index2);
+                return handleImplicationIntroduction(indices.getFirst(), indices.get(1));
             }
             case IMPLICATION_ELIMINATION -> {
-                String argument = arguments.getFirst();
-                String type = getArgumentType(argument);
-                int index = getArgumentIndex(argument);
-
-                if (!type.equals(kbName)) {
-                    addKBError(command);
-                }
+                int index = getIndexOfArityOne(command);
+                if (index == -1) return false;
 
                 return handleImplicationSimplification(index);
             }
             case EQUIVALENCE_INTRODUCTION -> {
-                String argument1 = arguments.getFirst();
-                String type1 = getArgumentType(argument1);
-                int index1 = getArgumentIndex(argument1);
+                List<Integer> indices = getIndexOfArityTwo(command);
+                if (indices.isEmpty()) return false;
 
-                String argument2 = arguments.get(1);
-                String type2 = getArgumentType(argument2);
-                int index2 = getArgumentIndex(argument2);
-
-                if (!type1.equals(kbName) || !type2.equals(kbName)) {
-                    addKBError(command);
-                }
-
-                return handleEquivalenceIntroduction(index1, index2);
+                return handleEquivalenceIntroduction(indices.getFirst(), indices.get(1));
             }
             case EQUIVALENCE_SIMPLIFICATION -> {
-                String argument = arguments.getFirst();
-                String type = getArgumentType(argument);
-                int index = getArgumentIndex(argument);
-
-                if (!type.equals(kbName)) {
-                    addKBError(command);
-                }
+                int index = getIndexOfArityOne(command);
+                if (index == -1) return false;
 
                 return handleEquivalenceSimplification(index);
             }
             case CONJUNCTION_INTRODUCTION -> {
-                String argument1 = arguments.getFirst();
-                String type1 = getArgumentType(argument1);
-                int index1 = getArgumentIndex(argument1);
+                List<Integer> indices = getIndexOfArityTwo(command);
+                if (indices.isEmpty()) return false;
 
-                String argument2 = arguments.get(1);
-                String type2 = getArgumentType(argument2);
-                int index2 = getArgumentIndex(argument2);
-
-                if (!type1.equals(kbName) || !type2.equals(kbName)) {
-                    addKBError(command);
-                }
-
-                return handleConjunctionIntroduction(index1, index2);
+                return handleConjunctionIntroduction(indices.getFirst(), indices.get(1));
             }
             case CONJUNCTION_ELIMINATION -> {
-                String argument = arguments.getFirst();
-                String type = getArgumentType(argument);
-                int index = getArgumentIndex(argument);
-
-                if (!type.equals(kbName)) {
-                    addKBError(command);
-                }
+                int index = getIndexOfArityOne(command);
+                if (index == -1) return false;
 
                 return handleConjunctionElimination(index);
             }
@@ -339,21 +347,22 @@ public class ManualPropositionalProof {
 
             }
             case DISJUNCTION_ELIMINATION -> {
+                List<Integer> indices = getIndexOfArityTwo(command);
+                if (indices.isEmpty()) return false;
 
+                return handleDisjunctionElimination(indices.getFirst(), indices.get(1));
             }
             case DISJUNCTION_SIMPLIFICATION -> {
-                String argument = arguments.getFirst();
-                String type = getArgumentType(argument);
-                int index = getArgumentIndex(argument);
-
-                if (!type.equals(kbName)) {
-                    addKBError(command);
-                }
+                int index = getIndexOfArityOne(command);
+                if (index == -1) return false;
 
                 return handleDisjunctionSimplification(index);
             }
             case DEMORGAN -> {
+                int index = getIndexOfArityOne(command);
+                if (index == -1) return false;
 
+                return handleDeMorgan(index);
             }
             case CONTRADICTION -> {
                 List<Integer> indices = new ArrayList<>();
@@ -375,6 +384,10 @@ public class ManualPropositionalProof {
 
                 isProven = handleContradiction(indices);
             }
+            case CHANGE_STATE -> {
+                int index = getIntegerIndex(command);
+                return handleChangeState(index);
+            }
             case DONE -> {
                 //TODO Look into case of Disjunction (not all goals need to be in the KB)
                 for (AST goal : goals) {
@@ -391,6 +404,14 @@ public class ManualPropositionalProof {
                         return false;
                     }
                 }
+
+                for (ManualPropositionalProof proof : stateGoals) {
+                    if (!proof.isProven()) {
+                        ErrorHelper.add("Proof could not be completed! State '"  + proof.getStateIndex() + "' has not been proven!");
+                        isProven = false;
+                        return false;
+                    }
+                }
                 isProven = true;
                 return true;
             }
@@ -400,6 +421,12 @@ public class ManualPropositionalProof {
             }
         }
         return false;
+    }
+
+    private boolean handleChangeState(int index) {
+        System.out.println(index);
+        ManualPropositionalProofStates.getState(index).prove();
+        return true;
     }
 
     private boolean handleImplicationStrategy(int index) {
@@ -430,11 +457,13 @@ public class ManualPropositionalProof {
             return false;
         }
 
-        AST newAST1 = ast.getSubtree(0);
-        AST newAST2 = ast.getSubtree(1);
-        goals.add(newAST1);
-        goals.add(newAST2);
         goals.remove(ast);
+        AST left = ast.getSubtree(0);
+        AST right = ast.getSubtree(1);
+        AST newAST1 = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getImplicationString() + " " + right, true);
+        AST newAST2 = new PropositionalAST(right + " " + LogicalOperatorFlyweight.getImplicationString() + " " + left, true);
+
+        createNewStates(newAST1, newAST2);
 
         KnowledgeBaseRegistry.addObtainedFrom(newAST1.toString(), List.of(ast.toString()), "Equivalence Strategy");
         KnowledgeBaseRegistry.addObtainedFrom(newAST2.toString(), List.of(ast.toString()), "Equivalence Strategy");
@@ -451,13 +480,61 @@ public class ManualPropositionalProof {
 
         AST newAST1 = ast.getSubtree(0);
         AST newAST2 = ast.getSubtree(1);
-        goals.add(newAST1);
-        goals.add(newAST2);
         goals.remove(ast);
+
+        createNewStates(newAST1, newAST2);
 
         KnowledgeBaseRegistry.addObtainedFrom(newAST1.toString(), List.of(ast.toString()), "Conjunction Strategy");
         KnowledgeBaseRegistry.addObtainedFrom(newAST2.toString(), List.of(ast.toString()), "Conjunction Strategy");
         return true;
+    }
+
+    private void createNewStates(AST newAST1, AST newAST2) {
+        List<AST> newGoals1 = new ArrayList<>();
+        copyGoals(newGoals1, goals);
+        newGoals1.add(newAST1);
+        ManualPropositionalProof newState1 = new ManualPropositionalProof(knowledgeBase, newGoals1, this, this.stateIndex + 1);
+
+        List<AST> newGoals2 = new ArrayList<>();
+        copyGoals(newGoals2, goals);
+        newGoals2.add(newAST2);
+        ManualPropositionalProof newState2 = new ManualPropositionalProof(knowledgeBase, newGoals2, this, this.stateIndex + 2);
+
+        childStates.add(newState1);
+        childStates.add(newState2);
+
+        stateGoals.add(newState1);
+        stateGoals.add(newState2);
+
+        ManualPropositionalProofStates.addState(newState1, stateIndex + 1);
+        ManualPropositionalProofStates.addState(newState2, stateIndex + 2);
+    }
+
+    private void createNewKBStates(AST newAST1, AST newAST2) {
+        List<AST> newKB1 = new ArrayList<>();
+        List<AST> newGoals1 = new ArrayList<>();
+        copyGoals(newGoals1, goals);
+        copyKB(newKB1, knowledgeBase);
+
+        newKB1.add(newAST1);
+        ManualPropositionalProof newState1 = new ManualPropositionalProof(newKB1, newGoals1, this, this.stateIndex + 1);
+
+        List<AST> newKB2 = new ArrayList<>();
+        copyKB(newKB2, knowledgeBase);
+        List<AST> newGoals2 = new ArrayList<>();
+        copyGoals(newGoals2, goals);
+
+        newKB2.add(newAST2);
+        ManualPropositionalProof newState2 = new ManualPropositionalProof(newKB2, newGoals2, this, this.stateIndex + 2);
+
+        childStates.add(newState1);
+        childStates.add(newState2);
+
+        stateGoals.add(newState1);
+        stateGoals.add(newState2);
+
+        ManualPropositionalProofStates.addState(newState1, stateIndex + 1);
+        ManualPropositionalProofStates.addState(newState2, stateIndex + 2);
     }
 
     private boolean handleDisjunctionStrategy(int index) {
@@ -481,6 +558,26 @@ public class ManualPropositionalProof {
             KnowledgeBaseRegistry.addObtainedFrom(contradictionAST.toString(), List.of(), "Proof by Contradiction");
         }
         return true;
+    }
+
+    private boolean handleProofByCases(int index) {
+        AST ast = knowledgeBase.get(index);
+        knowledgeBase.remove(ast);
+
+        if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.DISJUNCTION) {
+            AST left = ast.getSubtree(0);
+            AST right = ast.getSubtree(1);
+            createNewKBStates(left, right);
+
+            KnowledgeBaseRegistry.addObtainedFrom(left.toString(), List.of(ast.toString()), "Proof by Cases");
+            KnowledgeBaseRegistry.addObtainedFrom(right.toString(), List.of(ast.toString()), "Proof by Cases");
+
+            goals.removeFirst();
+            return true;
+        }
+
+        ErrorHelper.add("Cannot apply Proof by Cases on " + ast + "!");
+        return false;
     }
 
     private boolean handleModusPonens(int index1, int index2) {
@@ -888,6 +985,55 @@ public class ManualPropositionalProof {
         return true;
     }
 
+    private boolean handleDisjunctionElimination(int index1, int index2) {
+        AST ast1 = knowledgeBase.get(index1);
+        AST ast2 = knowledgeBase.get(index2);
+
+        if (PropositionalLogicHelper.getOutermostOperation(ast1) == LogicalOperator.DISJUNCTION) {
+            AST left = ast1.getSubtree(0);
+            AST right = ast1.getSubtree(1);
+
+            AST negatedLeft = new PropositionalAST(left.toString(), true);
+            AST negatedRight = new PropositionalAST(right.toString(), true);
+            negatedLeft.negate();
+            negatedRight.negate();
+
+            if (negatedLeft.isEquivalentTo(ast2)) {
+                KnowledgeBaseRegistry.addObtainedFrom(right.toString(), List.of(ast1.toString(), ast2.toString()), "Disjunction Elimination");
+                if (!containsEntry(right)) knowledgeBase.add(right);
+                return true;
+            }
+            else if (negatedRight.isEquivalentTo(ast2)) {
+                KnowledgeBaseRegistry.addObtainedFrom(left.toString(), List.of(ast1.toString(), ast2.toString()), "Disjunction Elimination");
+                if (!containsEntry(left)) knowledgeBase.add(left);
+                return true;
+            }
+        }
+        else if (PropositionalLogicHelper.getOutermostOperation(ast2) == LogicalOperator.DISJUNCTION) {
+            AST left = ast2.getSubtree(0);
+            AST right = ast2.getSubtree(1);
+
+            AST negatedLeft = new PropositionalAST(left.toString(), true);
+            AST negatedRight = new PropositionalAST(right.toString(), true);
+            negatedLeft.negate();
+            negatedRight.negate();
+
+            if (negatedLeft.isEquivalentTo(ast1)) {
+                KnowledgeBaseRegistry.addObtainedFrom(right.toString(), List.of(ast1.toString(), ast2.toString()), "Disjunction Elimination");
+                if (!containsEntry(right)) knowledgeBase.add(right);
+                return true;
+            }
+            else if (negatedRight.isEquivalentTo(ast1)) {
+                KnowledgeBaseRegistry.addObtainedFrom(left.toString(), List.of(ast1.toString(), ast2.toString()), "Disjunction Elimination");
+                if (!containsEntry(left)) knowledgeBase.add(left);
+                return true;
+            }
+        }
+
+        ErrorHelper.add("Cannot apply Disjunction Elimination on " + ast1 + " and " + ast2 + "!");
+        return false;
+    }
+
     private boolean handleConjunctionElimination(int index) {
         AST ast = knowledgeBase.get(index);
 
@@ -954,9 +1100,57 @@ public class ManualPropositionalProof {
         return false;
     }
 
+    private boolean handleDeMorgan(int index) {
+        AST copyAst = knowledgeBase.get(index);
+        AST ast = new PropositionalAST(copyAst.toString(), true);
+
+        if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.NEGATION) {
+            ast.negate();
+            if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.CONJUNCTION) {
+                AST left = ast.getSubtree(0);
+                AST right = ast.getSubtree(1);
+                left.negate();
+                right.negate();
+
+                AST newAST = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + right, true);
+                KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast.toString()), "DeMorgan");
+                if (!containsEntry(newAST)) knowledgeBase.add(newAST);
+                return true;
+            }
+            else if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.DISJUNCTION) {
+                AST left = ast.getSubtree(0);
+                AST right = ast.getSubtree(1);
+                left.negate();
+                right.negate();
+
+                AST newAST = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getConjunctionString() + " " + right, true);
+                KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast.toString()), "DeMorgan");
+                if (!containsEntry(newAST)) knowledgeBase.add(newAST);
+                return true;
+            }
+            else if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.IMPLICATION) {
+                AST left = ast.getSubtree(0);
+                AST right = ast.getSubtree(1);
+                right.negate();
+
+                AST newAST = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getConjunctionString() + " " + right, true);
+                KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast.toString()), "DeMorgan");
+                if (!containsEntry(newAST)) knowledgeBase.add(newAST);
+                return true;
+            }
+        }
+
+        ErrorHelper.add("Cannot apply DeMorgan on " + ast + "!");
+        return false;
+    }
+
     private void printState() {
-        OutputDevice.writeNumberedToConsole(knowledgeBase, 1, kbName);
-        OutputDevice.writeNumberedToConsole(goals, 1, goalName);
+        OutputDevice.writeToConsole("State: " + stateIndex);
+        OutputDevice.writeNewLine();
+
+        if (!knowledgeBase.isEmpty()) OutputDevice.writeNumberedToConsole(knowledgeBase, 1, kbName);
+        if (!goals.isEmpty()) OutputDevice.writeNumberedToConsole(goals, 1, goalName);
+        if (!childStates.isEmpty()) OutputDevice.writeNumberedStateToConsole(childStates, 1, stateName);
     }
 
     private String getArgumentType(String argument) {
@@ -1003,6 +1197,14 @@ public class ManualPropositionalProof {
     private void addOutOfBoundsError(int index) {
         if (knowledgeBase.size() == 1) ErrorHelper.add("Knowledge Base has " + knowledgeBase.size() + " entry, index " + (index + 1) + " is out of bounds!");
         else ErrorHelper.add("Knowledge Base has " + knowledgeBase.size() + " entries, index " + (index + 1) + " is out of bounds!");
+    }
+
+    private void copyGoals(List<AST> newGoals, List<AST> oldGoals) {
+        newGoals.addAll(oldGoals);
+    }
+
+    private void copyKB(List<AST> newKB, List<AST> oldKB) {
+        newKB.addAll(oldKB);
     }
 
     private boolean containsEntry(AST entry) {

@@ -3,6 +3,7 @@ package me.dariansandru.controller;
 import me.dariansandru.domain.UniverseOfDiscourse;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.proof.manual_proof.ManualPropositionalProof;
+import me.dariansandru.domain.proof.manual_proof.ManualPropositionalProofStates;
 import me.dariansandru.domain.proof.proofs.PropositionalProof;
 import me.dariansandru.domain.signature.Signature;
 import me.dariansandru.domain.signature.SignatureFactory;
@@ -79,7 +80,8 @@ public class LogicController {
         ProofTextHelper.clear();
 
         // TODO Logic Controller should be general
-        ManualPropositionalProof proof = new ManualPropositionalProof(knowledgeBaseAST, goalsAST);
+        ManualPropositionalProof proof = new ManualPropositionalProof(knowledgeBaseAST, goalsAST, null, 1);
+        ManualPropositionalProofStates.addState(proof, 1);
         proof.prove();
     }
 }

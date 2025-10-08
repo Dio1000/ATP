@@ -1,6 +1,7 @@
 package me.dariansandru.io;
 
 import me.dariansandru.domain.data_structures.ast.AST;
+import me.dariansandru.domain.proof.manual_proof.ManualPropositionalProof;
 import me.dariansandru.io.exception.OutputException;
 import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 
@@ -56,6 +57,18 @@ public class OutputDevice {
         StringBuilder builder = new StringBuilder();
         for (AST string : list) {
             builder.append(prefix).append(startIndex).append(". ").append(KnowledgeBaseRegistry.getObtainedFrom(string.toString())).append("\n");
+            startIndex++;
+        }
+
+        System.out.println(builder);
+    }
+
+    public static void writeNumberedStateToConsole(List<ManualPropositionalProof> list,  int startIndex, String prefix) {
+        StringBuilder builder = new StringBuilder();
+        for (ManualPropositionalProof proof : list) {
+            builder.append(prefix).append(startIndex).append(". State: ").append(proof.getStateIndex());
+            String provenText = proof.isProven() ? " (Proven)" : " (Not Proven)";
+            builder.append(provenText).append("\n");
             startIndex++;
         }
 

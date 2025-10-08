@@ -59,7 +59,9 @@ public class Main {
 // -- BUGS --
 //TODO Look into why Disjunction assumption and conclusion prints twice.
 //TODO Inference rules should not add potential entries if they are already in the KB.
+//TODO Look into Disjunction Elimination Automated Inference Rule, it is not correct.
 
 // -- NEW FEATURES --
 //TODO Add Proof by Cases.
 //TODO Add user created commands.
+//TODO Create a new way to output proofs.
