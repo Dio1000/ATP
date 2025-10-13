@@ -9,6 +9,7 @@ public abstract class ManualPropositionalProofStates {
 
     private static final List<ManualPropositionalProof> states = new ArrayList<>();
     private static final BiMap stateIndexMap = new BiMap();
+    private static int currentStateIndex = 1;
 
     public static ManualPropositionalProof getState(int index) {
         return (ManualPropositionalProof) stateIndexMap.get(index);
@@ -18,5 +19,13 @@ public abstract class ManualPropositionalProofStates {
         stateIndexMap.put(state, index);
     }
 
+    public static int increaseStateIndex() {
+        currentStateIndex++;
+        return currentStateIndex;
+    }
+
+    public static int getCurrentStateIndex() {
+        return currentStateIndex;
+    }
 
 }

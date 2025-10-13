@@ -2,9 +2,8 @@ Universe:
 Propositions
 
 KB:
-!(A AND B)
-!(A OR B)
-!(A -> B)
+A -> B
+B -> C
 
 Goals:
-!S
+A -> C

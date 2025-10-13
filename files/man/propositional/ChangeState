@@ -1,0 +1,6 @@
+name: Change State
+commandName: chstate
+aliases: ChangeState, changest
+arity: 1
+description: Changes the current state that is being manipulated.
+inference:

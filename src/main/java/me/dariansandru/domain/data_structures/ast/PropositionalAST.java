@@ -164,10 +164,12 @@ public class PropositionalAST implements AST {
         Tokenizer tokenizer = new Tokenizer(new PropositionalSignature());
         List<Token> tokens = tokenizer.tokenize(formulaString);
         boolean invalid = false;
+        int position = 0;
 
+        int currentIndex = 0;
         try{
             for (Token token : tokens) {
-                int position = token.position();
+                position = token.position();
 
                 if (token.type() == Type.SEPARATOR) {
                     if ("(".equals(token.lexeme())) {
@@ -244,7 +246,10 @@ public class PropositionalAST implements AST {
                                 currentNode = (PropositionalASTNode) currentNode.getChildren().get(currentChildIndex);
                             }
                             else {
-                                WarningHelper.add("Suggested parentheses around operands of logical operator " + token.lexeme(), line, position);
+                                String newLexeme = tokens.get(currentIndex - 2).lexeme();
+                                int newPosition = tokens.get(currentIndex - 2).position();
+
+                                WarningHelper.add("Suggested parentheses around operands of logical operator " + newLexeme, line, newPosition);
                                 Predicate oldOp = (Predicate) currentNode.getKey();
 
                                 PropositionalASTNode newOpNode = new PropositionalASTNode(oldOp);
@@ -272,10 +277,12 @@ public class PropositionalAST implements AST {
                         ErrorHelper.add("Unsupported arity: " + arity + " for token " + token.lexeme(), line, position);
                     }
                 }
+                currentIndex++;
             }
 
             boolean valid = (currentNode.equals(root)) && !invalid;
             if (!valid) {
+                if (currentNode.getParent() != null)ErrorHelper.add("Expected closing parentheses ')' at this position!", line, position);
                 ErrorHelper.add(formulaString + " is not a well-formed formula!");
             }
 

@@ -23,7 +23,7 @@ import java.util.List;
 public class LogicController {
 
     private final Signature signature;
-    private final boolean valid;
+    private boolean valid;
 
     private List<AST> knowledgeBaseAST = new ArrayList<>();
     private List<AST> goalsAST = new ArrayList<>();
@@ -47,6 +47,7 @@ public class LogicController {
 
         if (WarningHelper.notEmpty()) WarningHelper.printAndReset();
         if (ErrorHelper.notEmpty()) {
+            valid = false;
             OutputDevice.writeToConsole("Could not validate syntax!");
             ErrorHelper.print();
             return;
