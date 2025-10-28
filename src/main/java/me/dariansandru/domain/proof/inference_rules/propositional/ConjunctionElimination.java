@@ -1,6 +1,6 @@
 package me.dariansandru.domain.proof.inference_rules.propositional;
 
-import me.dariansandru.domain.predicate.Predicate;
+import me.dariansandru.domain.language.predicate.Predicate;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
@@ -10,14 +10,13 @@ import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class ConjunctionElimination implements InferenceRule {
 
     private final List<AST> derived = new ArrayList<>();
 
     @Override
-    public String getName() {
+    public String name() {
         return "Conjunction Elimination";
     }
 
@@ -41,13 +40,13 @@ public class ConjunctionElimination implements InferenceRule {
             if (!hasLeft)
             {
                 derived.add(left);
-                KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + " by " + getName() + ", we derive " + left, List.of(ast.toString()));
+                KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + " by " + name() + ", we derive " + left, List.of(ast.toString()));
                 shouldInference = true;
             }
             if (!hasRight)
             {
                 derived.add(right);
-                KnowledgeBaseRegistry.addEntry(right.toString(), "From " + ast + " by " + getName() + ", we derive " + right, List.of(ast.toString()));
+                KnowledgeBaseRegistry.addEntry(right.toString(), "From " + ast + " by " + name() + ", we derive " + right, List.of(ast.toString()));
                 shouldInference = true;
             }
         }
@@ -88,7 +87,7 @@ public class ConjunctionElimination implements InferenceRule {
 
     @Override
     public String getText(SubGoal subGoal) {
-        return "From " + subGoal.getGoal() + " and " + subGoal.getFormula() + " by " + getName() + ", we can derive " + subGoal.getFormula();
+        return "From " + subGoal.getGoal() + " and " + subGoal.getFormula() + " by " + name() + ", we can derive " + subGoal.getFormula();
     }
 
     private boolean contains(List<AST> asts, AST other) {

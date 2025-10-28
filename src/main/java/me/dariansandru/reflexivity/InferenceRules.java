@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface InferenceRules {
     List<InferenceRule> get();
+    List<InferenceRule> getCustom(String path);
 }

@@ -9,7 +9,7 @@ import java.util.List;
 public class ImplicationElimination implements InferenceRule {
 
     @Override
-    public String getName() {
+    public String name() {
         return "";
     }
 

@@ -1,13 +1,12 @@
 package me.dariansandru.domain.proof.proof_states;
 
-import me.dariansandru.domain.LogicalOperator;
+import me.dariansandru.domain.language.LogicalOperator;
 import me.dariansandru.domain.proof.Strategy;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.proof.inference_rules.propositional.ContradictionRule;
 import me.dariansandru.domain.proof.inference_rules.propositional.DisjunctionElimination;
 import me.dariansandru.domain.proof.inference_rules.propositional.PropositionalInferenceRule;
-import me.dariansandru.reflexivity.PropositionalInferenceRules;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.utils.helper.ProofTextHelper;
@@ -20,8 +19,10 @@ import java.util.Objects;
 public class PropositionalProofState implements ProofState {
 
     private final List<AST> knowledgeBase;
+    private List<AST> expandedKnowledgeBase;
     private final List<String> knowledgeBaseStrings = new ArrayList<>();
     private final List<AST> goals;
+
     private final List<InferenceRule> inferenceRules;
 
     private final List<String> activeSubGoals = new ArrayList<>();
@@ -29,6 +30,7 @@ public class PropositionalProofState implements ProofState {
 
     boolean isVisited = false;
     boolean childrenInConjunction = false;
+
     boolean isProven = false;
     boolean expanded = false;
 
@@ -141,7 +143,7 @@ public class PropositionalProofState implements ProofState {
 
         for (InferenceRule rule : inferenceRules) {
             DisjunctionElimination disjunctionElimination = new DisjunctionElimination();
-            if (Objects.equals(rule.getName(), disjunctionElimination.getName())) {
+            if (Objects.equals(rule.name(), disjunctionElimination.name())) {
                 if (processSubGoals(parent, rule.getSubGoals(knowledgeBase, goals.getFirst()))) return;
             }
             if (processSubGoals(parent, rule.getSubGoals(knowledgeBase, goal))) return;
@@ -163,11 +165,7 @@ public class PropositionalProofState implements ProofState {
     }
 
     private void expandKnowledgeBase() {
-        PropositionalInferenceRules rules = new PropositionalInferenceRules();
-        List<InferenceRule> inferenceRules = rules.get();
-
-        PropositionalAST subGoal = new PropositionalAST(activeSubGoals.getLast());
-        subGoal.validate(0);
+        PropositionalAST subGoal = new PropositionalAST(activeSubGoals.getLast(), true);
 
         for (InferenceRule inferenceRule : inferenceRules) {
             List<AST> potentialEntries = inferenceRule.inference(knowledgeBase, subGoal);
@@ -250,6 +248,13 @@ public class PropositionalProofState implements ProofState {
             this.childrenInConjunction = true;
             return Strategy.CONJUNCTION_STRATEGY;
         }
+
+        for (AST ast : knowledgeBase) {
+            if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.DISJUNCTION) {
+                return Strategy.PROOF_BY_CASES;
+            }
+        }
+
         switch (PropositionalLogicHelper.getOutermostOperation(this.goals.getFirst())) {
             case IMPLICATION -> {
                 this.childrenInConjunction = true;

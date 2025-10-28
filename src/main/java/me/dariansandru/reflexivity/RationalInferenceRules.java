@@ -9,4 +9,9 @@ public class RationalInferenceRules implements InferenceRules{
     public List<InferenceRule> get() {
         return List.of();
     }
+
+    @Override
+    public List<InferenceRule> getCustom(String path) {
+        return List.of();
+    }
 }

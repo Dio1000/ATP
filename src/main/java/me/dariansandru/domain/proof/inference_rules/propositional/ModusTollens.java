@@ -1,6 +1,6 @@
 package me.dariansandru.domain.proof.inference_rules.propositional;
 
-import me.dariansandru.domain.LogicalOperator;
+import me.dariansandru.domain.language.LogicalOperator;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
@@ -16,7 +16,7 @@ public class ModusTollens implements InferenceRule {
     private final List<AST> derived = new ArrayList<>();
 
     @Override
-    public String getName() {
+    public String name() {
         return "Modus Tollens";
     }
 
@@ -42,8 +42,8 @@ public class ModusTollens implements InferenceRule {
 
                     KnowledgeBaseRegistry.addEntry(
                             negatedAntecedent.toString(),
-                            "From " + other + " and " + candidate + ", by " + getName() + ", we derive " + negatedAntecedent,
-                            List.of(candidate.toString())
+                            "From " + other + " and " + candidate + ", by " + name() + ", we derive " + negatedAntecedent,
+                            List.of(candidate.toString(), other.toString())
                     );
 
                     derived.add(negatedAntecedent);
@@ -82,7 +82,7 @@ public class ModusTollens implements InferenceRule {
 
                     KnowledgeBaseRegistry.addEntry(
                             negatedAntecedent.toString(),
-                            "From " + ast + " and " + consequent + ", by " + getName() + ", we derive " + negatedAntecedent,
+                            "From " + ast + " and " + negatedConsequent + ", by " + name() + ", we derive " + negatedAntecedent,
                             List.of(ast.toString())
                     );
 

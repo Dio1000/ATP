@@ -1,6 +1,6 @@
 package me.dariansandru.domain.proof.inference_rules.propositional;
 
-import me.dariansandru.domain.LogicalOperator;
+import me.dariansandru.domain.language.LogicalOperator;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
@@ -16,7 +16,7 @@ public class ModusPonens implements InferenceRule {
     private final List<AST> derived = new ArrayList<>();
 
     @Override
-    public String getName() {
+    public String name() {
         return "Modus Ponens";
     }
 
@@ -34,10 +34,15 @@ public class ModusPonens implements InferenceRule {
 
             for (AST other : asts) {
                 if (other != candidate && other.isEquivalentTo(antecedent)) {
-                    KnowledgeBaseRegistry.addEntry(conclusion.toString(), "From " + candidate + " and " + antecedent + ", by " + getName() + ", we derive " + conclusion, List.of(candidate.toString()));
+                    KnowledgeBaseRegistry.addEntry(conclusion.toString(), "From " + candidate + " and " + antecedent + ", by " + name() + ", we derive " + conclusion, List.of(candidate.toString()));
                     derived.add(conclusion);
                     break;
                 }
+            }
+
+            if (antecedent.isTautology()) {
+                KnowledgeBaseRegistry.addEntry(conclusion.toString(), "From " + candidate + " and " + antecedent + ", by " + name() + ", because the antecedent is a tautology, we derive " + conclusion, List.of(candidate.toString()));
+                derived.add(conclusion);
             }
         }
 
@@ -59,13 +64,19 @@ public class ModusPonens implements InferenceRule {
             if (!(ast instanceof PropositionalAST)) continue;
             if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.IMPLICATION) {
                 PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
+                PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
+
                 if (right.isEquivalentTo(asts[0])) {
                     PropositionalAST newGoal = (PropositionalAST) ast.getSubtree(0);
-                    // newGoal.validate(0);
                     SubGoal newSubGoal = new SubGoal(newGoal, PropositionalInferenceRule.MODUS_PONENS, ast);
 
-                    KnowledgeBaseRegistry.addEntry(right.toString(), "From " + newSubGoal.getGoal() + " and " + ast + ", by " + getName() + ", we derive " + right, List.of(ast.toString()));
+                    KnowledgeBaseRegistry.addEntry(right.toString(), "From " + newSubGoal.getGoal() + " and " + ast + ", by " + name() + ", we derive " + right, List.of(ast.toString()));
                     subGoals.add(newSubGoal);
+                }
+
+                if (left.isTautology()) {
+                    KnowledgeBaseRegistry.addEntry(right.toString(), "From " + left + " and " + right + ", by " + name() + ", because the antecedent is a tautology, we derive " + right, List.of(left.toString()));
+                    derived.add(right);
                 }
             }
         }

@@ -67,7 +67,10 @@ public class OutputDevice {
         StringBuilder builder = new StringBuilder();
         for (ManualPropositionalProof proof : list) {
             builder.append(prefix).append(startIndex).append(". State: ").append(proof.getStateIndex());
-            String provenText = proof.isProven() ? " (Proven)" : " (Not Proven)";
+            AST goal = proof.getGoal();
+            boolean isProven = proof.isProven();
+
+            String provenText = isProven ? " (Proven)" : " (" + goal.toString() + " - Not Proven)";
             builder.append(provenText).append("\n");
             startIndex++;
         }

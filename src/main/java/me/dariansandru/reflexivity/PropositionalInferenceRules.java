@@ -2,6 +2,7 @@ package me.dariansandru.reflexivity;
 
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.proof.inference_rules.propositional.*;
+import me.dariansandru.utils.loader.PropositionalLogicLoader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,5 +25,18 @@ public class PropositionalInferenceRules implements InferenceRules {
         rules.add(new DeMorgan());
 
         return rules;
+    }
+
+    @Override
+    public List<InferenceRule> getCustom(String path) {
+        PropositionalLogicLoader loader = new PropositionalLogicLoader();
+        List<String> lines = loader.getLines(path);
+
+        List<InferenceRule> inferenceRules = new ArrayList<>();
+        for (String line : lines) {
+            if (line.startsWith("rule")) inferenceRules.add(loader.loadCustomRule(lines, line));
+        }
+
+        return inferenceRules;
     }
 }

@@ -1,9 +1,12 @@
 Universe:
 Propositions
 
+Rules:
+Classical
+// files/customRules/customRules.atpf
+
 KB:
-A -> B
-B -> C
+A
 
 Goals:
-A -> C
+!!A

@@ -6,7 +6,7 @@ import me.dariansandru.domain.data_structures.ast.AST;
 import java.util.List;
 
 public interface InferenceRule {
-    String getName();
+    String name();
 
     boolean canInference(List<AST> kb, AST goal);
     List<AST> inference(List<AST> kb, AST goal);

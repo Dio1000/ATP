@@ -1,7 +1,6 @@
 package me.dariansandru.domain.proof.inference_rules.propositional;
 
-import me.dariansandru.domain.LogicalOperator;
-import me.dariansandru.domain.logical_operator.Disjunction;
+import me.dariansandru.domain.language.LogicalOperator;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
@@ -18,7 +17,7 @@ public class DisjunctionIntroduction implements InferenceRule {
     private final List<AST> derived = new ArrayList<>();
 
     @Override
-    public String getName() {
+    public String name() {
         return "Disjunction Introduction";
     }
 
@@ -26,18 +25,25 @@ public class DisjunctionIntroduction implements InferenceRule {
     public boolean canInference(List<AST> asts, AST goal) {
         boolean shouldInference = false;
 
-        for (AST ast : asts) {
-            if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.IMPLICATION) {
-                PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
-                PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
+        if (PropositionalLogicHelper.getOutermostOperation(goal) == LogicalOperator.DISJUNCTION) {
+            AST left = goal.getSubtree(0);
+            AST right = goal.getSubtree(1);
 
-                PropositionalAST negatedLeft = new PropositionalAST(left.toString(), true);
-                negatedLeft.negate();
-
-                PropositionalAST newAST = new PropositionalAST(negatedLeft + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + right, true);
-                KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + " by " + getName() + ", we derive " + newAST, List.of(ast.toString()));
-                derived.add(newAST);
-                shouldInference = true;
+            for (AST ast : asts) {
+                if (ast.isEquivalentTo(left)) {
+                    AST newAST = new PropositionalAST(ast + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + right, true);
+                    KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + ", by " + name() + ", we derive " + newAST, List.of(ast.toString()));
+                    derived.add(newAST);
+                    shouldInference = true;
+                    break;
+                }
+                else if (ast.isEquivalentTo(right)) {
+                    AST newAST = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + ast, true);
+                    KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + ", by " + name() + ", we derive " + newAST, List.of(ast.toString()));
+                    derived.add(newAST);
+                    shouldInference = true;
+                    break;
+                }
             }
         }
 

@@ -1,6 +1,6 @@
 package me.dariansandru.parser.command;
 
-import me.dariansandru.domain.signature.UniversalSignature;
+import me.dariansandru.domain.language.signature.UniversalSignature;
 import me.dariansandru.tokenizer.Token;
 import me.dariansandru.tokenizer.Tokenizer;
 import me.dariansandru.tokenizer.Type;

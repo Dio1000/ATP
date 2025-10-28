@@ -1,6 +1,6 @@
 package me.dariansandru.domain.proof.manual_proof.helper;
 
-import me.dariansandru.domain.LogicalOperator;
+import me.dariansandru.domain.language.LogicalOperator;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.proof.manual_proof.ManualPropositionalProof;
@@ -15,21 +15,23 @@ import java.util.List;
 
 public class ManualPropositionalStrategyHelper {
 
-    private static List<AST> knowledgeBase = new ArrayList<>();
-    private static List<AST> goals = new ArrayList<>();
+    private final List<AST> knowledgeBase;
+    private final List<AST> goals;
+    private final List<ManualPropositionalProof> stateGoals;
+    private final List<ManualPropositionalProof> childStates;
 
-    private static List<ManualPropositionalProof> stateGoals = new ArrayList<>();
-    private static List<ManualPropositionalProof> childStates = new ArrayList<>();
-
-    public static void loadData(List<ManualPropositionalProof> stateGoals, List<ManualPropositionalProof> childStates,
-                                List<AST> knowledgeBase, List<AST> goals) {
-        ManualPropositionalStrategyHelper.knowledgeBase = knowledgeBase;
-        ManualPropositionalStrategyHelper.goals = goals;
-        ManualPropositionalStrategyHelper.stateGoals = stateGoals;
-        ManualPropositionalStrategyHelper.childStates = childStates;
+    public ManualPropositionalStrategyHelper(
+            List<ManualPropositionalProof> stateGoals,
+            List<ManualPropositionalProof> childStates,
+            List<AST> knowledgeBase,
+            List<AST> goals) {
+        this.knowledgeBase = knowledgeBase;
+        this.goals = goals;
+        this.stateGoals = stateGoals;
+        this.childStates = childStates;
     }
 
-    public static boolean handleImplicationStrategy(int index) {
+    public boolean handleImplicationStrategy(int index) {
         AST ast = goals.get(index);
         if (PropositionalLogicHelper.getOutermostOperation(ast) != LogicalOperator.IMPLICATION) {
             ErrorHelper.add("Cannot apply command on " + ast +
@@ -49,7 +51,7 @@ public class ManualPropositionalStrategyHelper {
         return true;
     }
 
-    public static boolean handleEquivalenceStrategy(int index, ManualPropositionalProof proof){
+    public boolean handleEquivalenceStrategy(int index, ManualPropositionalProof proof) {
         AST ast = goals.get(index);
         if (PropositionalLogicHelper.getOutermostOperation(ast) != LogicalOperator.EQUIVALENCE) {
             ErrorHelper.add("Cannot apply command on " + ast +
@@ -70,7 +72,7 @@ public class ManualPropositionalStrategyHelper {
         return true;
     }
 
-    public static boolean handleConjunctionStrategy(int index, ManualPropositionalProof proof) {
+    public boolean handleConjunctionStrategy(int index, ManualPropositionalProof proof) {
         AST ast = goals.get(index);
         if (PropositionalLogicHelper.getOutermostOperation(ast) != LogicalOperator.CONJUNCTION) {
             ErrorHelper.add("Cannot apply command on " + ast +
@@ -89,11 +91,11 @@ public class ManualPropositionalStrategyHelper {
         return true;
     }
 
-    public static boolean handleDisjunctionStrategy(int index) {
+    public boolean handleDisjunctionStrategy(int index) {
         return false;
     }
 
-    public static boolean handleNegationStrategy(int index) {
+    public boolean handleNegationStrategy(int index) {
         AST ast = goals.get(index);
         ast.negate();
         AST contradictionAST = new PropositionalAST(true);
@@ -112,7 +114,29 @@ public class ManualPropositionalStrategyHelper {
         return true;
     }
 
-    public static boolean handleProofByCases(int index, ManualPropositionalProof proof) {
+    public boolean handleContrapositiveStrategy(int index) {
+        AST ast = goals.get(index);
+        if (PropositionalLogicHelper.getOutermostOperation(ast) != LogicalOperator.IMPLICATION) {
+            ErrorHelper.add("Cannot apply command on " + ast +
+                    ". Outermost logical operator is not '" + LogicalOperatorFlyweight.getImplicationString() + "'!");
+            return false;
+        }
+
+        AST antecedent = ast.getSubtree(0);
+        AST conclusion = ast.getSubtree(1);
+        antecedent.negate();
+        conclusion.negate();
+
+        if (!containsEntry(conclusion, knowledgeBase)) knowledgeBase.add(conclusion);
+        goals.remove(ast);
+        goals.add(antecedent);
+
+        KnowledgeBaseRegistry.addObtainedFrom(antecedent.toString(), List.of(ast.toString()), "Contrapositive Strategy");
+        KnowledgeBaseRegistry.addObtainedFrom(conclusion.toString(), List.of(ast.toString()), "Contrapositive Strategy");
+        return true;
+    }
+
+    public boolean handleProofByCases(int index, ManualPropositionalProof proof) {
         AST ast = knowledgeBase.get(index);
         knowledgeBase.remove(ast);
 
@@ -132,7 +156,7 @@ public class ManualPropositionalStrategyHelper {
         return false;
     }
 
-    public static void createNewState(AST newGoal, ManualPropositionalProof proof) {
+    public void createNewState(AST newGoal, ManualPropositionalProof proof) {
         int index = ManualPropositionalProofStates.increaseStateIndex();
         List<AST> newGoals = new ArrayList<>();
         List<AST> newKB = new ArrayList<>();
@@ -144,7 +168,7 @@ public class ManualPropositionalStrategyHelper {
         ManualPropositionalProofStates.addState(newState, index);
     }
 
-    private static void createNewStates(AST newAST1, AST newAST2, ManualPropositionalProof proof) {
+    private void createNewStates(AST newAST1, AST newAST2, ManualPropositionalProof proof) {
         int index1 = ManualPropositionalProofStates.increaseStateIndex();
         int index2 = ManualPropositionalProofStates.increaseStateIndex();
 
@@ -173,7 +197,7 @@ public class ManualPropositionalStrategyHelper {
         ManualPropositionalProofStates.addState(newState2, index2);
     }
 
-    private static void createNewKBStates(AST newAST1, AST newAST2, ManualPropositionalProof proof) {
+    private void createNewKBStates(AST newAST1, AST newAST2, ManualPropositionalProof proof) {
         int index1 = ManualPropositionalProofStates.increaseStateIndex();
         int index2 = ManualPropositionalProofStates.increaseStateIndex();
 
@@ -181,16 +205,16 @@ public class ManualPropositionalStrategyHelper {
         List<AST> newGoals1 = new ArrayList<>();
         copyGoals(newGoals1, goals);
         copyKB(newKB1, knowledgeBase);
-
         newKB1.add(newAST1);
+
         ManualPropositionalProof newState1 = new ManualPropositionalProof(newKB1, newGoals1, proof, index1);
 
         List<AST> newKB2 = new ArrayList<>();
-        copyKB(newKB2, knowledgeBase);
         List<AST> newGoals2 = new ArrayList<>();
         copyGoals(newGoals2, goals);
-
+        copyKB(newKB2, knowledgeBase);
         newKB2.add(newAST2);
+
         ManualPropositionalProof newState2 = new ManualPropositionalProof(newKB2, newGoals2, proof, index2);
 
         childStates.add(newState1);
@@ -203,21 +227,20 @@ public class ManualPropositionalStrategyHelper {
         ManualPropositionalProofStates.addState(newState2, index2);
     }
 
-    private static void copyGoals(List<AST> newGoals, List<AST> oldGoals) {
+    private void copyGoals(List<AST> newGoals, List<AST> oldGoals) {
         newGoals.addAll(oldGoals);
     }
 
-    private static void copyKB(List<AST> newKB, List<AST> oldKB) {
+    private void copyKB(List<AST> newKB, List<AST> oldKB) {
         for (AST ast : oldKB) {
             newKB.add(new PropositionalAST(ast.toString(), true));
         }
     }
 
-    private static boolean containsEntry(AST entry, List<AST> knowledgeBase) {
+    private boolean containsEntry(AST entry, List<AST> knowledgeBase) {
         for (AST ast : knowledgeBase) {
             if (ast.isEquivalentTo(entry)) return true;
         }
         return false;
     }
-
 }

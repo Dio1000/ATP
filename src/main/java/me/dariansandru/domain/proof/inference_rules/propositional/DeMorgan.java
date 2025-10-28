@@ -1,9 +1,8 @@
 package me.dariansandru.domain.proof.inference_rules.propositional;
 
-import me.dariansandru.domain.LogicalOperator;
+import me.dariansandru.domain.language.LogicalOperator;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
-import me.dariansandru.domain.logical_operator.Disjunction;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
@@ -18,7 +17,7 @@ public class DeMorgan implements InferenceRule {
     private final List<AST> derived = new ArrayList<>();
 
     @Override
-    public String getName() {
+    public String name() {
         return "DeMorgan";
     }
 
@@ -38,8 +37,8 @@ public class DeMorgan implements InferenceRule {
                     derived.add(left);
                     derived.add(right);
 
-                    KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + ", by applying " + getName() + ", we derive " + left, List.of(String.valueOf(ast)));
-                    KnowledgeBaseRegistry.addEntry(right.toString(), "From " + ast + ", by applying " + getName() + ", we derive " + right, List.of(String.valueOf(ast)));
+                    KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + ", by applying " + name() + ", we derive " + left, List.of(String.valueOf(ast)));
+                    KnowledgeBaseRegistry.addEntry(right.toString(), "From " + ast + ", by applying " + name() + ", we derive " + right, List.of(String.valueOf(ast)));
                     shouldInference = true;
                 }
                 else if (PropositionalLogicHelper.getOutermostOperation(childAST) == LogicalOperator.CONJUNCTION) {
@@ -50,7 +49,7 @@ public class DeMorgan implements InferenceRule {
 
                     PropositionalAST newAST = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + right, true);
                     derived.add(newAST);
-                    KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + ", by applying " + getName() + ", we derive " + newAST, List.of(ast.toString()));
+                    KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + ", by applying " + name() + ", we derive " + newAST, List.of(ast.toString()));
                     shouldInference = true;
                 }
             }

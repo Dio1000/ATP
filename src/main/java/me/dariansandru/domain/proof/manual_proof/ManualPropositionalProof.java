@@ -1,8 +1,7 @@
 package me.dariansandru.domain.proof.manual_proof;
 
-import me.dariansandru.domain.LogicalOperator;
+import me.dariansandru.domain.language.LogicalOperator;
 import me.dariansandru.domain.data_structures.ast.AST;
-import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.proof.manual_proof.helper.ManualPropositionalInferenceRuleHelper;
 import me.dariansandru.domain.proof.manual_proof.helper.ManualPropositionalStrategyHelper;
 import me.dariansandru.io.InputDevice;
@@ -33,14 +32,17 @@ public class ManualPropositionalProof {
     private final ManualPropositionalProof parent;
     private final int stateIndex;
 
+    private final ManualPropositionalStrategyHelper strategyHelper;
+    private final ManualPropositionalInferenceRuleHelper inferenceRuleHelper;
+
     public ManualPropositionalProof(List<AST> knowledgeBase, List<AST> goals, ManualPropositionalProof parent, int index) {
         this.knowledgeBase = knowledgeBase;
         this.goals = goals;
         this.parent = parent;
         this.stateIndex = index;
 
-        ManualPropositionalStrategyHelper.loadData(stateGoals, childStates, knowledgeBase, goals);
-        ManualPropositionalInferenceRuleHelper.loadData(knowledgeBase);
+        this.strategyHelper = new ManualPropositionalStrategyHelper(stateGoals, childStates, knowledgeBase, goals);
+        this.inferenceRuleHelper = new ManualPropositionalInferenceRuleHelper(knowledgeBase);
     }
 
     public ManualPropositionalProof getParent() {
@@ -60,7 +62,7 @@ public class ManualPropositionalProof {
     }
 
     public AST getGoal() {
-        return (!goals.isEmpty()) ? this.goals.getFirst() : new PropositionalAST("", true);
+        return (!goals.isEmpty()) ? this.goals.getFirst() : null;
     }
 
     private void addHypothesis() {
@@ -77,7 +79,7 @@ public class ManualPropositionalProof {
             addHypothesis();
             if (goals.size() != 1) {
                 for (AST goal : goals) {
-                    ManualPropositionalStrategyHelper.createNewState(goal, this);
+                    strategyHelper.createNewState(goal, this);
                 }
                 goals.clear();
             }
@@ -129,12 +131,12 @@ public class ManualPropositionalProof {
         int index = getArgumentIndex(argument);
 
         if (!type.equals(goalName)) {
-            ManualPropositionalInferenceRuleHelper.addGoalError(command);
+             inferenceRuleHelper.addGoalError(command);
             return -1;
         }
 
         if (index >= goals.size()) {
-            ManualPropositionalInferenceRuleHelper.addOutOfBoundsError(index);
+             inferenceRuleHelper.addOutOfBoundsError(index);
             return -1;
         }
 
@@ -151,18 +153,49 @@ public class ManualPropositionalProof {
             int index = getArgumentIndex(argument);
 
             if (!type.equals(kbName)) {
-                ManualPropositionalInferenceRuleHelper.addKBError(command);
+                 inferenceRuleHelper.addKBError(command);
                 return new ArrayList<>();
             }
 
             if (index > knowledgeBase.size()) {
-                ManualPropositionalInferenceRuleHelper.addOutOfBoundsError(index);
+                 inferenceRuleHelper.addOutOfBoundsError(index);
                 return new ArrayList<>();
             }
             indices.add(index);
         }
 
         return indices;
+    }
+
+    private String getArgumentType(String argument) {
+        StringBuilder type = new StringBuilder();
+
+        int idx = 0;
+        while (idx < argument.length()) {
+            if ('0' < argument.charAt(idx) && argument.charAt(idx) < '9') {
+                break;
+            }
+            else type.append(argument.charAt(idx));
+            idx++;
+        }
+
+        return type.toString();
+    }
+
+    private int getArgumentIndex(String argument) {
+        StringBuilder index = new StringBuilder();
+
+        int idx = 0;
+        while (idx < argument.length()) {
+            if ('A' < argument.charAt(idx) && argument.charAt(idx) < 'z') {
+                idx++;
+                continue;
+            }
+            else index.append(argument.charAt(idx));
+            idx++;
+        }
+
+        return Integer.parseInt(index.toString()) - 1;
     }
 
     private boolean handlePropositionalLogicCommand(String commandString, Command command) {
@@ -173,133 +206,139 @@ public class ManualPropositionalProof {
                 int index = getIndexOfStrategy(command);
                 if (index == -1) return false;
 
-                return ManualPropositionalStrategyHelper.handleImplicationStrategy(index);
+                return strategyHelper.handleImplicationStrategy(index);
             }
             case EQUIVALENCE_STRATEGY -> {
                 int index = getIndexOfStrategy(command);
                 if (index == -1) return false;
 
-                return ManualPropositionalStrategyHelper.handleEquivalenceStrategy(index, this);
+                return strategyHelper.handleEquivalenceStrategy(index, this);
             }
             case CONJUNCTION_STRATEGY -> {
                 int index = getIndexOfStrategy(command);
                 if (index == -1) return false;
 
-                return ManualPropositionalStrategyHelper.handleConjunctionStrategy(index, this);
+                return strategyHelper.handleConjunctionStrategy(index, this);
             }
             case DISJUNCTION_STRATEGY -> {
                 int index = getIndexOfStrategy(command);
                 if (index == -1) return false;
 
-                return ManualPropositionalStrategyHelper.handleDisjunctionStrategy(index);
+                return strategyHelper.handleDisjunctionStrategy(index);
             }
             case NEGATION_STRATEGY -> {
                 int index = getIndexOfStrategy(command);
                 if (index == -1) return false;
 
-                return ManualPropositionalStrategyHelper.handleNegationStrategy(index);
+                return strategyHelper.handleNegationStrategy(index);
+            }
+            case CONTRAPOSITIVE_STRATEGY -> {
+                int index = getIndexOfStrategy(command);
+                if (index == -1) return false;
+
+                return strategyHelper.handleContrapositiveStrategy(index);
             }
             case PROOF_BY_CASES -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalStrategyHelper.handleProofByCases(indices.getFirst(), this);
+                return strategyHelper.handleProofByCases(indices.getFirst(), this);
             }
             case MODUS_PONENS -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleModusPonens(indices.getFirst(), indices.get(1));
+                return  inferenceRuleHelper.handleModusPonens(indices.getFirst(), indices.get(1));
             }
             case MODUS_TOLLENS -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleModusTollens(indices.getFirst(), indices.get(1));
+                return  inferenceRuleHelper.handleModusTollens(indices.getFirst(), indices.get(1));
             }
             case HYPOTHETICAL_SYLLOGISM -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleHypotheticalSyllogism(indices.getFirst(), indices.get(1));
+                return  inferenceRuleHelper.handleHypotheticalSyllogism(indices.getFirst(), indices.get(1));
             }
             case DISJUNCTIVE_SYLLOGISM -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleDisjunctiveSyllogism(indices.getFirst(), indices.get(1));
+                return  inferenceRuleHelper.handleDisjunctiveSyllogism(indices.getFirst(), indices.get(1));
             }
             case CONSTRUCTIVE_DILEMMA -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleConstructiveDilemma(indices.getFirst(), indices.get(1), indices.get(2));
+                return  inferenceRuleHelper.handleConstructiveDilemma(indices.getFirst(), indices.get(1), indices.get(2));
             }
             case DESTRUCTIVE_DILEMMA -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleDestructiveDilemma(indices.getFirst(), indices.get(1), indices.get(2));
+                return  inferenceRuleHelper.handleDestructiveDilemma(indices.getFirst(), indices.get(1), indices.get(2));
             }
             case ABSORPTION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleAbsorption(indices.getFirst());
+                return  inferenceRuleHelper.handleAbsorption(indices.getFirst());
             }
             case TRANSPOSITION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleTransposition(indices.getFirst());
+                return  inferenceRuleHelper.handleTransposition(indices.getFirst());
             }
             case MATERIAL_EQUIVALENCE -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleMaterialEquivalence(indices.getFirst());
+                return  inferenceRuleHelper.handleMaterialEquivalence(indices.getFirst());
             }
             case MATERIAL_IMPLICATION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleMaterialImplication(indices.getFirst());
+                return  inferenceRuleHelper.handleMaterialImplication(indices.getFirst());
             }
             case IMPLICATION_INTRODUCTION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleImplicationIntroduction(indices.getFirst(), indices.get(1));
+                return  inferenceRuleHelper.handleImplicationIntroduction(indices.getFirst(), indices.get(1));
             }
             case IMPLICATION_ELIMINATION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleImplicationSimplification(indices.getFirst());
+                return  inferenceRuleHelper.handleImplicationSimplification(indices.getFirst());
             }
             case EQUIVALENCE_INTRODUCTION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleEquivalenceIntroduction(indices.getFirst(), indices.get(1));
+                return  inferenceRuleHelper.handleEquivalenceIntroduction(indices.getFirst(), indices.get(1));
             }
             case EQUIVALENCE_SIMPLIFICATION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleEquivalenceSimplification(indices.getFirst());
+                return  inferenceRuleHelper.handleEquivalenceSimplification(indices.getFirst());
             }
             case CONJUNCTION_INTRODUCTION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleConjunctionIntroduction(indices.getFirst(), indices.get(1));
+                return  inferenceRuleHelper.handleConjunctionIntroduction(indices);
             }
             case CONJUNCTION_ELIMINATION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleConjunctionElimination(indices.getFirst());
+                return  inferenceRuleHelper.handleConjunctionElimination(indices.getFirst());
             }
             case DISJUNCTION_INTRODUCTION -> {
                 List<Integer> indices = getIndexOfArityN(command);
@@ -311,19 +350,19 @@ public class ManualPropositionalProof {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleDisjunctionElimination(indices.getFirst(), indices.get(1));
+                return  inferenceRuleHelper.handleDisjunctionElimination(indices.getFirst(), indices.get(1));
             }
             case DISJUNCTION_SIMPLIFICATION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleDisjunctionSimplification(indices.getFirst());
+                return  inferenceRuleHelper.handleDisjunctionSimplification(indices.getFirst());
             }
             case DEMORGAN -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return ManualPropositionalInferenceRuleHelper.handleDeMorgan(indices.getFirst());
+                return  inferenceRuleHelper.handleDeMorgan(indices.getFirst());
             }
             case CONTRADICTION -> {
                 List<Integer> indices = new ArrayList<>();
@@ -336,7 +375,7 @@ public class ManualPropositionalProof {
                     int index = getArgumentIndex(currentArgument);
 
                     if (!type.equals(kbName)) {
-                        ManualPropositionalInferenceRuleHelper.addKBError(command);
+                         inferenceRuleHelper.addKBError(command);
                     }
 
                     indices.add(index);
@@ -386,7 +425,7 @@ public class ManualPropositionalProof {
 
     private boolean handleChangeState(int index) {
         if (index > ManualPropositionalProofStates.getCurrentStateIndex()) {
-            ManualPropositionalInferenceRuleHelper.addStateError(index);
+             inferenceRuleHelper.addStateError(index);
             return false;
         }
         ManualPropositionalProofStates.getState(index).prove();
@@ -430,37 +469,6 @@ public class ManualPropositionalProof {
         if (!knowledgeBase.isEmpty()) OutputDevice.writeNumberedToConsole(knowledgeBase, 1, kbName);
         if (!goals.isEmpty()) OutputDevice.writeNumberedToConsole(goals, 1, goalName);
         if (!childStates.isEmpty()) OutputDevice.writeNumberedStateToConsole(childStates, 1, stateName);
-    }
-
-    private String getArgumentType(String argument) {
-        StringBuilder type = new StringBuilder();
-
-        int idx = 0;
-        while (idx < argument.length()) {
-            if ('0' < argument.charAt(idx) && argument.charAt(idx) < '9') {
-                break;
-            }
-            else type.append(argument.charAt(idx));
-            idx++;
-        }
-
-        return type.toString();
-    }
-
-    private int getArgumentIndex(String argument) {
-        StringBuilder index = new StringBuilder();
-
-        int idx = 0;
-        while (idx < argument.length()) {
-            if ('A' < argument.charAt(idx) && argument.charAt(idx) < 'z') {
-                idx++;
-                continue;
-            }
-            else index.append(argument.charAt(idx));
-            idx++;
-        }
-
-        return Integer.parseInt(index.toString()) - 1;
     }
 
 }

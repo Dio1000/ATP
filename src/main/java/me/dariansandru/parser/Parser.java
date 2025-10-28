@@ -1,19 +1,25 @@
 package me.dariansandru.parser;
 
-import me.dariansandru.domain.UniverseOfDiscourse;
+import me.dariansandru.domain.language.UniverseOfDiscourse;
 import me.dariansandru.utils.helper.ErrorHelper;
 import me.dariansandru.utils.helper.WarningHelper;
 
+import java.io.File;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Parser {
+
+    private static final String formatExtension = ".atpf";
 
     public static boolean parseValidInput(List<String> lines) {
         int index = 0;
         boolean universeFlag = false;
         boolean kbFlag = false;
         boolean goalsFlag = false;
+        boolean usesFlag = false;
 
         for (String line : lines) {
             switch (line) {
@@ -33,6 +39,11 @@ public abstract class Parser {
                         ErrorHelper.add("No goals were provided!");
                     goalsFlag = true;
                 }
+                case "Rules:" -> {
+                    if (index + 1 > lines.size() || !checkRules(lines.get(index + 1)))
+                        ErrorHelper.add("Custom Rule path is invalid!");
+                    usesFlag = true;
+                }
             }
             index++;
         }
@@ -41,7 +52,7 @@ public abstract class Parser {
         if (!kbFlag) ErrorHelper.add("Knowledge Base not provided!");
         if (!goalsFlag) ErrorHelper.add("Goals not provided!");
 
-        return universeFlag && kbFlag && goalsFlag;
+        return universeFlag && kbFlag && goalsFlag && usesFlag;
     }
 
     public static List<String> getKBLines(List<String> lines) {
@@ -99,5 +110,46 @@ public abstract class Parser {
 
         return UniverseOfDiscourse.UNKNOWN;
     }
+
+    private static boolean checkRules(String rulePath) {
+        if (rulePath.equals("Classical")) return true;
+        if (!rulePath.endsWith(formatExtension)) {
+            ErrorHelper.add("Custom rules file must have a " + formatExtension + " extension!");
+            return false;
+        }
+
+        if (!isValidPath(rulePath)) {
+            ErrorHelper.add("Custom rules file " + rulePath + " is not a valid path!");
+            return false;
+        }
+
+        File file = new File(rulePath);
+        if (!file.exists()) {
+            ErrorHelper.add("Custom rules file '" + rulePath + "' does not exist!");
+        }
+
+        return true;
+    }
+
+    public static boolean isValidPath(String path) {
+        try {
+            Paths.get(path);
+        } catch (InvalidPathException | NullPointerException ex) {
+            return false;
+        }
+        return true;
+    }
+
+    public static String getPackageName(List<String> lines) {
+        int index = 0;
+        while (index < lines.size()) {
+            if (lines.get(index).equals("Rules:")) {
+                return lines.get(index + 1);
+            }
+            index++;
+        }
+        return "None";
+    }
+
 
 }

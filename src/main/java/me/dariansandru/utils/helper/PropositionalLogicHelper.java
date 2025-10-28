@@ -1,8 +1,8 @@
 package me.dariansandru.utils.helper;
 
-import me.dariansandru.domain.LogicalOperator;
-import me.dariansandru.domain.logical_operator.*;
-import me.dariansandru.domain.predicate.Predicate;
+import me.dariansandru.domain.language.LogicalOperator;
+import me.dariansandru.domain.language.logical_operator.*;
+import me.dariansandru.domain.language.predicate.Predicate;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.ASTNode;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;

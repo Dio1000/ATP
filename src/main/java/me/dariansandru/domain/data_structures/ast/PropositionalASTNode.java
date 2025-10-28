@@ -1,6 +1,6 @@
 package me.dariansandru.domain.data_structures.ast;
 
-import me.dariansandru.domain.predicate.Predicate;
+import me.dariansandru.domain.language.predicate.Predicate;
 import me.dariansandru.domain.data_structures.ast.exception.ASTNodeException;
 
 import java.util.ArrayList;

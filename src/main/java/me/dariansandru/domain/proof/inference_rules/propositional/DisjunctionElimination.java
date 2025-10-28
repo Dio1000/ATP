@@ -1,7 +1,6 @@
 package me.dariansandru.domain.proof.inference_rules.propositional;
 
-import me.dariansandru.domain.LogicalOperator;
-import me.dariansandru.domain.logical_operator.Implication;
+import me.dariansandru.domain.language.LogicalOperator;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
@@ -18,7 +17,7 @@ public class DisjunctionElimination implements InferenceRule {
     private final List<AST> derived = new ArrayList<>();
 
     @Override
-    public String getName() {
+    public String name() {
         return "Disjunction Elimination";
     }
 
@@ -32,7 +31,7 @@ public class DisjunctionElimination implements InferenceRule {
                 PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
 
                 if (left.isEquivalentTo(right) || right.isEquivalentTo(left)) {
-                    KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + " by " + getName() + ", we derive " + left, List.of(ast.toString()));
+                    KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + " by " + name() + ", we derive " + left, List.of(ast.toString()));
                 }
                 derived.add(left);
                 shouldDerive = true;

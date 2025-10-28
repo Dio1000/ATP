@@ -1,6 +1,6 @@
 package me.dariansandru.utils.flyweight;
 
-import me.dariansandru.domain.logical_operator.*;
+import me.dariansandru.domain.language.logical_operator.*;
 
 public abstract class LogicalOperatorFlyweight {
 

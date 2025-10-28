@@ -1,9 +1,9 @@
 package me.dariansandru.tokenizer;
 
-import me.dariansandru.domain.function.Function;
-import me.dariansandru.domain.predicate.Predicate;
-import me.dariansandru.domain.signature.PropositionalSignature;
-import me.dariansandru.domain.signature.Signature;
+import me.dariansandru.domain.language.function.Function;
+import me.dariansandru.domain.language.predicate.Predicate;
+import me.dariansandru.domain.language.signature.PropositionalSignature;
+import me.dariansandru.domain.language.signature.Signature;
 import me.dariansandru.parser.command.Command;
 import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
 import me.dariansandru.utils.helper.ErrorHelper;
@@ -38,6 +38,10 @@ public class Tokenizer {
         for (Command command : Command.getAllCommands()) {
             matchableList.add(new Matchable(command.toString(), Type.COMMAND));
         }
+        matchableList.sort((a, b) -> Integer.compare(
+                b.lexeme.length(),
+                a.lexeme.length()
+        ));
 
         matchableList.add(new Matchable("(", Type.SEPARATOR));
         matchableList.add(new Matchable(")", Type.SEPARATOR));

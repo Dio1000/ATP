@@ -249,30 +249,43 @@ public class GUIController extends JFrame {
         }
         outputArea.setText("Processing proof...");
 
-        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-            @Override
-            protected Void doInBackground() throws Exception {
-                LogicController logicController = new LogicController("files/input.txt");
-                logicController.automatedRun();
-                return null;
-            }
+        LogicController logicController = new LogicController("files/input.txt");
+        logicController.automatedRun();
 
-            @Override
-            protected void done() {
-                try {
-                    get();
-                    String proof = ProofTextHelper.getProofString();
-                    outputArea.setText(proof);
-                    outputArea.setCaretPosition(0);
-                }
-                catch (Exception ex) {
-                    ex.printStackTrace();
-                    outputArea.setText("Error during proof execution: " + ex.getMessage());
-                }
-            }
-        };
+        try {
+            String proof = ProofTextHelper.getProofString();
+            outputArea.setText(proof);
+            outputArea.setCaretPosition(0);
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+            outputArea.setText("Error during proof execution: " + ex.getMessage());
+        }
 
-        worker.execute();
+//        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+//            @Override
+//            protected Void doInBackground() throws Exception {
+//                LogicController logicController = new LogicController("files/input.txt");
+//                logicController.automatedRun();
+//                return null;
+//            }
+//
+//            @Override
+//            protected void done() {
+//                try {
+//                    get();
+//                    String proof = ProofTextHelper.getProofString();
+//                    outputArea.setText(proof);
+//                    outputArea.setCaretPosition(0);
+//                }
+//                catch (Exception ex) {
+//                    ex.printStackTrace();
+//                    outputArea.setText("Error during proof execution: " + ex.getMessage());
+//                }
+//            }
+//        };
+
+       //worker.execute();
     }
 
     public static void main(String[] args) {

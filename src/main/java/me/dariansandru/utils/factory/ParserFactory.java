@@ -1,7 +1,7 @@
 package me.dariansandru.utils.factory;
 
-import me.dariansandru.domain.UniverseOfDiscourse;
-import me.dariansandru.domain.signature.*;
+import me.dariansandru.domain.language.UniverseOfDiscourse;
+import me.dariansandru.domain.language.signature.Signature;
 import me.dariansandru.parser.parsers.*;
 
 public class ParserFactory {

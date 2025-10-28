@@ -16,6 +16,7 @@ public enum Command {
     CONJUNCTION_STRATEGY("constr", 1, true),
     DISJUNCTION_STRATEGY("disstr", 1, true),
     NEGATION_STRATEGY("negstr", 1, true),
+    CONTRAPOSITIVE_STRATEGY("contrapos", 1, true),
 
     // Rules of Inference
     ABSORPTION("absor", 1, true),

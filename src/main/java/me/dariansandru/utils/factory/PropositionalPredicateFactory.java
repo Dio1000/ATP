@@ -1,8 +1,8 @@
 package me.dariansandru.utils.factory;
 
-import me.dariansandru.domain.logical_operator.*;
-import me.dariansandru.domain.predicate.Predicate;
-import me.dariansandru.domain.predicate.PropositionalAtom;
+import me.dariansandru.domain.language.logical_operator.*;
+import me.dariansandru.domain.language.predicate.Predicate;
+import me.dariansandru.domain.language.predicate.PropositionalAtom;
 import me.dariansandru.tokenizer.Token;
 import me.dariansandru.tokenizer.Type;
 

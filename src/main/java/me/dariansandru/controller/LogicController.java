@@ -1,12 +1,12 @@
 package me.dariansandru.controller;
 
-import me.dariansandru.domain.UniverseOfDiscourse;
+import me.dariansandru.domain.language.UniverseOfDiscourse;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.proof.manual_proof.ManualPropositionalProof;
 import me.dariansandru.domain.proof.manual_proof.ManualPropositionalProofStates;
-import me.dariansandru.domain.proof.proofs.PropositionalProof;
-import me.dariansandru.domain.signature.Signature;
-import me.dariansandru.domain.signature.SignatureFactory;
+import me.dariansandru.domain.proof.automated_proof.PropositionalProof;
+import me.dariansandru.domain.language.signature.Signature;
+import me.dariansandru.domain.language.signature.SignatureFactory;
 import me.dariansandru.io.InputDevice;
 import me.dariansandru.io.OutputDevice;
 import me.dariansandru.parser.Parser;
@@ -16,6 +16,7 @@ import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.utils.helper.ErrorHelper;
 import me.dariansandru.utils.helper.ProofTextHelper;
 import me.dariansandru.utils.helper.WarningHelper;
+import me.dariansandru.utils.loader.LoaderPackageHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,9 +34,11 @@ public class LogicController {
         valid = Parser.parseValidInput(lines);
         if (!valid) {
             this.signature = null;
+            WarningHelper.printAndReset();
+            ErrorHelper.printAndReset();
             return;
         }
-
+        
         UniverseOfDiscourse universeOfDiscourse = Parser.getUniverseOfDiscourse(lines);
         this.signature = SignatureFactory.createSignature(universeOfDiscourse);
         FormulaParser parser = ParserFactory.createParser(signature);
@@ -44,6 +47,9 @@ public class LogicController {
         List<String> goals = Parser.getGoalsLines(lines);
         knowledgeBaseAST = parser.parseAndGetASTs(knowledgeBase);
         goalsAST = parser.parseAndGetASTs(goals);
+
+        String packageName = Parser.getPackageName(lines);
+        LoaderPackageHelper.setPackageName(packageName);
 
         if (WarningHelper.notEmpty()) WarningHelper.printAndReset();
         if (ErrorHelper.notEmpty()) {

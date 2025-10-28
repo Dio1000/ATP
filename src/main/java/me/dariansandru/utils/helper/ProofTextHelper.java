@@ -279,6 +279,10 @@ public abstract class ProofTextHelper {
         return builder.toString();
     }
 
+    public static String getProofByCasesAssumption(String goal, String disjunction) {
+        return "To prove " + goal + ", having the disjunction " + disjunction + ", we will use Proof By Cases";
+    }
+
     public static String getNegationAssumption(AST assumption) {
         AST negatedAssumption = new PropositionalAST(assumption.toString());
         negatedAssumption.validate(0);

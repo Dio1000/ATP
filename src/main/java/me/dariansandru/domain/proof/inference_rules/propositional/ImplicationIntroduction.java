@@ -1,7 +1,6 @@
 package me.dariansandru.domain.proof.inference_rules.propositional;
 
-import me.dariansandru.domain.LogicalOperator;
-import me.dariansandru.domain.logical_operator.Implication;
+import me.dariansandru.domain.language.LogicalOperator;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
@@ -18,7 +17,7 @@ public class ImplicationIntroduction implements InferenceRule {
     private final List<AST> derived = new ArrayList<>();
 
     @Override
-    public String getName() {
+    public String name() {
         return "Implication Introduction";
     }
 
@@ -38,8 +37,8 @@ public class ImplicationIntroduction implements InferenceRule {
                     derived.add(newAST1);
                     derived.add(newAST2);
 
-                    KnowledgeBaseRegistry.addEntry(newAST1.toString(), "From " + ast + " by " + getName() + ", we derive " + newAST1, List.of(ast.toString()));
-                    KnowledgeBaseRegistry.addEntry(newAST2.toString(), "From " + ast + " by " + getName() + ", we derive " + newAST2, List.of(ast.toString()));
+                    KnowledgeBaseRegistry.addEntry(newAST1.toString(), "From " + ast + " by " + name() + ", we derive " + newAST1, List.of(ast.toString()));
+                    KnowledgeBaseRegistry.addEntry(newAST2.toString(), "From " + ast + " by " + name() + ", we derive " + newAST2, List.of(ast.toString()));
                     shouldInference = true;
                 }
             }

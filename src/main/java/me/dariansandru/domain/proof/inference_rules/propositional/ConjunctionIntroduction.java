@@ -16,7 +16,7 @@ public class ConjunctionIntroduction implements InferenceRule {
     private final List<AST> derived = new ArrayList<>();
 
     @Override
-    public String getName() {
+    public String name() {
         return "Conjunction Introduction";
     }
 
@@ -39,7 +39,7 @@ public class ConjunctionIntroduction implements InferenceRule {
                         }
 
                         if (duplicate) continue;
-                        KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + " and " + ast1 + " by " + getName() + ", we derive " + newAST, List.of(ast.toString(), ast1.toString()));
+                        KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + " and " + ast1 + " by " + name() + ", we derive " + newAST, List.of(ast.toString(), ast1.toString()));
                         derived.add(newAST);
                         shouldInference = true;
                     }

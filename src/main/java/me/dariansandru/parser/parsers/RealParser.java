@@ -1,6 +1,6 @@
 package me.dariansandru.parser.parsers;
 
-import me.dariansandru.domain.signature.Signature;
+import me.dariansandru.domain.language.signature.Signature;
 import me.dariansandru.domain.data_structures.ast.AST;
 
 import java.util.List;
