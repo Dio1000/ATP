@@ -71,7 +71,7 @@ public class ContradictionRule implements InferenceRule {
     }
     
     public List<SubGoal> conjunctionContradiction(List<AST> knowledgeBase) {
-        Set<AST> atoms = new HashSet<>();
+        Set<String> atoms = new HashSet<>();
         List<SubGoal> subGoals = new ArrayList<>();
         for (AST ast : knowledgeBase) {
             atoms.addAll(PropositionalLogicHelper.getAtoms(ast));
@@ -84,8 +84,8 @@ public class ContradictionRule implements InferenceRule {
             subGoals.add(subGoal);
         }
 
-        for (AST atom : atoms) {
-            AST negatedAtom = new PropositionalAST(atom.toString(), true);
+        for (String atom : atoms) {
+            AST negatedAtom = new PropositionalAST(atom, true);
             negatedAtom.negate();
 
             PropositionalAST newSubGoal = new PropositionalAST(atom + " " + LogicalOperatorFlyweight.getConjunctionString() + " " + negatedAtom, true);

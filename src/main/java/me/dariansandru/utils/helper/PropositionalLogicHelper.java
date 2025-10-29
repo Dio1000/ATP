@@ -34,21 +34,20 @@ public abstract class PropositionalLogicHelper {
         else return LogicalOperator.NOT_A_LOGICAL_OPERATOR;
     }
 
-    public static Set<AST> getAtoms(AST ast) {
-        Set<AST> atoms = new HashSet<>();
+    public static Set<String> getAtoms(AST ast) {
+        Set<String> atoms = new HashSet<>();
         collectAtoms((PropositionalASTNode) ast.getRoot(), atoms);
         return atoms;
     }
 
-    private static void collectAtoms(PropositionalASTNode node, Set<AST> atoms) {
+    private static void collectAtoms(PropositionalASTNode node, Set<String> atoms) {
         if (node == null || node.getKey() == null) return;
 
         Predicate predicate = (Predicate) node.getKey();
 
         if (predicate.getArity() == 0) {
-            AST ast = new PropositionalAST(predicate.getRepresentation());
-            ast.validate(0);
-            atoms.add(ast);
+            AST ast = new PropositionalAST(predicate.getRepresentation(), true);
+            atoms.add(ast.toString());
         }
 
         for (ASTNode child : node.getChildren()) {

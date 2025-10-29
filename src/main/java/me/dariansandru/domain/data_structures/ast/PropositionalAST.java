@@ -1,5 +1,6 @@
 package me.dariansandru.domain.data_structures.ast;
 
+import me.dariansandru.domain.data_structures.bdd.PropositionalBDDBuilder;
 import me.dariansandru.domain.language.LogicalOperator;
 import me.dariansandru.domain.language.interpretation.Interpretation;
 import me.dariansandru.domain.language.interpretation.PropositionalInterpretation;
@@ -30,6 +31,8 @@ public class PropositionalAST implements AST {
     private final boolean isContradiction;
     private boolean isTautology;
 
+    private final PropositionalBDDBuilder builder;
+
     public PropositionalAST(String formulaString) {
         this.formulaString = formulaString;
         this.root = new PropositionalASTNode(null);
@@ -42,6 +45,8 @@ public class PropositionalAST implements AST {
 
         this.checkContradiction();
         this.checkTautology();
+
+        builder = new PropositionalBDDBuilder(this);
     }
 
     public PropositionalAST(String formulaString, boolean shouldValidate) {
@@ -58,6 +63,8 @@ public class PropositionalAST implements AST {
 
         this.checkContradiction();
         this.checkTautology();
+
+        builder = new PropositionalBDDBuilder(this);
     }
 
     public PropositionalAST(PropositionalASTNode node) {
@@ -85,6 +92,8 @@ public class PropositionalAST implements AST {
 
         this.checkContradiction();
         this.checkTautology();
+
+        builder = new PropositionalBDDBuilder(this);
     }
 
     public PropositionalAST(boolean isContradiction) {
@@ -92,6 +101,7 @@ public class PropositionalAST implements AST {
         this.root = null;
         this.isContradiction = isContradiction;
         this.isTautology = !isContradiction;
+        builder = new PropositionalBDDBuilder(this);
     }
 
     @Override
@@ -542,6 +552,14 @@ public class PropositionalAST implements AST {
 
             else return new PropositionalAST(atomString, true);
         }
+    }
+
+    public void buildBDD() {
+        builder.buildBDD();
+    }
+
+    public PropositionalBDDBuilder getBuilder() {
+        return builder;
     }
 
     private PropositionalAST formString(PropositionalAST argument1, PropositionalAST argument2, String symbol) {

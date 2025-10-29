@@ -4,6 +4,7 @@ import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class PropositionalBDDNode {
 
@@ -106,4 +107,23 @@ public class PropositionalBDDNode {
 
         return truthValues;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        PropositionalBDDNode other = (PropositionalBDDNode) obj;
+
+        if (this.isLeaf != other.isLeaf) return false;
+        if (!Objects.equals(this.value.toString(), other.value.toString())) return false;
+
+        return Objects.equals(this.left, other.left)
+                && Objects.equals(this.right, other.right);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(isLeaf, value, left, right);
+    }
+
 }

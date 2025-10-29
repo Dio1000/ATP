@@ -3,8 +3,6 @@ package me.dariansandru;
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.util.SystemInfo;
 import me.dariansandru.controller.LogicController;
-import me.dariansandru.domain.data_structures.ast.PropositionalAST;
-import me.dariansandru.domain.data_structures.bdd.PropositionalBDDBuilder;
 import me.dariansandru.gui.GUIController;
 
 import javax.swing.*;

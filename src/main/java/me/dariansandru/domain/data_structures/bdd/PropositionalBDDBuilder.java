@@ -1,6 +1,5 @@
 package me.dariansandru.domain.data_structures.bdd;
 
-import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.language.interpretation.PropositionalPartialInterpretation;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
@@ -11,7 +10,7 @@ public class PropositionalBDDBuilder {
 
     private PropositionalBDDNode root;
     private final PropositionalAST ast;
-    private List<AST> atomList = new ArrayList<>();
+    private List<String> atomList = new ArrayList<>();
     private final List<String> atomStringList = new ArrayList<>();
 
     public PropositionalBDDBuilder(PropositionalAST ast) {
@@ -20,12 +19,12 @@ public class PropositionalBDDBuilder {
     }
 
     public void buildBDD() {
-        Set<AST> atoms = PropositionalLogicHelper.getAtoms(ast);
+        Set<String> atoms = PropositionalLogicHelper.getAtoms(ast);
         atomList = atoms.stream()
-                .sorted(Comparator.comparing(AST::toString)).distinct().toList();
-        for (AST astString : atomList) atomStringList.add(astString.toString());
+                .sorted().distinct().toList();
+        atomStringList.addAll(atomList);
 
-        this.root = new PropositionalBDDNode(new PropositionalAST(atomList.getFirst().toString(), true));
+        this.root = new PropositionalBDDNode(new PropositionalAST(atomList.getFirst(), true));
         buildRecursive(root);
     }
 
@@ -55,13 +54,13 @@ public class PropositionalBDDBuilder {
         if (astLeft.isTautology() || astLeft.isContradiction())
             node.addLeftChild(astLeft);
         else
-            node.addLeftChild(new PropositionalAST(atomList.get(depth + 1).toString(), true));
+            node.addLeftChild(new PropositionalAST(atomList.get(depth + 1), true));
 
         PropositionalAST astRight = ast.evaluatePartial(partialInterpretationFalse);
         if (astRight.isTautology() || astRight.isContradiction())
             node.addRightChild(astRight);
         else
-            node.addRightChild(new PropositionalAST(atomList.get(depth + 1).toString(), true));
+            node.addRightChild(new PropositionalAST(atomList.get(depth + 1), true));
 
         buildRecursive(node.getLeft());
         buildRecursive(node.getRight());
@@ -75,4 +74,18 @@ public class PropositionalBDDBuilder {
         return ast;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        PropositionalBDDBuilder other = (PropositionalBDDBuilder) obj;
+
+        return  Objects.equals(this.root, other.root) &&
+                Objects.equals(this.atomStringList, other.atomStringList);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(ast, root, atomList, atomStringList);
+    }
 }
