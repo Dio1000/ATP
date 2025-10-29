@@ -4,13 +4,10 @@ import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.util.SystemInfo;
 import me.dariansandru.controller.LogicController;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
-import me.dariansandru.domain.language.interpretation.Interpretation;
-import me.dariansandru.domain.language.interpretation.PropositionalInterpretation;
-import me.dariansandru.domain.language.interpretation.PropositionalPartialInterpretation;
+import me.dariansandru.domain.data_structures.bdd.PropositionalBDDBuilder;
 import me.dariansandru.gui.GUIController;
 
 import javax.swing.*;
-import java.util.List;
 import java.util.Objects;
 
 public class Main {
@@ -43,10 +40,7 @@ public class Main {
             logicController.manualRun();
         }
         else if (Objects.equals(args[0], testString)) {
-            PropositionalAST ast = new PropositionalAST("((A -> B) -> A) -> A", true);
-            PropositionalPartialInterpretation partialInterpretation =
-                    new PropositionalPartialInterpretation(List.of("A", "B", "C", "D", "E"), List.of(0, 0, -1, -1, -1));
-            System.out.println(ast.evaluatePartial(partialInterpretation));
+
         }
         else {
             throw new IllegalStateException("Argument: " + args[0] + " could not be found!");

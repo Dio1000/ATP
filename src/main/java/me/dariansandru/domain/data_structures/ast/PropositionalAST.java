@@ -427,7 +427,7 @@ public class PropositionalAST implements AST {
                 return boolean2 ? new PropositionalAST(false) : argument1;
             }
             else {
-                return new PropositionalAST(argument1 + " " + LogicalOperatorFlyweight.getImplicationString() + " " + argument2);
+                return formString(argument1, argument2, LogicalOperatorFlyweight.getImplicationString());
             }
         }
         else if (operator == LogicalOperator.EQUIVALENCE) {
@@ -446,7 +446,7 @@ public class PropositionalAST implements AST {
                 return argument1;
             }
             else {
-                return new PropositionalAST(argument1 + " " + LogicalOperatorFlyweight.getEquivalenceString() + " " + argument2);
+                return formString(argument1, argument2, LogicalOperatorFlyweight.getEquivalenceString());
             }
         }
         else if (operator == LogicalOperator.CONJUNCTION) {
@@ -468,7 +468,7 @@ public class PropositionalAST implements AST {
                     existsContradiction = true;
                 }
                 else if (!isContradictionOrTautology(ast)) {
-                    conjunctionBuilder.append(ast).append(" ").append(LogicalOperatorFlyweight.getConjunctionString());
+                    conjunctionBuilder.append(ast).append(" ").append(LogicalOperatorFlyweight.getConjunctionString()).append(" ");
                     allTautology = false;
                 }
             }
@@ -493,7 +493,7 @@ public class PropositionalAST implements AST {
             boolean existsTautology = false;
             boolean allContradiction = true;
 
-            StringBuilder conjunctionBuilder = new StringBuilder();
+            StringBuilder disjunctionBuilder = new StringBuilder();
             for (int index = 0 ; index < childrenNumber ; index++) {
                 PropositionalAST ast = arguments.get(index);
                 if (ast.isTautology) {
@@ -501,25 +501,35 @@ public class PropositionalAST implements AST {
                     existsTautology = true;
                 }
                 else if (!isContradictionOrTautology(ast)) {
-                    conjunctionBuilder.append(ast).append(" ").append(LogicalOperatorFlyweight.getDisjunctionString());
+                    disjunctionBuilder.append(ast).append(" ").append(LogicalOperatorFlyweight.getDisjunctionString()).append(" ");
                     allContradiction = false;
                 }
             }
 
-            if (!conjunctionBuilder.isEmpty()) {
+            if (!disjunctionBuilder.isEmpty()) {
                 int lengthToRemove = LogicalOperatorFlyweight.getDisjunctionString().length() + 1;
-                conjunctionBuilder.setLength(conjunctionBuilder.length() - lengthToRemove);
+                disjunctionBuilder.setLength(disjunctionBuilder.length() - lengthToRemove);
             }
 
             if (allContradiction) return new PropositionalAST(true);
             else if (existsTautology) return new PropositionalAST(false);
-            else return new PropositionalAST(conjunctionBuilder.toString(), true);
+            else return new PropositionalAST(disjunctionBuilder.toString(), true);
         }
         else if (operator == LogicalOperator.NEGATION) {
             PropositionalAST ast = evaluatePartialRecursive((PropositionalAST) node.getSubtree(0), interpretation);
             if (ast.isTautology) return new PropositionalAST(true);
             else if (ast.isContradiction) return new PropositionalAST(false);
-            // TODO Some other case here?
+            else {
+                String argumentString = ast.toString();
+                if (PropositionalLogicHelper.getOutermostOperation(ast) != LogicalOperator.NOT_A_LOGICAL_OPERATOR) {
+                    argumentString = "!(" + argumentString + ")";
+                    return new PropositionalAST(argumentString, true);
+                }
+                else {
+                    argumentString = "!" + argumentString;
+                    return new PropositionalAST(argumentString, true);
+                }
+            }
         }
         else {
             String atomString = node.toString();
@@ -532,7 +542,22 @@ public class PropositionalAST implements AST {
 
             else return new PropositionalAST(atomString, true);
         }
-        return node;
+    }
+
+    private PropositionalAST formString(PropositionalAST argument1, PropositionalAST argument2, String symbol) {
+        String argument1String = argument1.toString();
+        String argument2String = argument2.toString();
+
+        LogicalOperator operator1 = PropositionalLogicHelper.getOutermostOperation(argument1);
+        LogicalOperator operator2 = PropositionalLogicHelper.getOutermostOperation(argument2);
+
+        if (operator1 != LogicalOperator.NOT_A_LOGICAL_OPERATOR && operator1 != LogicalOperator.NEGATION) {
+            argument1String = "(" + argument1 + ")";
+        }
+        if (operator2 != LogicalOperator.NOT_A_LOGICAL_OPERATOR && operator2 != LogicalOperator.NEGATION) {
+            argument2String = "(" + argument2 + ")";
+        }
+        return new PropositionalAST(argument1String + " " + symbol + " " + argument2String, true);
     }
 
     private boolean isContradictionOrTautology(PropositionalAST ast) {
