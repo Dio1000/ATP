@@ -42,4 +42,9 @@ public class Conjunction implements Predicate {
         return left.evaluate() && right.evaluate();
     }
 
+    @Override
+    public String toString() {
+        return "Conjunction";
+    }
+
 }

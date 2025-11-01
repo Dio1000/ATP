@@ -13,6 +13,7 @@ public interface AST {
     Object evaluate(Interpretation interpretation);
 
     boolean isEquivalentTo(AST other);
+    boolean isSameFormula(AST other);
     boolean hasSameStructure(AST other);
     boolean isEmpty();
 
@@ -27,4 +28,6 @@ public interface AST {
 
     Object getRoot();
     AST getSubtree(int childIndex);
+
+    int getLength();
 }

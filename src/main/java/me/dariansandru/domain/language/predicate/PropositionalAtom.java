@@ -28,6 +28,11 @@ public class PropositionalAtom implements Predicate {
     }
 
     @Override
+    public String toString() {
+        return name;
+    }
+
+    @Override
     public Notation getNotation() {
         return Notation.PREFIX;
     }
@@ -36,4 +41,5 @@ public class PropositionalAtom implements Predicate {
     public boolean evaluate(Object... args) {
         return truthValue;
     }
+
 }

@@ -1,5 +1,6 @@
 package me.dariansandru.reflexivity;
 
+import me.dariansandru.domain.proof.inference_rules.CustomPropositionalInferenceRule;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.proof.inference_rules.propositional.*;
 import me.dariansandru.utils.loader.PropositionalLogicLoader;
@@ -34,7 +35,11 @@ public class PropositionalInferenceRules implements InferenceRules {
 
         List<InferenceRule> inferenceRules = new ArrayList<>();
         for (String line : lines) {
-            if (line.startsWith("rule")) inferenceRules.add(loader.loadCustomRule(lines, line));
+            if (line.startsWith("rule")) {
+                CustomPropositionalInferenceRule rule = loader.loadCustomRule(lines, line);
+                rule.createPathToAtomsMap();
+                inferenceRules.add(rule);
+            }
         }
 
         return inferenceRules;

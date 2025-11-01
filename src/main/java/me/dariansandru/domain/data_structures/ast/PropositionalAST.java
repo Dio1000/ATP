@@ -670,11 +670,40 @@ public class PropositionalAST implements AST {
     }
 
     @Override
-    public boolean isEquivalentTo(AST other) {
-        if (other == null || !(other.getRoot() instanceof PropositionalASTNode)) {
-            return false;
+    public int getLength() {
+        if (isContradictionOrTautology(this)) return 1;
+        return getLengthRecursive(root);
+    }
+
+    private int getLengthRecursive(PropositionalASTNode node) {
+        if (node == null) return 0;
+
+        int count = 1;
+        for (ASTNode child : node.getChildren()) {
+            count += getLengthRecursive((PropositionalASTNode) child);
         }
-        return areNodesEquivalent((PropositionalASTNode) this.getRoot(), (PropositionalASTNode) other.getRoot());
+        return count;
+    }
+
+    @Override
+    public boolean isEquivalentTo(AST other) {
+        if (this.isContradiction && other.isContradiction()) return true;
+        else if (this.isTautology && other.isTautology()) return true;
+        else if (this.isContradiction && !other.isContradiction()) return false;
+        else if (!this.isContradiction && other.isContradiction()) return false;
+
+        this.buildBDD();
+        if (!(other instanceof PropositionalAST)) {
+            throw new ASTException("Cannot compare Propositional AST to other types of ASTs!");
+        }
+        ((PropositionalAST) other).buildBDD();
+
+        return this.getBuilder().equals(((PropositionalAST) other).getBuilder());
+    }
+
+    @Override
+    public boolean isSameFormula(AST other) {
+        return this.formulaString.equals(other.toString());
     }
 
     @Override
@@ -712,42 +741,15 @@ public class PropositionalAST implements AST {
 
     }
 
-    private boolean areNodesEquivalent(PropositionalASTNode node1, PropositionalASTNode node2) {
-        if (node1 == null && node2 == null) {
-            return true;
-        }
-        if (node1 == null || node2 == null) {
-            return false;
-        }
-
-        Object key1 = node1.getKey();
-        Object key2 = node2.getKey();
-
-        if (key1 == null && key2 != null) return false;
-        if (key1 != null && key2 == null) return false;
-
-        if (key1 != null) {
-            String representation1 = (key1 instanceof Predicate p1) ? p1.getRepresentation() : key1.toString();
-            String representation2 = (key2 instanceof Predicate p2) ? p2.getRepresentation() : key2.toString();
-            if (!representation1.equals(representation2)) {
-                return false;
-            }
-        }
-
-        if (node1.getChildren().size() != node2.getChildren().size()) {
-            return false;
-        }
-
-        for (int i = 0; i < node1.getChildren().size(); i++) {
-            PropositionalASTNode c1 = (PropositionalASTNode) node1.getChildren().get(i);
-            PropositionalASTNode c2 = (PropositionalASTNode) node2.getChildren().get(i);
-            if (!areNodesEquivalent(c1, c2)) return false;
-        }
-        return true;
-    }
-
     @Override
     public boolean hasSameStructure(AST other) {
+        if (isContradictionOrTautology(this) && isContradictionOrTautology((PropositionalAST) other)) {
+            if (this.isTautology && ((PropositionalAST) other).isTautology) return true;
+            else if (this.isContradiction && ((PropositionalAST) other).isContradiction) return true;
+            else return false;
+        }
+        else if (!isContradictionOrTautology(this) && isContradictionOrTautology((PropositionalAST) other)) return false;
+        else if (isContradictionOrTautology(this) && !isContradictionOrTautology((PropositionalAST) other)) return false;
         return hasSameStructureRecursive(this, other);
     }
 

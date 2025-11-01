@@ -6,6 +6,7 @@ import me.dariansandru.domain.proof.inference_rules.CustomPropositionalInference
 import me.dariansandru.io.InputDevice;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class PropositionalLogicLoader implements Loader {
@@ -22,31 +23,38 @@ public class PropositionalLogicLoader implements Loader {
 
         int index = 0;
         while (index < lines.size()) {
-            String line = lines.get(index);
-            StringBuilder builder = new StringBuilder();
-            builder.append("rule='").append(ruleName).append("'");
+            String line = lines.get(index).trim();
 
-            if (line.contentEquals(builder)) {
-                while (line.equals("end")) {
-                    line = lines.get(index);
+            if (line.equals(ruleName)) {
+                index++;
+                while (index < lines.size()) {
+                    line = lines.get(index).trim();
+
+                    if (line.equals("end")) {
+                        break;
+                    }
 
                     if (line.startsWith("a:")) {
-                        String[] parts = line.split(":");
+                        String[] parts = line.split(":", 2);
                         PropositionalAST ast = new PropositionalAST(parts[1].trim(), true);
                         antecedents.add(ast);
                     }
                     else if (line.startsWith("c:")) {
-                        String[] parts = line.split(":");
+                        String[] parts = line.split(":", 2);
                         conclusion = new PropositionalAST(parts[1].trim(), true);
                     }
+
                     index++;
                 }
+                break;
             }
-
-            index++;
+            else index++;
         }
 
-        return new CustomPropositionalInferenceRule(ruleName.split("=")[1].trim(), antecedents, conclusion);
+        String parsedRuleName = ruleName.contains("=") ? ruleName.split("=")[1].trim() : ruleName;
+        antecedents.sort(Comparator.comparingInt(AST::getLength));
+        return new CustomPropositionalInferenceRule(parsedRuleName, antecedents, conclusion);
     }
+
 
 }

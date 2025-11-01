@@ -34,6 +34,15 @@ public abstract class PropositionalLogicHelper {
         else return LogicalOperator.NOT_A_LOGICAL_OPERATOR;
     }
 
+    public static LogicalOperator getLogicalOperator(Predicate predicate) {
+        if (predicate instanceof Implication) return LogicalOperator.IMPLICATION;
+        else if (predicate instanceof Equivalence) return LogicalOperator.EQUIVALENCE;
+        else if (predicate instanceof Conjunction) return LogicalOperator.CONJUNCTION;
+        else if (predicate instanceof Disjunction) return LogicalOperator.DISJUNCTION;
+        else if (predicate instanceof Negation) return LogicalOperator.NEGATION;
+        else return LogicalOperator.NOT_A_LOGICAL_OPERATOR;
+    }
+
     public static Set<String> getAtoms(AST ast) {
         Set<String> atoms = new HashSet<>();
         collectAtoms((PropositionalASTNode) ast.getRoot(), atoms);

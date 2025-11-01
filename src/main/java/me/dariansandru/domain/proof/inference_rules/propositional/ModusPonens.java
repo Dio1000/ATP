@@ -34,7 +34,10 @@ public class ModusPonens implements InferenceRule {
 
             for (AST other : asts) {
                 if (other != candidate && other.isEquivalentTo(antecedent)) {
-                    KnowledgeBaseRegistry.addEntry(conclusion.toString(), "From " + candidate + " and " + antecedent + ", by " + name() + ", we derive " + conclusion, List.of(candidate.toString()));
+                    if (other.isSameFormula(antecedent))
+                        KnowledgeBaseRegistry.addEntry(conclusion.toString(), "From " + candidate + " and " + antecedent + ", by " + name() + ", we derive " + conclusion, List.of(candidate.toString()));
+                    else
+                        KnowledgeBaseRegistry.addEntry(conclusion.toString(), "From " + candidate + " and " + other + " (which is equivalent to " + antecedent + "), by " + name() + ", we derive " + conclusion, List.of(candidate.toString()));
                     derived.add(conclusion);
                     break;
                 }

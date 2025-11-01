@@ -6,7 +6,8 @@ Classical
 // files/customRules/customRules.atpf
 
 KB:
-A
+A AND B
+(B AND A) -> C
 
 Goals:
-!!A
+C

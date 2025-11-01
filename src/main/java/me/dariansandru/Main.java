@@ -3,9 +3,14 @@ package me.dariansandru;
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.util.SystemInfo;
 import me.dariansandru.controller.LogicController;
+import me.dariansandru.domain.data_structures.ast.AST;
+import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.domain.proof.inference_rules.CustomPropositionalInferenceRule;
 import me.dariansandru.gui.GUIController;
 
 import javax.swing.*;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public class Main {
@@ -47,16 +52,17 @@ public class Main {
 }
 
 // -- GENERAL --
-//TODO Implement tokenizer for functions.
-//TODO Check notation and arity of predicates / functions in all universes of discourse besides Propositional Logic.
-//TODO Change reflexivity package classes to actually use reflexivity.
 //TODO Look into how collections are kept (inference rules, universes, enums in general).
 //TODO Create more error messages for AST parsing.
+//TODO Maybe there will be the need for different KBRegistry handling because of stronger equivalency?
+//TODO Look into custom inference rules, refactor to add all derived formulas in one cycle.
 
 // -- BUGS --
-// TODO: Find a way to also be able to print the formula itself, even if it is a contradiction / tautology
+//TODO: Find a way to also be able to print the formula itself, even if it is a contradiction / tautology
 
 // -- NEW FEATURES --
 //TODO Create a new way to output proofs because some lines do not get printed in Automated Proofs.
 //TODO Add more inference rules for Automated Proving (from Manual Proving) and fix old ones. (Look at Natural Deduction to find missing rules)
-//TODO Add CNF to all AST at creation and use it to check for equivalency.
+//TODO Add faster equivalence check method.
+//TODO Add antecedent redundancy check.
+//TODO Add creation of custom propositional inference rules packages.

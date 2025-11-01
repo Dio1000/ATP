@@ -1,15 +1,16 @@
-rule='Hypothetical Syllogism'
-a: A -> B
-a: B -> C
-c: A -> C
-end
-
 rule='Modus Ponens'
 a: A
 a: A -> B
 c: B
 end
 
+rule='Hypothetical Syllogism'
+a: A -> B
+a: B -> C
+c: A -> C
+end
+
 rule='Tautology Elimination'
 a: (A -> A) -> B
 c: B
+end
