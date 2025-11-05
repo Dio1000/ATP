@@ -106,8 +106,13 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
                 if (variableAST == null) return false;
 
                 String variableASTString = Objects.requireNonNull(variableAST).toString();
+                key = key.split("\\|")[0];
                 if (atomVariableMap.get(key) == null) atomVariableMap.put(key, variableASTString);
-                else if (!atomVariableMap.get(key).equals(variableASTString)) return false;
+                else {
+                    PropositionalAST ast1 = new PropositionalAST(atomVariableMap.get(key), true);
+                    PropositionalAST ast2 = new PropositionalAST(variableASTString, true);
+                    if (!ast1.isEquivalentTo(ast2)) return false;
+                }
             }
         }
 
@@ -132,12 +137,15 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
 
     public AST buildConclusion() {
         Map<String, Path> conclusionAtomPath = buildPathMap(conclusion);
+
         PropositionalAST conclusionAST = new PropositionalAST(conclusion.toString(), true);
         Set<String> conclusionAtoms = PropositionalLogicHelper.getAtoms(conclusionAST);
 
         for (String atom : conclusionAtoms) {
+            atom = atom + "|1";
             PropositionalASTNode node = (PropositionalASTNode) conclusionAST.getRoot();
             Path path = conclusionAtomPath.get(atom);
+            atom = atom.split("\\|")[0];
 
             PropositionalASTNode parent = null;
             int childIndex = -1;
@@ -253,7 +261,7 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
         PropositionalASTNode root = (PropositionalASTNode) ast.getRoot();
         if (root.getChildren().isEmpty()) {
             Map<String, Path> map = new HashMap<>();
-            map.put(ast.toString(), new Path(List.of()));
+            map.put(ast + "|1", new Path(List.of()));
             return map;
         }
         return getAllPaths(root);
@@ -261,17 +269,25 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
 
     public static Map<String, Path> getAllPaths(PropositionalASTNode root) {
         Map<String, Path> pathMap = new LinkedHashMap<>();
-        collectPathsToAtoms(root, new ArrayList<>(), pathMap);
+        Map<String, Integer> atomCount = new HashMap<>(); // counts occurrences per atom
+        collectPathsToAtoms(root, new ArrayList<>(), pathMap, atomCount);
         return pathMap;
     }
 
     private static void collectPathsToAtoms(PropositionalASTNode node,
                                             List<Direction> currentPath,
-                                            Map<String, Path> pathMap) {
+                                            Map<String, Path> pathMap,
+                                            Map<String, Integer> atomCount) {
         if (node == null) return;
+
         if (node.getChildren().isEmpty() && node.getKey() != null) {
             String atom = node.getKey().toString();
-            pathMap.put(atom, new Path(new ArrayList<>(currentPath)));
+            int index = atomCount.getOrDefault(atom, 0) + 1;
+            atomCount.put(atom, index);
+
+            String uniqueAtom = atom + "|" + index;
+            pathMap.put(uniqueAtom, new Path(new ArrayList<>(currentPath)));
+            return;
         }
 
         List<ASTNode> children = node.getChildren();
@@ -283,7 +299,7 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
             }
 
             currentPath.add(new Direction(operator, index));
-            collectPathsToAtoms(child, currentPath, pathMap);
+            collectPathsToAtoms(child, currentPath, pathMap, atomCount);
             currentPath.removeLast();
         }
     }

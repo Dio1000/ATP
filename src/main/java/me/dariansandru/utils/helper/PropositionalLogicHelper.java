@@ -115,7 +115,9 @@ public abstract class PropositionalLogicHelper {
         return subsets;
     }
 
-    private static AST buildImplication(List<AST> subset, AST conclusion) {
+    public static AST buildImplication(List<AST> subset, AST conclusion) {
+        if (subset.isEmpty()) return conclusion;
+
         String conclusionString = conclusion.toString();
         if (PropositionalLogicHelper.getOutermostOperation(conclusion) != LogicalOperator.NOT_A_LOGICAL_OPERATOR) {
             conclusionString = "(" + conclusionString + ")";

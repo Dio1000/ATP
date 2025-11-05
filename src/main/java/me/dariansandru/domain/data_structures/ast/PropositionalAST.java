@@ -29,7 +29,7 @@ public class PropositionalAST implements AST {
 
     private int currentChildIndex;
     private final boolean isContradiction;
-    private boolean isTautology;
+    private final boolean isTautology;
 
     private final PropositionalBDDBuilder builder;
 
@@ -440,7 +440,6 @@ public class PropositionalAST implements AST {
         }
 
         return lastAST;
-        // return evaluatePartialRecursive(this, interpretation);
     }
 
     public PropositionalAST evaluatePartialRecursive(PropositionalAST node, PropositionalPartialInterpretation interpretation) {

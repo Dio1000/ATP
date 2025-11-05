@@ -15,6 +15,7 @@ import me.dariansandru.utils.factory.ParserFactory;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.utils.helper.ErrorHelper;
 import me.dariansandru.utils.helper.ProofTextHelper;
+import me.dariansandru.utils.helper.PropositionalLogicHelper;
 import me.dariansandru.utils.helper.WarningHelper;
 import me.dariansandru.utils.loader.LoaderPackageHelper;
 
@@ -76,7 +77,13 @@ public class LogicController {
         if (!valid) return;
         ProofTextHelper.clear();
 
-        // TODO Logic Controller should be general
+        if (cannotBeProven()) {
+            OutputDevice.writeToConsole("This cannot be proven!");
+            return;
+        }
+        else OutputDevice.writeToConsole("Starting proof processing...");
+
+        // TODO Logic Controller should be generic
         PropositionalProof proof = new PropositionalProof(signature, knowledgeBaseAST, goalsAST);
         proof.proveWithoutPrinting();
         proof.prove();
@@ -86,9 +93,21 @@ public class LogicController {
         if (!valid) return;
         ProofTextHelper.clear();
 
-        // TODO Logic Controller should be general
+        if (cannotBeProven()) {
+            OutputDevice.writeToConsole("This cannot be proven!");
+            return;
+        }
+        else OutputDevice.writeToConsole("Starting proof processing...");
+
+        // TODO Logic Controller should be generic
         ManualPropositionalProof proof = new ManualPropositionalProof(knowledgeBaseAST, goalsAST, null, 1);
         ManualPropositionalProofStates.addState(proof, 1);
         proof.prove();
+    }
+
+    private boolean cannotBeProven() {
+        PropositionalAST ast = (PropositionalAST) PropositionalLogicHelper.buildImplication(knowledgeBaseAST, goalsAST.getFirst());
+        ast.buildBDD();
+        return !ast.getBuilder().isTautology();
     }
 }

@@ -2,12 +2,11 @@ Universe:
 Propositions
 
 Rules:
-Classical
-// files/customRules/customRules.atpf
+// Classical
+files/customRules/customRules.atpf
 
 KB:
-A AND B
-(B AND A) -> C
+(((P -> Q) -> P) -> P) -> R
 
 Goals:
-C
+R
