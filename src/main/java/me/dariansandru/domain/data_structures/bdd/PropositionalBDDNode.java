@@ -43,26 +43,36 @@ public class PropositionalBDDNode {
 
     public void addLeftChild(PropositionalAST value) {
         PropositionalBDDNode node = new PropositionalBDDNode();
-
         node.value = value;
         node.setParent(this);
         node.setDepth(this.depth + 1);
         node.setLeaf();
-        isLeftChild = true;
-
+        node.isLeftChild = true;
         this.left = node;
     }
 
     public void addRightChild(PropositionalAST value) {
         PropositionalBDDNode node = new PropositionalBDDNode();
-
         node.value = value;
         node.setParent(this);
         node.setDepth(this.depth + 1);
         node.setLeaf();
-        isLeftChild = false;
-
+        node.isLeftChild = false;
         this.right = node;
+    }
+
+    public List<Integer> getTruthValuesOfParents() {
+        List<Integer> truthValues = new ArrayList<>();
+        PropositionalBDDNode node = this;
+        while (node.parent != null) {
+            truthValues.addFirst(node.isLeftChild ? 1 : 0);
+            node = node.parent;
+        }
+        return truthValues;
+    }
+
+    public void setValue(PropositionalAST value) {
+        this.value = value;
     }
 
     public boolean isLeaf() {
@@ -100,17 +110,6 @@ public class PropositionalBDDNode {
 
     public void setDepth(int depth) {
         this.depth = depth;
-    }
-
-    public List<Integer> getTruthValuesOfParents() {
-        List<Integer> truthValues = new ArrayList<>();
-        PropositionalBDDNode node = this;
-        while (node.parent != null) {
-            truthValues.addFirst(this.isLeftChild ? 0 : 1);
-            node = node.parent;
-        }
-
-        return truthValues;
     }
 
     @Override

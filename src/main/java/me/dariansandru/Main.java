@@ -5,8 +5,10 @@ import com.formdev.flatlaf.util.SystemInfo;
 import me.dariansandru.controller.LogicController;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.domain.language.interpretation.PropositionalPartialInterpretation;
 import me.dariansandru.domain.proof.inference_rules.CustomPropositionalInferenceRule;
 import me.dariansandru.gui.GUIController;
+import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import javax.swing.*;
 import java.util.Arrays;
@@ -43,7 +45,7 @@ public class Main {
             logicController.manualRun();
         }
         else if (Objects.equals(args[0], testString)) {
-
+            
         }
         else {
             throw new IllegalStateException("Argument: " + args[0] + " could not be found!");
@@ -58,11 +60,8 @@ public class Main {
 //TODO Look into custom inference rules, refactor to add all derived formulas in one cycle.
 
 // -- BUGS --
-//TODO: Find a way to also be able to print the formula itself, even if it is a contradiction / tautology
 
 // -- NEW FEATURES --
 //TODO Create a new way to output proofs because some lines do not get printed in Automated Proofs.
 //TODO Add more inference rules for Automated Proving (from Manual Proving) and fix old ones. (Look at Natural Deduction to find missing rules)
-//TODO Add faster equivalence check method.
-//TODO Add antecedent redundancy check.
 //TODO Add creation of custom propositional inference rules packages.

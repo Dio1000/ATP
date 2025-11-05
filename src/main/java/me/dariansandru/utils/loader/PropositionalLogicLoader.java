@@ -56,5 +56,4 @@ public class PropositionalLogicLoader implements Loader {
         return new CustomPropositionalInferenceRule(parsedRuleName, antecedents, conclusion);
     }
 
-
 }

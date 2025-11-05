@@ -97,10 +97,31 @@ public class PropositionalAST implements AST {
     }
 
     public PropositionalAST(boolean isContradiction) {
-        this.formulaString = null;
+        this.formulaString = "";
         this.root = null;
         this.isContradiction = isContradiction;
         this.isTautology = !isContradiction;
+        builder = new PropositionalBDDBuilder(this);
+    }
+
+    public PropositionalAST(String formulaString, boolean shouldValidate, int code) {
+        this.formulaString = formulaString;
+        this.root = new PropositionalASTNode(null);
+        this.isContradiction = false;
+        this.isTautology = false;
+
+        this.root.addChild();
+        this.currentNode = (PropositionalASTNode) this.root.getChildren().getFirst();
+        this.currentChildIndex = 0;
+
+        if (shouldValidate) this.validate(0);
+
+        this.checkContradiction();
+        this.checkTautology();
+
+        if (code == 1) {
+            buildBDD();
+        }
         builder = new PropositionalBDDBuilder(this);
     }
 
@@ -411,10 +432,22 @@ public class PropositionalAST implements AST {
     }
 
     public PropositionalAST evaluatePartial(PropositionalPartialInterpretation interpretation) {
-        return evaluatePartialRecursive(this, interpretation);
+        PropositionalAST lastAST = this;
+        PropositionalAST evaluatedAST = evaluatePartialRecursive(lastAST, interpretation);
+        while (!lastAST.isSameFormula(evaluatedAST)) {
+            lastAST = evaluatedAST;
+            evaluatedAST = evaluatePartialRecursive(lastAST, interpretation);
+        }
+
+        return lastAST;
+        // return evaluatePartialRecursive(this, interpretation);
     }
 
     public PropositionalAST evaluatePartialRecursive(PropositionalAST node, PropositionalPartialInterpretation interpretation) {
+        if (isContradictionOrTautology(node)) {
+            return node;
+        }
+
         LogicalOperator operator = PropositionalLogicHelper.getOutermostOperation(node);
         if (operator == LogicalOperator.IMPLICATION) {
             PropositionalAST argument1 = evaluatePartialRecursive((PropositionalAST) node.getSubtree(0), interpretation);
@@ -575,6 +608,8 @@ public class PropositionalAST implements AST {
         if (operator2 != LogicalOperator.NOT_A_LOGICAL_OPERATOR && operator2 != LogicalOperator.NEGATION) {
             argument2String = "(" + argument2 + ")";
         }
+
+        if (argument1String.equals(argument2String)) return new PropositionalAST(false);
         return new PropositionalAST(argument1String + " " + symbol + " " + argument2String, true);
     }
 
@@ -703,6 +738,9 @@ public class PropositionalAST implements AST {
 
     @Override
     public boolean isSameFormula(AST other) {
+        if (this.isTautology && other.isTautology()) return true;
+        else if (this.isContradiction && other.isContradiction()) return true;
+
         return this.formulaString.equals(other.toString());
     }
 
@@ -724,21 +762,8 @@ public class PropositionalAST implements AST {
         return isTautology;
     }
 
-    //TODO Look further into this
     @Override
     public void checkTautology() {
-        if (PropositionalLogicHelper.getOutermostOperation(this) == LogicalOperator.IMPLICATION) {
-            AST left = this.getSubtree(0);
-            AST right = this.getSubtree(1);
-
-            this.isTautology = left.isEquivalentTo(right);
-            return;
-        }
-
-        if (PropositionalLogicHelper.getOutermostOperation(this) == LogicalOperator.DISJUNCTION) {
-
-        }
-
     }
 
     @Override

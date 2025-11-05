@@ -1,8 +1,5 @@
 package me.dariansandru.domain.data_structures.bdd;
 
-import jdk.incubator.vector.IntVector;
-import jdk.incubator.vector.VectorOperators;
-import jdk.incubator.vector.VectorSpecies;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.language.interpretation.PropositionalPartialInterpretation;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
@@ -20,11 +17,8 @@ public class PropositionalBDDBuilder {
 
     private boolean isBuilt = false;
 
-    static final VectorSpecies<Integer> SPECIES = IntVector.SPECIES_PREFERRED;
     private int[] uniqueArrayRepresentation;
     private int index = 0;
-
-    private final int VECTOR_SIZE_THRESHOLD = 15;
 
     public PropositionalBDDBuilder(PropositionalAST ast) {
         this.ast = ast;
@@ -34,13 +28,12 @@ public class PropositionalBDDBuilder {
     public void buildBDD() {
         if (isBuilt) return;
         if (ast.isContradiction() || ast.isTautology()) return;
-        
+
         Set<String> atoms = PropositionalLogicHelper.getAtoms(ast);
-        atomList = atoms.stream()
-                .sorted().distinct().toList();
+        atomList = atoms.stream().sorted().distinct().toList();
         atomStringList.addAll(atomList);
 
-        this.root = new PropositionalBDDNode(new PropositionalAST(atomList.getFirst(), true));
+        this.root = new PropositionalBDDNode(new PropositionalAST(atomList.getFirst(), true, 0));
 
         nodeCount = 1;
         buildRecursive(root);
@@ -73,6 +66,27 @@ public class PropositionalBDDBuilder {
                 new PropositionalPartialInterpretation(atomStringList, truthValueListFalse);
 
         PropositionalAST astLeft = ast.evaluatePartial(partialInterpretationTrue);
+        PropositionalAST astRight = ast.evaluatePartial(partialInterpretationFalse);
+
+        if (astLeft.isTautology() && astRight.isTautology()) {
+            if (depth == 0) {
+                node.addLeftChild(new PropositionalAST(false));
+                node.addRightChild(new PropositionalAST(false));
+                nodeCount += 2;
+            }
+            node.setValue(new PropositionalAST(false));
+            return;
+        }
+        else if (astLeft.isContradiction() && astRight.isContradiction()) {
+            if (depth == 0) {
+                node.addLeftChild(new PropositionalAST(true));
+                node.addRightChild(new PropositionalAST(true));
+                nodeCount += 2;
+            }
+            node.setValue(new PropositionalAST(true));
+            return;
+        }
+
         if (astLeft.isTautology() || astLeft.isContradiction()) {
             nodeCount++;
             node.addLeftChild(astLeft);
@@ -82,7 +96,6 @@ public class PropositionalBDDBuilder {
             node.addLeftChild(new PropositionalAST(atomList.get(depth + 1), true));
         }
 
-        PropositionalAST astRight = ast.evaluatePartial(partialInterpretationFalse);
         if (astRight.isTautology() || astRight.isContradiction()) {
             nodeCount++;
             node.addRightChild(astRight);
@@ -128,6 +141,16 @@ public class PropositionalBDDBuilder {
         return index;
     }
 
+    public boolean isTautology() {
+        return this.getRoot().getRight().getValue().isTautology()
+                && this.getRoot().getLeft().getValue().isTautology();
+    }
+
+    public boolean isContradiction() {
+        return this.getRoot().getRight().getValue().isContradiction()
+                && this.getRoot().getLeft().getValue().isContradiction();
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
@@ -136,27 +159,13 @@ public class PropositionalBDDBuilder {
 
         int[] array1 = this.getUniqueArrayRepresentation();
         int[] array2 = other.getUniqueArrayRepresentation();
-        int arrayLength1 = this.getUniqueArrayLength();
-        int arrayLength2 = other.getUniqueArrayLength();
+        int length1 = this.getUniqueArrayLength();
+        int length2 = other.getUniqueArrayLength();
 
-        if (arrayLength1 != arrayLength2) return false;
-        if (arrayLength1 < SPECIES.length() || arrayLength1 < VECTOR_SIZE_THRESHOLD) {
-            return Objects.equals(this.root, other.root) &&
-                    Objects.equals(this.atomStringList, other.atomStringList) &&
-                    Arrays.equals(array1, array2);
-        }
+        if (length1 != length2) return false;
 
-        int index = 0;
-        for (; index < SPECIES.loopBound(arrayLength1); index += SPECIES.length()) {
-            var vector1 = IntVector.fromArray(SPECIES, array1, index);
-            var vector2 = IntVector.fromArray(SPECIES, array2, index);
-
-            if (vector1.compare(VectorOperators.NE, vector2).anyTrue()) {
-                return false;
-            }
-        }
-        for (; index < arrayLength1; index++) {
-            if (array1[index] != array2[index]) return false;
+        for (int i = 0; i < length1; i++) {
+            if (array1[i] != array2[i]) return false;
         }
 
         return true;

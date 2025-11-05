@@ -27,4 +27,13 @@ public class PropositionalPartialInterpretation implements Interpretation{
         else return -1;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        for (String key : interpretation.keySet()) {
+            builder.append(key).append("-> ").append(interpretation.get(key)).append(" ");
+        }
+        return builder.append("\n").toString();
+    }
+
 }
