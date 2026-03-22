@@ -61,29 +61,8 @@ public class ConjunctionElimination implements InferenceRule {
 
     @Override
     public List<SubGoal> getSubGoals(List<AST> knowledgeBase, AST... asts) {
-//        if (asts.length != 1) return new ArrayList<>();
-//        AST goal = asts[0];
-//        List<SubGoal> subGoals = new ArrayList<>();
-//
-//        for (AST ast : knowledgeBase) {
-//            if (!(ast instanceof PropositionalAST)) continue;
-//            if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.CONJUNCTION) {
-//                PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
-//                PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
-//
-//                if (goal.isEquivalentTo(left)) {
-//                    subGoals.add(new SubGoal(left, PropositionalInferenceRule.CONJUNCTION_ELIMINATION, goal));
-//                }
-//                if (goal.isEquivalentTo(right)) {
-//                    subGoals.add(new SubGoal(right, PropositionalInferenceRule.CONJUNCTION_ELIMINATION, goal));
-//                }
-//            }
-//        }
-//
-//        return subGoals;
         return new ArrayList<>();
     }
-
 
     @Override
     public String getText(SubGoal subGoal) {

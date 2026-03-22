@@ -5,28 +5,34 @@ import com.formdev.flatlaf.util.SystemInfo;
 import me.dariansandru.controller.LogicController;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
-import me.dariansandru.domain.language.interpretation.PropositionalPartialInterpretation;
-import me.dariansandru.domain.proof.inference_rules.CustomPropositionalInferenceRule;
+import me.dariansandru.domain.proof.inference_rules.InferenceRule;
+import me.dariansandru.domain.proof.inference_rules.helper.CustomInferenceRuleHelper;
+import me.dariansandru.domain.proof.manual_proof.helper.ManualPropositionalInferenceRuleHelper;
 import me.dariansandru.gui.GUIController;
-import me.dariansandru.utils.helper.PropositionalLogicHelper;
+import me.dariansandru.gui.PropositionalProofGUIController;
+import me.dariansandru.utils.global.GlobalAtomID;
 
 import javax.swing.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
 public class Main {
 
+    static final String guiString = "gui";
+    static final String automatedString = "automated";
+    static final String manualString = "manual";
+    static final String testString = "test";
+    static final String inputFile = "files/input.txt";
+
     public static void main(String[] args) {
-        String guiString = "gui";
-        String automatedString = "automated";
-        String manualString = "manual";
-        String testString = "test";
-        String inputFile = "files/input.txt";
 
         if (args.length == 0) throw new IllegalStateException("No arguments were provided!");
-        else if (args.length == 2) throw new IllegalStateException("Too many arguments were provided!");
-        else if (Objects.equals(args[0], guiString)) {
+        final String argument = args[0];
+
+        if (args.length == 2) throw new IllegalStateException("Too many arguments were provided!");
+        else if (Objects.equals(argument, guiString)) {
             if (SystemInfo.isMacOS) {
                 System.setProperty( "apple.laf.useScreenMenuBar", "true" );
                 System.setProperty( "apple.awt.application.name", "Automated Theorem Prover" );
@@ -34,18 +40,28 @@ public class Main {
             }
 
             FlatDarkLaf.setup();
-            SwingUtilities.invokeLater(GUIController::new);
+            SwingUtilities.invokeLater(PropositionalProofGUIController::new);
         }
-        else if (Objects.equals(args[0], automatedString)) {
+        else if (Objects.equals(argument, automatedString)) {
             LogicController logicController = new LogicController(inputFile);
             logicController.automatedRun();
         }
-        else if (Objects.equals(args[0], manualString)) {
+        else if (Objects.equals(argument, manualString)) {
             LogicController logicController = new LogicController(inputFile);
             logicController.manualRun();
         }
-        else if (Objects.equals(args[0], testString)) {
-            
+        else if (Objects.equals(argument, testString)) {
+            PropositionalAST ast1 = new PropositionalAST("A -> B", true);
+            PropositionalAST ast2 = new PropositionalAST("A", true);
+            List<AST> asts = new ArrayList<>();
+            asts.add(ast1);
+            asts.add(ast2);
+            GlobalAtomID.addAtomId("A");
+            GlobalAtomID.addAtomId("B");
+
+            ManualPropositionalInferenceRuleHelper helper = new ManualPropositionalInferenceRuleHelper(new ArrayList<AST>());
+            List<InferenceRule> inferenceRules = helper.applicableRules(asts);
+            for (InferenceRule inferenceRule : inferenceRules) System.out.println(inferenceRule.name());
         }
         else {
             throw new IllegalStateException("Argument: " + args[0] + " could not be found!");
@@ -54,10 +70,6 @@ public class Main {
 }
 
 // -- GENERAL --
-//TODO Look into how collections are kept (inference rules, universes, enums in general).
-//TODO Create more error messages for AST parsing.
-//TODO Maybe there will be the need for different KBRegistry handling because of stronger equivalency?
-//TODO Look into custom inference rules, refactor to add all derived formulas in one cycle.
 
 // -- BUGS --
 

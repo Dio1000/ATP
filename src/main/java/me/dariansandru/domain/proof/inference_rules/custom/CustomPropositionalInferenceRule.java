@@ -1,4 +1,4 @@
-package me.dariansandru.domain.proof.inference_rules;
+package me.dariansandru.domain.proof.inference_rules.custom;
 
 import me.dariansandru.domain.data_structures.ast.*;
 import me.dariansandru.domain.language.LogicalOperator;
@@ -6,6 +6,8 @@ import me.dariansandru.domain.language.predicate.Predicate;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.helper.Direction;
 import me.dariansandru.domain.proof.helper.Path;
+import me.dariansandru.domain.proof.inference_rules.InferenceRule;
+import me.dariansandru.utils.global.GlobalAtomID;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.*;
@@ -27,6 +29,15 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
         this.name = name;
         this.antecedents = antecedents;
         this.conclusion = conclusion;
+
+        for (AST antecedent : antecedents) {
+            for (String atom : PropositionalLogicHelper.getAtoms(antecedent)) {
+                GlobalAtomID.addAtomId(atom);
+            }
+        }
+        for (String atom : PropositionalLogicHelper.getAtoms(conclusion)) {
+            GlobalAtomID.addAtomId(atom);
+        }
     }
 
     public String name() {
@@ -269,7 +280,7 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
 
     public static Map<String, Path> getAllPaths(PropositionalASTNode root) {
         Map<String, Path> pathMap = new LinkedHashMap<>();
-        Map<String, Integer> atomCount = new HashMap<>(); // counts occurrences per atom
+        Map<String, Integer> atomCount = new HashMap<>();
         collectPathsToAtoms(root, new ArrayList<>(), pathMap, atomCount);
         return pathMap;
     }
@@ -304,10 +315,30 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
         }
     }
 
+    public boolean isTautology() {
+        PropositionalAST ast = (PropositionalAST) PropositionalLogicHelper.buildImplication(antecedents, conclusion);
+        ast.buildBDD();
+        return ast.getBuilder().isTautology();
+    }
+
     private void resetState() {
         pathToAtomList.clear();
         atoms.clear();
         atomVariableMap.clear();
         derived.clear();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+
+        int index = 0;
+        for (AST ast : antecedents) {
+            if (index == antecedents.size() - 1) builder.append(ast.toString());
+            else builder.append(ast.toString()).append(",");
+        }
+
+        builder.append(" |- ").append(conclusion.toString());
+        return builder.toString();
     }
 }

@@ -2,7 +2,7 @@ package me.dariansandru.utils.loader;
 
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
-import me.dariansandru.domain.proof.inference_rules.CustomPropositionalInferenceRule;
+import me.dariansandru.domain.proof.inference_rules.custom.CustomPropositionalInferenceRule;
 import me.dariansandru.io.InputDevice;
 
 import java.util.ArrayList;

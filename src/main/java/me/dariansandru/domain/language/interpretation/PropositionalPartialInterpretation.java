@@ -21,6 +21,7 @@ public class PropositionalPartialInterpretation implements Interpretation{
 
     @Override
     public Object getValue(Object value) {
+        if (value == null || value == "") return -1;
         Integer integer = interpretation.get(value);
         if (integer == 1) return true;
         else if (integer == 0) return false;

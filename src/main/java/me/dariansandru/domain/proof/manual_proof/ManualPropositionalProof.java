@@ -75,6 +75,8 @@ public class ManualPropositionalProof {
     }
 
     public void prove() {
+        boolean isDoneTextPrinted = false;
+
         if (this.stateIndex == 1) {
             addHypothesis();
             if (goals.size() != 1) {
@@ -114,12 +116,12 @@ public class ManualPropositionalProof {
         }
     }
 
-    int getIntegerIndex(Command command) {
+    int getIntegerIndex() {
         String argument = arguments.getFirst();
         String type = getArgumentType(argument);
         int index = getArgumentIndex(argument);
 
-        if (!type.isEmpty()) {
+        if (!type.isEmpty() && !type.equals("S") && !type.equals("s")) {
             return -1;
         }
         return index + 1;
@@ -146,19 +148,17 @@ public class ManualPropositionalProof {
     private List<Integer> getIndexOfArityN(Command command) {
         List<Integer> indices = new ArrayList<>();
 
-        int size = arguments.size();
-        for (int i = 0 ; i < size ; i++) {
-            String argument = arguments.get(i);
+        for (String argument : arguments) {
             String type = getArgumentType(argument);
             int index = getArgumentIndex(argument);
 
             if (!type.equals(kbName)) {
-                 inferenceRuleHelper.addKBError(command);
+                inferenceRuleHelper.addKBError(command);
                 return new ArrayList<>();
             }
 
             if (index > knowledgeBase.size()) {
-                 inferenceRuleHelper.addOutOfBoundsError(index);
+                inferenceRuleHelper.addOutOfBoundsError(index);
                 return new ArrayList<>();
             }
             indices.add(index);
@@ -172,7 +172,7 @@ public class ManualPropositionalProof {
 
         int idx = 0;
         while (idx < argument.length()) {
-            if ('0' < argument.charAt(idx) && argument.charAt(idx) < '9') {
+            if ('0' < argument.charAt(idx) && argument.charAt(idx) <= '9') {
                 break;
             }
             else type.append(argument.charAt(idx));
@@ -196,6 +196,12 @@ public class ManualPropositionalProof {
         }
 
         return Integer.parseInt(index.toString()) - 1;
+    }
+
+    public boolean executeCommand(String commandString) {
+        CommandParser.parse(commandString);
+        Command command = CommandParser.getCurrentCommand();
+        return handlePropositionalLogicCommand(commandString, command);
     }
 
     private boolean handlePropositionalLogicCommand(String commandString, Command command) {
@@ -248,121 +254,121 @@ public class ManualPropositionalProof {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleModusPonens(indices.getFirst(), indices.get(1));
+                return inferenceRuleHelper.handleModusPonens(indices.getFirst(), indices.get(1));
             }
             case MODUS_TOLLENS -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleModusTollens(indices.getFirst(), indices.get(1));
+                return inferenceRuleHelper.handleModusTollens(indices.getFirst(), indices.get(1));
             }
             case HYPOTHETICAL_SYLLOGISM -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleHypotheticalSyllogism(indices.getFirst(), indices.get(1));
+                return inferenceRuleHelper.handleHypotheticalSyllogism(indices.getFirst(), indices.get(1));
             }
             case DISJUNCTIVE_SYLLOGISM -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleDisjunctiveSyllogism(indices.getFirst(), indices.get(1));
+                return inferenceRuleHelper.handleDisjunctiveSyllogism(indices.getFirst(), indices.get(1));
             }
             case CONSTRUCTIVE_DILEMMA -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleConstructiveDilemma(indices.getFirst(), indices.get(1), indices.get(2));
+                return inferenceRuleHelper.handleConstructiveDilemma(indices.getFirst(), indices.get(1), indices.get(2));
             }
             case DESTRUCTIVE_DILEMMA -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleDestructiveDilemma(indices.getFirst(), indices.get(1), indices.get(2));
+                return inferenceRuleHelper.handleDestructiveDilemma(indices.getFirst(), indices.get(1), indices.get(2));
             }
             case ABSORPTION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleAbsorption(indices.getFirst());
+                return inferenceRuleHelper.handleAbsorption(indices.getFirst());
             }
             case TRANSPOSITION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleTransposition(indices.getFirst());
+                return inferenceRuleHelper.handleTransposition(indices.getFirst());
             }
             case MATERIAL_EQUIVALENCE -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleMaterialEquivalence(indices.getFirst());
+                return inferenceRuleHelper.handleMaterialEquivalence(indices.getFirst());
             }
             case MATERIAL_IMPLICATION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleMaterialImplication(indices.getFirst());
+                return inferenceRuleHelper.handleMaterialImplication(indices.getFirst());
             }
             case IMPLICATION_INTRODUCTION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleImplicationIntroduction(indices.getFirst(), indices.get(1));
+                return inferenceRuleHelper.handleImplicationIntroduction(indices.getFirst(), indices.get(1));
             }
             case IMPLICATION_ELIMINATION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleImplicationSimplification(indices.getFirst());
+                return inferenceRuleHelper.handleImplicationSimplification(indices.getFirst());
             }
             case EQUIVALENCE_INTRODUCTION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleEquivalenceIntroduction(indices.getFirst(), indices.get(1));
+                return inferenceRuleHelper.handleEquivalenceIntroduction(indices.getFirst(), indices.get(1));
             }
             case EQUIVALENCE_SIMPLIFICATION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleEquivalenceSimplification(indices.getFirst());
+                return inferenceRuleHelper.handleEquivalenceSimplification(indices.getFirst());
             }
             case CONJUNCTION_INTRODUCTION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleConjunctionIntroduction(indices);
+                return inferenceRuleHelper.handleConjunctionIntroduction(indices);
             }
             case CONJUNCTION_ELIMINATION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleConjunctionElimination(indices.getFirst());
+                return inferenceRuleHelper.handleConjunctionElimination(indices.getFirst());
             }
             case DISJUNCTION_INTRODUCTION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-
+                // TODO Complete
             }
             case DISJUNCTION_ELIMINATION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleDisjunctionElimination(indices.getFirst(), indices.get(1));
+                return inferenceRuleHelper.handleDisjunctionElimination(indices.getFirst(), indices.get(1));
             }
             case DISJUNCTION_SIMPLIFICATION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleDisjunctionSimplification(indices.getFirst());
+                return inferenceRuleHelper.handleDisjunctionSimplification(indices.getFirst());
             }
             case DEMORGAN -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return  inferenceRuleHelper.handleDeMorgan(indices.getFirst());
+                return inferenceRuleHelper.handleDeMorgan(indices.getFirst());
             }
             case CONTRADICTION -> {
                 List<Integer> indices = new ArrayList<>();
@@ -385,7 +391,7 @@ public class ManualPropositionalProof {
                 isProven = handleContradiction(indices);
             }
             case CHANGE_STATE -> {
-                int index = getIntegerIndex(command);
+                int index = getIntegerIndex();
                 return handleChangeState(index);
             }
             case DONE -> {
@@ -424,7 +430,7 @@ public class ManualPropositionalProof {
     }
 
     private boolean handleChangeState(int index) {
-        if (index > ManualPropositionalProofStates.getCurrentStateIndex()) {
+        if (index > ManualPropositionalProofStates.getCurrentStateIndex() || index == -1) {
              inferenceRuleHelper.addStateError(index);
             return false;
         }
@@ -462,7 +468,7 @@ public class ManualPropositionalProof {
         return false;
     }
 
-    private void printState() {
+    public void printState() {
         OutputDevice.writeToConsole("State: " + stateIndex);
         OutputDevice.writeNewLine();
 
@@ -471,4 +477,45 @@ public class ManualPropositionalProof {
         if (!childStates.isEmpty()) OutputDevice.writeNumberedStateToConsole(childStates, 1, stateName);
     }
 
+    public String getStateText() {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("State: ").append(stateIndex).append("\n\n");
+
+        if (!knowledgeBase.isEmpty()) {
+            builder.append(getNumberedText(knowledgeBase, 1, kbName));
+        }
+        if (!goals.isEmpty()) {
+            builder.append(getNumberedText(goals, 1, goalName));
+        }
+        if (!childStates.isEmpty()) {
+            builder.append(getNumberedStateText(childStates, 1, stateName));
+        }
+
+        return builder.toString();
+    }
+
+    private String getNumberedText(List<AST> list, int startIndex, String prefix) {
+        StringBuilder builder = new StringBuilder();
+        for (AST ast : list) {
+            builder.append(prefix).append(startIndex).append(". ")
+                    .append(KnowledgeBaseRegistry.getObtainedFrom(ast.toString()))
+                    .append("\n");
+            startIndex++;
+        }
+        builder.append("\n");
+        return builder.toString();
+    }
+
+    private String getNumberedStateText(List<ManualPropositionalProof> states, int startIndex, String prefix) {
+        StringBuilder builder = new StringBuilder();
+        for (ManualPropositionalProof state : states) {
+            builder.append(prefix).append(startIndex).append(". ")
+                    .append("State ").append(state.getStateIndex())
+                    .append("\n");
+            startIndex++;
+        }
+        builder.append("\n");
+        return builder.toString();
+    }
 }

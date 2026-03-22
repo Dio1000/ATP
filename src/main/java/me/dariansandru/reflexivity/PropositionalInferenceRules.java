@@ -1,6 +1,6 @@
 package me.dariansandru.reflexivity;
 
-import me.dariansandru.domain.proof.inference_rules.CustomPropositionalInferenceRule;
+import me.dariansandru.domain.proof.inference_rules.custom.CustomPropositionalInferenceRule;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.proof.inference_rules.propositional.*;
 import me.dariansandru.utils.loader.PropositionalLogicLoader;

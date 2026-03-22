@@ -13,6 +13,7 @@ import me.dariansandru.parser.Parser;
 import me.dariansandru.parser.parsers.FormulaParser;
 import me.dariansandru.utils.factory.ParserFactory;
 import me.dariansandru.domain.data_structures.ast.AST;
+import me.dariansandru.utils.global.GlobalAtomID;
 import me.dariansandru.utils.helper.ErrorHelper;
 import me.dariansandru.utils.helper.ProofTextHelper;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
@@ -47,7 +48,7 @@ public class LogicController {
         List<String> knowledgeBase = Parser.getKBLines(lines);
         List<String> goals = Parser.getGoalsLines(lines);
         knowledgeBaseAST = parser.parseAndGetASTs(knowledgeBase);
-        goalsAST = parser.parseAndGetASTs(goals);
+        goalsAST = parser.parseAndGetASTs (goals);
 
         String packageName = Parser.getPackageName(lines);
         LoaderPackageHelper.setPackageName(packageName);
@@ -67,6 +68,7 @@ public class LogicController {
 
         voodooKnowledgeBaseAST.add(new PropositionalAST("A", true));
         voodooGoalAST.add(new PropositionalAST("A", true));
+        GlobalAtomID.addAtomId("A");
 
         PropositionalProof voodooProof = new PropositionalProof(signature, voodooKnowledgeBaseAST, voodooGoalAST);
         voodooProof.proveWithoutPrinting();
@@ -76,33 +78,25 @@ public class LogicController {
     public void automatedRun() {
         if (!valid) return;
         ProofTextHelper.clear();
-
-        if (cannotBeProven()) {
-            OutputDevice.writeToConsole("This cannot be proven!");
-            return;
-        }
-        else OutputDevice.writeToConsole("Starting proof processing...");
+        OutputDevice.writeToConsole("Starting proof processing...");
 
         // TODO Logic Controller should be generic
         PropositionalProof proof = new PropositionalProof(signature, knowledgeBaseAST, goalsAST);
         proof.proveWithoutPrinting();
         proof.prove();
+        GlobalAtomID.reset();
     }
 
     public void manualRun() {
         if (!valid) return;
         ProofTextHelper.clear();
-
-        if (cannotBeProven()) {
-            OutputDevice.writeToConsole("This cannot be proven!");
-            return;
-        }
-        else OutputDevice.writeToConsole("Starting proof processing...");
+        OutputDevice.writeToConsole("Starting proof processing...");
 
         // TODO Logic Controller should be generic
         ManualPropositionalProof proof = new ManualPropositionalProof(knowledgeBaseAST, goalsAST, null, 1);
         ManualPropositionalProofStates.addState(proof, 1);
         proof.prove();
+        GlobalAtomID.reset();
     }
 
     private boolean cannotBeProven() {

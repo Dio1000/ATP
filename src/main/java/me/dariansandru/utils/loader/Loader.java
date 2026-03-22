@@ -1,6 +1,6 @@
 package me.dariansandru.utils.loader;
 
-import me.dariansandru.domain.proof.inference_rules.CustomPropositionalInferenceRule;
+import me.dariansandru.domain.proof.inference_rules.custom.CustomPropositionalInferenceRule;
 
 import java.util.List;
 

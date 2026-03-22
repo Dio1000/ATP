@@ -9,6 +9,7 @@ import me.dariansandru.domain.proof.inference_rules.propositional.DisjunctionEli
 import me.dariansandru.domain.proof.inference_rules.propositional.PropositionalInferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.ProofTextHelper;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
@@ -19,7 +20,6 @@ import java.util.Objects;
 public class PropositionalProofState implements ProofState {
 
     private final List<AST> knowledgeBase;
-    private List<AST> expandedKnowledgeBase;
     private final List<String> knowledgeBaseStrings = new ArrayList<>();
     private final List<AST> goals;
 
@@ -38,6 +38,7 @@ public class PropositionalProofState implements ProofState {
     private final List<ProofState> children = new ArrayList<>();
 
     private int currentChildIndex = 0;
+    private int stateIndex = 0;
 
     public PropositionalProofState(List<AST> knowledgeBase,
                                    List<AST> goals,
@@ -83,12 +84,7 @@ public class PropositionalProofState implements ProofState {
 
     @Override
     public void prove() {
-        if (!knowledgeBase.isEmpty()) {
-            for (AST ast : knowledgeBase) {
-                String astString = ast.toString();
-                if (!knowledgeBaseStrings.contains(astString)) knowledgeBaseStrings.add(astString);
-            }
-        }
+        proofSetup();
 
         if (!children.isEmpty()) {
             proveChildren();
@@ -101,8 +97,9 @@ public class PropositionalProofState implements ProofState {
                 isProven = true;
                 break;
             }
-            if (goals.getFirst().toString().equals("Contradiction")
-                    && containsContradiction()) {
+            else if (containsContradiction()) {
+                // TODO: CHANGE AFTER NEW PROOF OUTPUT SYSTEM
+                System.out.println("Proof ended because Knowledge Base contains a contradiction");
                 isProven = true;
                 break;
             }
@@ -110,6 +107,23 @@ public class PropositionalProofState implements ProofState {
             SubGoal root = new SubGoal(goals.getFirst(), PropositionalInferenceRule.HYPOTHESIS, goals.getFirst());
             expandSubGoal(root);
             expandKnowledgeBase();
+        }
+
+        // printKnowledgeBase();
+    }
+
+    private void proofSetup() {
+        if (!knowledgeBase.isEmpty()) {
+            for (AST ast : knowledgeBase) {
+                String astString = ast.toString();
+                if (!knowledgeBaseStrings.contains(astString)) knowledgeBaseStrings.add(astString);
+            }
+        }
+        for (AST ast : knowledgeBase) {
+            KnowledgeBaseRegistry.addObtainedFrom(ast.toString(), "Hypothesis");
+        }
+        for (AST ast : goals) {
+            KnowledgeBaseRegistry.addObtainedFrom(ast.toString(), "Hypothesis");
         }
     }
 
@@ -230,57 +244,67 @@ public class PropositionalProofState implements ProofState {
         this.parent = proofState;
     }
 
-    public Strategy notifyProof() {
-        if (isProven) return Strategy.NO_STRATEGY;
-        if (expanded) return Strategy.NO_STRATEGY;
+    @Override
+    public void setStateIndex(int index) {
+        this.stateIndex = index;
+    }
+
+    @Override
+    public int getStateIndex() {
+        return this.stateIndex;
+    }
+
+    public List<Strategy> notifyProof() {
+        List<Strategy> strategies = new ArrayList<>();
+        if (isProven) return List.of(Strategy.NO_STRATEGY);
+        if (expanded) return List.of(Strategy.NO_STRATEGY);
 
         expanded = true;
 
         if (PropositionalLogicHelper.getOutermostOperation(this.goals.getFirst()) == LogicalOperator.NEGATION) {
             this.childrenInConjunction = true;
-            return Strategy.NEGATION_STRATEGY;
+            strategies.add(Strategy.NO_STRATEGY);
         }
+        if (!simplify()) return List.of(Strategy.NO_STRATEGY);
 
-        if (!simplify()) {
-            return Strategy.NO_STRATEGY;
-        }
         if (this.goals.size() != 1) {
             this.childrenInConjunction = true;
-            return Strategy.CONJUNCTION_STRATEGY;
+            strategies.add(Strategy.CONJUNCTION_STRATEGY);
         }
 
         for (AST ast : knowledgeBase) {
             if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.DISJUNCTION) {
-                return Strategy.PROOF_BY_CASES;
+                strategies.add(Strategy.PROOF_BY_CASES);
             }
         }
 
         switch (PropositionalLogicHelper.getOutermostOperation(this.goals.getFirst())) {
             case IMPLICATION -> {
                 this.childrenInConjunction = true;
-                return Strategy.IMPLICATION_STRATEGY;
+                strategies.add(Strategy.IMPLICATION_STRATEGY);
             }
             case EQUIVALENCE -> {
                 this.childrenInConjunction = true;
-                return Strategy.EQUIVALENCE_STRATEGY;
+                strategies.add(Strategy.EQUIVALENCE_STRATEGY);
             }
             case CONJUNCTION -> {
                 this.childrenInConjunction = true;
-                return Strategy.CONJUNCTION_STRATEGY;
+                strategies.add(Strategy.CONJUNCTION_STRATEGY);
             }
             case DISJUNCTION -> {
                 this.childrenInConjunction = false;
-                return Strategy.DISJUNCTION_STRATEGY;
+                strategies.add(Strategy.DISJUNCTION_STRATEGY);
             }
             case NEGATION -> {
                 this.childrenInConjunction = true;
-                return Strategy.NEGATION_STRATEGY;
+                strategies.add(Strategy.NEGATION_STRATEGY);
             }
             default -> {
                 this.childrenInConjunction = false;
-                return Strategy.NO_STRATEGY;
+                return List.of(Strategy.NO_STRATEGY);
             }
         }
+        return strategies;
     }
 
     private boolean containsGoal() {
@@ -290,29 +314,37 @@ public class PropositionalProofState implements ProofState {
         return false;
     }
 
+    private boolean containsContradiction() {
+        if (goals.getFirst().isContradiction()) return false;
+
+        for (AST ast : knowledgeBase) {
+            if (ast.isContradiction()) return true;
+        }
+        return false;
+    }
+
     private boolean containsSubGoal(SubGoal subGoal) {
         for (AST ast : knowledgeBase) {
             if (subGoal.getOtherGoals() != null) {
                 for (AST other : subGoal.getOtherGoals()) {
+                    other.validate(0);
                     if (ast.isEquivalentTo(other)) return true;
                 }
             }
+            subGoal.getGoal().validate(0);
             if (ast.isEquivalentTo(subGoal.getGoal())) return true;
         }
         return false;
     }
 
-    private boolean containsContradiction() {
+    private boolean containsConjunctionContradiction() {
         for (AST ast : knowledgeBase) {
             if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.CONJUNCTION) {
                 PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
                 PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
 
-                PropositionalAST negatedLeft = new PropositionalAST(left.toString());
-                PropositionalAST negatedRight = new PropositionalAST(right.toString());
-                negatedLeft.validate(0);
-                negatedRight.validate(0);
-
+                PropositionalAST negatedLeft = new PropositionalAST(left.toString(), true);
+                PropositionalAST negatedRight = new PropositionalAST(right.toString(), true);
                 negatedLeft.negate();
                 negatedRight.negate();
 
@@ -349,10 +381,18 @@ public class PropositionalProofState implements ProofState {
                 }
             }
         }
-        return containsContradiction();
+        return containsConjunctionContradiction();
     }
 
     public void setUnproven() {
         this.isProven = false;
+    }
+
+    public void printKnowledgeBase() {
+        System.out.println(stateIndex);
+        for (AST ast : knowledgeBase) {
+            System.out.println(KnowledgeBaseRegistry.getObtainedFrom(ast.toString()));
+        }
+        System.out.println();
     }
 }

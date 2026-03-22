@@ -1,0 +1,11 @@
+rule='ModPon'
+a: A -> B
+a: A
+c: B
+end
+
+rule='SomeRule'
+a: A
+a: B
+c: A AND B
+end

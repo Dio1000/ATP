@@ -23,6 +23,8 @@ public class DisjunctionElimination implements InferenceRule {
 
     @Override
     public boolean canInference(List<AST> asts, AST goal) {
+        if (goal == null) return false;
+
         boolean shouldDerive = false;
         for (AST ast : asts) {
             if (((PropositionalAST) goal).isAtomic() &&

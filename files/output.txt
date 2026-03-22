@@ -1,5 +1,23 @@
 KB:
-P -> Q
-P
+
 Goals:
-Q
+P -> ((P -> Q) -> Q)
+
+KB:
+Q AND P
+R
+
+Goals:
+P AND (R AND Q)
+
+KB:
+
+Goals:
+P -> P
+
+KB:
+P1 AND P2
+(Q1 AND Q2) AND R
+
+Goals:
+(P1 AND Q2) AND R

@@ -10,7 +10,7 @@ public class ImplicationElimination implements InferenceRule {
 
     @Override
     public String name() {
-        return "";
+        return "Implication Elimination";
     }
 
     @Override

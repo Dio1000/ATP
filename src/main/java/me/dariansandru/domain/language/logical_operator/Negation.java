@@ -42,4 +42,9 @@ public class Negation implements Predicate {
 
         return !operand.evaluate();
     }
+
+    @Override
+    public String toString() {
+        return "Negation";
+    }
 }

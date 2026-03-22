@@ -4,6 +4,8 @@ import me.dariansandru.domain.language.signature.PropositionalSignature;
 import me.dariansandru.domain.language.signature.Signature;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.utils.global.GlobalAtomID;
+import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,8 +24,13 @@ public class PropositionalParser implements FormulaParser {
     public void parseEntry(String line, int index) {
         PropositionalAST ast = new PropositionalAST(line);
         boolean valid = ast.validate(index);
-        if (valid) astList.add(ast);
 
+        if (valid) astList.add(ast);
+        else return;
+
+        for (String atom : PropositionalLogicHelper.getAtoms(ast)) {
+            GlobalAtomID.addAtomId(atom);
+        }
     }
 
     @Override

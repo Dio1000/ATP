@@ -16,9 +16,10 @@ import java.util.Set;
 
 public abstract class PropositionalLogicHelper {
 
-    private static int NArityConstant = 1_000_000_000;
+    private final static int NArityConstant = Integer.MAX_VALUE;
 
     public static LogicalOperator getOutermostOperation(AST ast) {
+        if (ast == null) return LogicalOperator.NOT_A_LOGICAL_OPERATOR;
         if (ast.isTautology() || ast.isContradiction()) return LogicalOperator.NOT_A_LOGICAL_OPERATOR;
 
         PropositionalASTNode node;
@@ -119,7 +120,8 @@ public abstract class PropositionalLogicHelper {
         if (subset.isEmpty()) return conclusion;
 
         String conclusionString = conclusion.toString();
-        if (PropositionalLogicHelper.getOutermostOperation(conclusion) != LogicalOperator.NOT_A_LOGICAL_OPERATOR) {
+        LogicalOperator conclusionOperator = PropositionalLogicHelper.getOutermostOperation(conclusion);
+        if (conclusionOperator != LogicalOperator.NOT_A_LOGICAL_OPERATOR && conclusionOperator != LogicalOperator.NEGATION) {
             conclusionString = "(" + conclusionString + ")";
         }
 
@@ -128,7 +130,8 @@ public abstract class PropositionalLogicHelper {
             AST current = subset.get(i);
             PropositionalAST currentAst = new PropositionalAST(current.toString(), true);
 
-            if (PropositionalLogicHelper.getOutermostOperation(currentAst) != LogicalOperator.NOT_A_LOGICAL_OPERATOR) {
+            LogicalOperator operator = PropositionalLogicHelper.getOutermostOperation(currentAst);
+            if (operator != LogicalOperator.NOT_A_LOGICAL_OPERATOR && operator != LogicalOperator.NEGATION) {
                 builder.append("(").append(current).append(")");
             }
             else builder.append(current);
@@ -136,15 +139,15 @@ public abstract class PropositionalLogicHelper {
             if (i < subset.size() - 1) builder.append(" ").append(LogicalOperatorFlyweight.getConjunctionString()).append(" ");
         }
 
-        if (PropositionalLogicHelper.getOutermostOperation(new PropositionalAST(builder.toString(), true))
-                == LogicalOperator.NOT_A_LOGICAL_OPERATOR || subset.size() == 1) {
-            String formulaString = builder + " " + LogicalOperatorFlyweight.getImplicationString() + " " + conclusionString;
-            return new PropositionalAST(formulaString, true);
+        LogicalOperator operator = PropositionalLogicHelper.getOutermostOperation(new PropositionalAST(builder.toString(), true));
+        String formulaString;
+        if (operator == LogicalOperator.NOT_A_LOGICAL_OPERATOR || subset.size() == 1) {
+            formulaString = builder + " " + LogicalOperatorFlyweight.getImplicationString() + " " + conclusionString;
         }
         else {
-            String formulaString = "(" + builder + ") " + LogicalOperatorFlyweight.getImplicationString() + " " + conclusionString;
-            return new PropositionalAST(formulaString, true);
+            formulaString = "(" + builder + ") " + LogicalOperatorFlyweight.getImplicationString() + " " + conclusionString;
         }
+        return new PropositionalAST(formulaString, true);
     }
 
 }

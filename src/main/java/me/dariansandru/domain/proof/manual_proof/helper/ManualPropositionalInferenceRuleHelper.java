@@ -3,11 +3,20 @@ package me.dariansandru.domain.proof.manual_proof.helper;
 import me.dariansandru.domain.language.LogicalOperator;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.domain.language.UniverseOfDiscourse;
+import me.dariansandru.domain.language.signature.PropositionalSignature;
+import me.dariansandru.domain.language.signature.Signature;
+import me.dariansandru.domain.language.signature.SignatureFactory;
+import me.dariansandru.domain.proof.Strategy;
+import me.dariansandru.domain.proof.inference_rules.InferenceRule;
+import me.dariansandru.parser.Parser;
 import me.dariansandru.parser.command.Command;
+import me.dariansandru.utils.factory.InferenceRulesFactory;
 import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
 import me.dariansandru.utils.helper.ErrorHelper;
 import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
+import me.dariansandru.utils.manual.Manual;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -425,8 +434,8 @@ public class ManualPropositionalInferenceRuleHelper {
         List<String> from = new ArrayList<>();
 
         int index = 0;
-        while (index < indices.size()) {
-            AST ast = knowledgeBase.get(index);
+        for (Integer idx : indices) {
+            AST ast = knowledgeBase.get(idx);
             if (index == indices.size() - 1) builder.append(ast);
             else builder.append(ast).append(" ").append(LogicalOperatorFlyweight.getConjunctionString()).append(" ");
 
@@ -594,6 +603,32 @@ public class ManualPropositionalInferenceRuleHelper {
             if (ast.isEquivalentTo(entry)) return true;
         }
         return false;
+    }
+
+    public List<InferenceRule> applicableRules(List<AST> asts) {
+        UniverseOfDiscourse universeOfDiscourse = UniverseOfDiscourse.PROPOSITIONS;
+        Signature signature = SignatureFactory.createSignature(universeOfDiscourse);
+        List<InferenceRule> inferenceRules = InferenceRulesFactory.createRules(signature);
+        List<InferenceRule> usableInferenceRules = new ArrayList<>();
+
+        for (InferenceRule inferenceRule : inferenceRules) {
+            if (inferenceRule.canInference(asts, null)) usableInferenceRules.add(inferenceRule);
+        }
+
+        return usableInferenceRules;
+    }
+
+    public List<Strategy> applicableStrategies(AST ast) {
+        ManualPropositionalStrategyHelper helper = new ManualPropositionalStrategyHelper(null, null, null, List.of(ast));
+        List<Strategy> strategies = new ArrayList<>();
+
+        if (helper.handleImplicationStrategy(0)) strategies.add(Strategy.IMPLICATION_STRATEGY);
+        if (helper.handleConjunctionStrategy(0, null)) strategies.add(Strategy.CONJUNCTION_STRATEGY);
+        if (helper.handleDisjunctionStrategy(0)) strategies.add(Strategy.DISJUNCTION_STRATEGY);
+        if (helper.handleEquivalenceStrategy(0, null)) strategies.add(Strategy.EQUIVALENCE_STRATEGY);
+        //TODO Complete.
+
+        return strategies;
     }
 }
 

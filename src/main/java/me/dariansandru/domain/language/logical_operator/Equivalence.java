@@ -42,4 +42,9 @@ public class Equivalence implements Predicate {
 
         return (left.evaluate() && right.evaluate()) || (!left.evaluate() && !right.evaluate());
     }
+
+    @Override
+    public String toString() {
+        return "Equivalence";
+    }
 }

@@ -1,4 +1,0 @@
-rule='Peirce'
-a: (((A -> B) -> A) -> A) -> C
-c: C
-end

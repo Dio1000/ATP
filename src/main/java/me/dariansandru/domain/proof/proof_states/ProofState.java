@@ -19,6 +19,10 @@ public interface ProofState {
 
     List<ProofState> getChildren();
     void addChild(ProofState proofState);
+
     ProofState getParent();
     void addParent(ProofState proofState);
+
+    void setStateIndex(int index);
+    int getStateIndex();
 }

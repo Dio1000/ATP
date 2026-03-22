@@ -1,12 +1,15 @@
 package me.dariansandru.domain.data_structures.bdd;
 
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.utils.global.GlobalAtomID;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class PropositionalBDDNode {
+
+    private final int id;
 
     private boolean isLeaf;
     private PropositionalAST value;
@@ -17,62 +20,47 @@ public class PropositionalBDDNode {
 
     private int depth;
     private boolean isLeftChild = false;
-    private int uniqueIntegerRepresentation = -1;
-    private int uniqueIntegerRepresentationLength;
-
-    private int uniqueIntegerRepresentationOfValue = -1;
-    private int uniqueIntegerRepresentationOfValueLength;
 
     public PropositionalBDDNode(PropositionalAST value) {
-        this.isLeaf = value.isTautology() || value.isContradiction();
+        this.id = GlobalAtomID.getAtomId(value.toString());
         this.value = value;
-
+        this.isLeaf = value.isTautology() || value.isContradiction();
         this.parent = null;
         this.left = null;
         this.right = null;
+        this.depth = 0;
     }
 
     public PropositionalBDDNode() {
-        this.isLeaf = false;
+        this.id = 0;
         this.value = null;
-
+        this.isLeaf = false;
         this.parent = null;
         this.left = null;
         this.right = null;
+        this.depth = 0;
     }
 
     public void addLeftChild(PropositionalAST value) {
-        PropositionalBDDNode node = new PropositionalBDDNode();
-        node.value = value;
-        node.setParent(this);
-        node.setDepth(this.depth + 1);
-        node.setLeaf();
+        PropositionalBDDNode node = new PropositionalBDDNode(value);
+        node.parent = this;
+        node.depth = this.depth + 1;
         node.isLeftChild = true;
+        node.setLeaf();
         this.left = node;
     }
 
     public void addRightChild(PropositionalAST value) {
-        PropositionalBDDNode node = new PropositionalBDDNode();
-        node.value = value;
-        node.setParent(this);
-        node.setDepth(this.depth + 1);
-        node.setLeaf();
+        PropositionalBDDNode node = new PropositionalBDDNode(value);
+        node.parent = this;
+        node.depth = this.depth + 1;
         node.isLeftChild = false;
+        node.setLeaf();
         this.right = node;
     }
 
-    public List<Integer> getTruthValuesOfParents() {
-        List<Integer> truthValues = new ArrayList<>();
-        PropositionalBDDNode node = this;
-        while (node.parent != null) {
-            truthValues.addFirst(node.isLeftChild ? 1 : 0);
-            node = node.parent;
-        }
-        return truthValues;
-    }
-
-    public void setValue(PropositionalAST value) {
-        this.value = value;
+    public int getId() {
+        return id;
     }
 
     public boolean isLeaf() {
@@ -83,20 +71,17 @@ public class PropositionalBDDNode {
         return value;
     }
 
+    public void setValue(PropositionalAST value) {
+        this.value = value;
+        setLeaf();
+    }
+
     public PropositionalBDDNode getParent() {
         return parent;
     }
 
-    public void setParent(PropositionalBDDNode node) {
-        if (this.parent == null) this.parent = node;
-    }
-
     public PropositionalBDDNode getLeft() {
         return left;
-    }
-
-    public void setLeaf() {
-        this.isLeaf = value.isTautology() || value.isContradiction();
     }
 
     public PropositionalBDDNode getRight() {
@@ -104,12 +89,26 @@ public class PropositionalBDDNode {
     }
 
     public int getDepth() {
-        if (parent == null) return 0;
-        return depth;
+        return parent == null ? 0 : depth;
     }
 
-    public void setDepth(int depth) {
-        this.depth = depth;
+    private void setLeaf() {
+        this.isLeaf = value.isTautology() || value.isContradiction();
+    }
+
+    public List<Integer> getTruthValuesOfParents() {
+        List<Integer> truthValues = new ArrayList<>();
+        PropositionalBDDNode node = this;
+
+        while (node.parent != null) {
+            truthValues.addFirst(node.isLeftChild ? 1 : 0);
+            node = node.parent;
+        }
+        return truthValues;
+    }
+
+    public int getUniqueIntegerRepresentation() {
+        return id;
     }
 
     @Override
@@ -118,76 +117,14 @@ public class PropositionalBDDNode {
         if (obj == null || getClass() != obj.getClass()) return false;
         PropositionalBDDNode other = (PropositionalBDDNode) obj;
 
-        if (this.isLeaf != other.isLeaf) return false;
-        if (!Objects.equals(this.value.toString(), other.value.toString())) return false;
-
-        return Objects.equals(this.left, other.left)
-                && Objects.equals(this.right, other.right);
+        return isLeaf == other.isLeaf
+                && Objects.equals(value, other.value)
+                && Objects.equals(left, other.left)
+                && Objects.equals(right, other.right);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(isLeaf, value, left, right);
-    }
-
-    public int getUniqueIntegerRepresentation() {
-        if (uniqueIntegerRepresentation != -1) return uniqueIntegerRepresentation;
-
-        int representation = getRepresentationOfValue();
-
-        int parentUniqueRepresentation = this.getParent() == null ? 0 : this.getParent().getUniqueIntegerRepresentationOfValue();
-        int parentUniqueRepresentationLength = parentUniqueRepresentation == 0 ? 1 : this.getParent().getUniqueIntegerRepresentationOfValueLength();
-        representation *= (int) Math.pow(10, parentUniqueRepresentationLength);
-        representation += parentUniqueRepresentation;
-
-        int representationCopy = representation;
-        int representationLength = 0;
-
-        while (representationCopy != 0) {
-            representationLength++;
-            representationCopy /= 10;
-        }
-
-        this.uniqueIntegerRepresentation = representation;
-        this.uniqueIntegerRepresentationLength = representationLength;
-        return representation;
-    }
-
-    public int getRepresentationOfValue() {
-        if (uniqueIntegerRepresentationOfValue != -1) return uniqueIntegerRepresentationOfValue;
-
-        int representation = 0;
-        if (this.value.isTautology()) representation += 2;
-        else if (this.value.isContradiction()) representation += 1;
-        else {
-            String valueString = this.value.toString();
-            for (int i = 0 ; i < this.value.toString().length() ; i++) {
-                representation += valueString.charAt(i);
-            }
-        }
-
-        int length = 0;
-        int representationCopy = representation;
-        while (representationCopy != 0) {
-            length++;
-            representationCopy /= 10;
-        }
-
-        uniqueIntegerRepresentationOfValue = representation;
-        uniqueIntegerRepresentationOfValueLength = length;
-
-        return representation;
-    }
-
-    public int getUniqueIntegerRepresentationLength() {
-        return this.uniqueIntegerRepresentationLength;
-    }
-
-    public int getUniqueIntegerRepresentationOfValue() {
-        return uniqueIntegerRepresentationOfValue;
-    }
-
-    public int getUniqueIntegerRepresentationOfValueLength() {
-        return uniqueIntegerRepresentationOfValueLength;
     }
 }

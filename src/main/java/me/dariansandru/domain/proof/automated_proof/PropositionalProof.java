@@ -6,6 +6,7 @@ import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.proof.proof_states.ProofState;
 import me.dariansandru.domain.proof.proof_states.PropositionalProofState;
 import me.dariansandru.domain.language.signature.Signature;
+import me.dariansandru.domain.proof.thread.ProofThread;
 import me.dariansandru.io.OutputDevice;
 import me.dariansandru.utils.factory.InferenceRulesFactory;
 import me.dariansandru.domain.data_structures.ast.AST;
@@ -28,44 +29,93 @@ public class PropositionalProof implements Proof{
     private final List<String> assumptions = new ArrayList<>();
     private final List<String> conclusions = new ArrayList<>();
 
-    private PropositionalProofState root;
+    private final List<PropositionalProofState> roots = new ArrayList<>();
+    private final List<Strategy> strategies;
+    private int currentlyUsedStrategy = 0;
+    private final PropositionalProofState originalState;
+
+    private final List<ProofThread> proofThreads = new ArrayList<>();
+
+    private int currentStateIndex = 0;
 
     public PropositionalProof(Signature signature, List<AST> knowledgeBase, List<AST> goals) {
         this.inferenceRules = InferenceRulesFactory.createRules(signature);
-        this.knowledgeBase = knowledgeBase;
+        this.knowledgeBase = new ArrayList<>(knowledgeBase);
         this.goals = goals;
 
-        this.root = new PropositionalProofState(knowledgeBase, goals, inferenceRules);
+        this.originalState = new PropositionalProofState(knowledgeBase, goals, inferenceRules);
+        setCurrentStateIndex(originalState);
+        this.strategies = originalState.notifyProof();
     }
 
-    public void prove() {
+    public PropositionalProof(List<InferenceRule> inferenceRules, List<AST> knowledgeBase, List<AST> goals) {
+        this.inferenceRules = inferenceRules;
+        this.knowledgeBase = new ArrayList<>(knowledgeBase);
+        this.goals = goals;
+
+        this.originalState = new PropositionalProofState(knowledgeBase, goals, inferenceRules);
+        setCurrentStateIndex(originalState);
+        this.strategies = originalState.notifyProof();
+    }
+
+    public boolean prove() {
         long startTime = System.nanoTime();
 
-        buildTree(root, 0);
-        root.prove();
-        isProven = root.isProven();
+        for (int i = 0 ; i < strategies.size() ; i++) roots.add(originalState);
+        for (PropositionalProofState root : roots) {
+            if (isProven) {
+                System.out.println();
+                ProofTextHelper.print();
 
-        System.out.println();
-        ProofTextHelper.print();
+                long endTime = System.nanoTime();
+                long duration = endTime - startTime;
+                double durationMs = duration / 1_000_000.0;
 
-        long endTime = System.nanoTime();
-        long duration = endTime - startTime;
-        double durationMs = duration / 1_000_000.0;
+                ProofTextHelper.printWithSymbol("Proof completed in " + durationMs + " ms", "-");
+                isProven = false;
+                root.setUnproven();
+                break;
+            }
+            buildTree(root, 0, strategies.get(currentlyUsedStrategy));
+            ProofThread proofThread = new ProofThread();
+            proofThread.setProofState(root);
+            proofThreads.add(proofThread);
 
-        ProofTextHelper.printWithSymbol("Proof completed in " + durationMs + " ms", "-");
-        isProven = false;
-        root.setUnproven();
-        this.root = new PropositionalProofState(knowledgeBase, goals, inferenceRules);
+            currentlyUsedStrategy++;
+        }
+        for (ProofThread proofThread : proofThreads) proofThread.run();
+        currentlyUsedStrategy = 0;
+        proofThreads.clear();
+
+        return isProven;
     }
 
-    public void proveWithoutPrinting() {
-        buildTree(root, 0);
-        root.prove();
-        isProven = root.isProven();
+    public boolean proveWithoutPrinting() {
+        for (int i = 0 ; i < strategies.size() ; i++) roots.add(originalState);
+        for (PropositionalProofState root : roots) {
+            if (isProven) continue;
+            buildTree(root, 0, strategies.get(currentlyUsedStrategy));
+            ProofThread proofThread = new ProofThread();
+            proofThread.setProofState(root);
+            proofThreads.add(proofThread);
+
+            currentlyUsedStrategy++;
+        }
+        for (ProofThread proofThread : proofThreads) proofThread.run();
+        for (ProofThread proofThread : proofThreads) {
+            if (proofThread.isProven()) {
+                isProven = true;
+                break;
+            }
+        }
+        currentlyUsedStrategy = 0;
+        proofThreads.clear();
+
+        return isProven;
     }
 
-    public void buildTree(ProofState state, int indent) {
-        Strategy strategy = ((PropositionalProofState) state).notifyProof();
+    public void buildTree(ProofState state, int indent, Strategy strategy) {
+        if (strategies.isEmpty() || strategy == Strategy.NO_STRATEGY) return;
 
         if (strategy == Strategy.IMPLICATION_STRATEGY) {
             solveImplication(state, indent);
@@ -77,7 +127,7 @@ public class PropositionalProof implements Proof{
             solveConjunction(state, indent);
         }
         else if (strategy == Strategy.DISJUNCTION_STRATEGY) {
-            // solveDisjunction(state, indent);
+            solveDisjunction(state, indent);
         }
         else if (strategy == Strategy.NEGATION_STRATEGY) {
             solveNegation(state, indent);
@@ -110,6 +160,7 @@ public class PropositionalProof implements Proof{
                     newKB1.add(ast.getSubtree(i));
 
                     PropositionalProofState newState = new PropositionalProofState(newKB1, List.of(state.getGoal()), inferenceRules);
+                    setCurrentStateIndex(newState);
                     state.addChild(newState);
                 }
                 newKB.remove(disjunctionAST);
@@ -133,7 +184,7 @@ public class PropositionalProof implements Proof{
         addAssumptionAndConclusionText(state, indent);
 
         ImplicationStrategy(state);
-        buildTree(state.getChildren().getFirst(), indent + 1);
+        buildTree(state.getChildren().getFirst(), indent + 1, ((PropositionalProofState) state).notifyProof().getFirst());
     }
 
     private void solveEquivalence(ProofState state, int indent) {
@@ -149,8 +200,8 @@ public class PropositionalProof implements Proof{
         ProofTextHelper.addConclusionStep(conclusions.getLast(), indent);
 
         EquivalenceStrategy(state);
-        buildTree(state.getChildren().getFirst(), indent + 1);
-        buildTree(state.getChildren().get(1), indent + 1);
+        buildTree(state.getChildren().getFirst(), indent + 1, ((PropositionalProofState) state).notifyProof().getFirst());
+        buildTree(state.getChildren().get(1), indent + 1, ((PropositionalProofState) state).notifyProof().getFirst());
     }
 
     private void solveConjunction(ProofState state, int indent) {
@@ -166,7 +217,7 @@ public class PropositionalProof implements Proof{
         ConjunctionStrategy(state);
         int childrenNumber = state.getChildren().size();
         for (int i = 0 ; i < childrenNumber ; i++)
-            buildTree(state.getChildren().get(i), indent + 1);
+            buildTree(state.getChildren().get(i), indent + 1, ((PropositionalProofState) state).notifyProof().getFirst());
     }
 
     private void solveDisjunction(ProofState state, int indent) {
@@ -187,7 +238,7 @@ public class PropositionalProof implements Proof{
         DisjunctionStrategy(state);
         int childrenNumber = state.getChildren().size();
         for (int i = 0 ; i < childrenNumber ; i++)
-            buildTree(state.getChildren().get(i), indent + 1);
+            buildTree(state.getChildren().get(i), indent + 1, ((PropositionalProofState) state).notifyProof().getFirst());
     }
 
     private void solveNegation(ProofState state, int indent) {
@@ -212,6 +263,8 @@ public class PropositionalProof implements Proof{
 
         PropositionalProofState newState1 = new PropositionalProofState(newKB1, List.of(newGoal1), inferenceRules);
         PropositionalProofState newState2 = new PropositionalProofState(newKB2, List.of(newGoal2), inferenceRules);
+        setCurrentStateIndex(newState1);
+        setCurrentStateIndex(newState2);
 
         state.addChild(newState1);
         state.addChild(newState2);
@@ -232,6 +285,7 @@ public class PropositionalProof implements Proof{
         newGoals.add(newGoal);
 
         PropositionalProofState newState = new PropositionalProofState(newKnowledgeBase, newGoals, inferenceRules);
+        setCurrentStateIndex(newState);
 
         state.addChild(newState);
     }
@@ -248,6 +302,7 @@ public class PropositionalProof implements Proof{
 
         PropositionalProofState newState =
                 new PropositionalProofState(newKnowledgeBase, newGoals, inferenceRules);
+        setCurrentStateIndex(newState);
 
         state.addChild(newState);
     }
@@ -262,6 +317,7 @@ public class PropositionalProof implements Proof{
 
                 PropositionalProofState newState =
                         new PropositionalProofState(newKB, newGoals, inferenceRules);
+                setCurrentStateIndex(newState);
 
                 state.addChild(newState);
             }
@@ -288,9 +344,15 @@ public class PropositionalProof implements Proof{
 
             PropositionalProofState newState =
                     new PropositionalProofState(newKB, List.of(newGoal), inferenceRules);
+            setCurrentStateIndex(newState);
 
             state.addChild(newState);
         }
+    }
+
+    public void setCurrentStateIndex(PropositionalProofState state) {
+        state.setStateIndex(currentStateIndex);
+        currentStateIndex++;
     }
 
     @Override

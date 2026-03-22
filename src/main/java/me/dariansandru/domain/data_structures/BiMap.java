@@ -31,4 +31,8 @@ public class BiMap {
         return map.containsKey(key);
     }
 
+    public void reset() {
+        map.clear();
+    }
+
 }

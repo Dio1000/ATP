@@ -45,4 +45,9 @@ public class Disjunction implements Predicate{
 
         return left.evaluate() || right.evaluate();
     }
+
+    @Override
+    public String toString() {
+        return "Disjunction";
+    }
 }

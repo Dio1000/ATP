@@ -2,11 +2,11 @@ Universe:
 Propositions
 
 Rules:
-// Classical
-files/customRules/customRules.atpf
+Classical
 
 KB:
-(((P -> Q) -> P) -> P) -> R
+A
+A -> B
 
 Goals:
-R
+A <-> D

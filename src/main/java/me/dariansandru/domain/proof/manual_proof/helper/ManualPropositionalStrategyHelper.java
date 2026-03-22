@@ -58,6 +58,7 @@ public class ManualPropositionalStrategyHelper {
                     ". Outermost logical operator is not '" + LogicalOperatorFlyweight.getEquivalenceString() + "'!");
             return false;
         }
+        if (proof == null) return true;
 
         goals.remove(ast);
         AST left = ast.getSubtree(0);
@@ -79,6 +80,7 @@ public class ManualPropositionalStrategyHelper {
                     ". Outermost logical operator is not '" + LogicalOperatorFlyweight.getConjunctionString() + "'!");
             return false;
         }
+        if (proof == null) return true;
 
         AST newAST1 = ast.getSubtree(0);
         AST newAST2 = ast.getSubtree(1);
@@ -238,6 +240,7 @@ public class ManualPropositionalStrategyHelper {
     }
 
     private boolean containsEntry(AST entry, List<AST> knowledgeBase) {
+        if (knowledgeBase == null) return false;
         for (AST ast : knowledgeBase) {
             if (ast.isEquivalentTo(entry)) return true;
         }

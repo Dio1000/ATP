@@ -6,6 +6,7 @@ import me.dariansandru.domain.language.interpretation.Interpretation;
 import me.dariansandru.domain.language.interpretation.PropositionalInterpretation;
 import me.dariansandru.domain.language.interpretation.PropositionalPartialInterpretation;
 import me.dariansandru.domain.language.interpretation.exception.InvalidInterpretationException;
+import me.dariansandru.domain.language.logical_operator.Negation;
 import me.dariansandru.domain.language.predicate.Predicate;
 import me.dariansandru.domain.language.signature.PropositionalSignature;
 import me.dariansandru.tokenizer.Token;
@@ -23,7 +24,7 @@ import java.util.*;
 
 public class PropositionalAST implements AST {
 
-    private final String formulaString;
+    private String formulaString;
     private PropositionalASTNode root;
     private PropositionalASTNode currentNode;
 
@@ -31,20 +32,35 @@ public class PropositionalAST implements AST {
     private final boolean isContradiction;
     private final boolean isTautology;
 
+    private final boolean validated;
+
     private final PropositionalBDDBuilder builder;
 
     public PropositionalAST(String formulaString) {
         this.formulaString = formulaString;
         this.root = new PropositionalASTNode(null);
-        this.isContradiction = false;
-        this.isTautology = false;
 
         this.root.addChild();
         this.currentNode = (PropositionalASTNode) this.root.getChildren().getFirst();
         this.currentChildIndex = 0;
 
-        this.checkContradiction();
-        this.checkTautology();
+        if (formulaString.equals("Contradiction")) {
+            this.isContradiction = true;
+            this.isTautology = false;
+            this.validated = true;
+        }
+        else if (formulaString.equals("Tautology")) {
+            this.isContradiction = false;
+            this.isTautology = true;
+            this.validated = true;
+        }
+        else {
+            this.isContradiction = false;
+            this.isTautology = false;
+            this.validated = false;
+            this.checkContradiction();
+            this.checkTautology();
+        }
 
         builder = new PropositionalBDDBuilder(this);
     }
@@ -52,12 +68,28 @@ public class PropositionalAST implements AST {
     public PropositionalAST(String formulaString, boolean shouldValidate) {
         this.formulaString = formulaString;
         this.root = new PropositionalASTNode(null);
-        this.isContradiction = false;
-        this.isTautology = false;
 
         this.root.addChild();
         this.currentNode = (PropositionalASTNode) this.root.getChildren().getFirst();
         this.currentChildIndex = 0;
+
+        if (formulaString.equals("Contradiction")) {
+            this.isContradiction = true;
+            this.isTautology = false;
+            this.validated = true;
+        }
+        else if (formulaString.equals("Tautology")) {
+            this.isContradiction = false;
+            this.isTautology = true;
+            this.validated = true;
+        }
+        else {
+            this.isContradiction = false;
+            this.isTautology = false;
+            this.validated = false;
+            this.checkContradiction();
+            this.checkTautology();
+        }
 
         if (shouldValidate) this.validate(0);
 
@@ -68,9 +100,10 @@ public class PropositionalAST implements AST {
     }
 
     public PropositionalAST(PropositionalASTNode node) {
-        this.formulaString = "";
+        this.formulaString = buildString(node);
         this.isContradiction = false;
         this.isTautology = false;
+        this.validated = false;
 
         if (node != null && node.getKey() == null && !node.getChildren().isEmpty()) {
             this.root = node;
@@ -101,6 +134,8 @@ public class PropositionalAST implements AST {
         this.root = null;
         this.isContradiction = isContradiction;
         this.isTautology = !isContradiction;
+        this.validated = false;
+
         builder = new PropositionalBDDBuilder(this);
     }
 
@@ -109,6 +144,7 @@ public class PropositionalAST implements AST {
         this.root = new PropositionalASTNode(null);
         this.isContradiction = false;
         this.isTautology = false;
+        this.validated = false;
 
         this.root.addChild();
         this.currentNode = (PropositionalASTNode) this.root.getChildren().getFirst();
@@ -119,9 +155,8 @@ public class PropositionalAST implements AST {
         this.checkContradiction();
         this.checkTautology();
 
-        if (code == 1) {
-            buildBDD();
-        }
+        if (code == 1) buildBDD();
+
         builder = new PropositionalBDDBuilder(this);
     }
 
@@ -208,6 +243,9 @@ public class PropositionalAST implements AST {
 
     @Override
     public boolean validate(int line) {
+        if (formulaString == null) return false;
+        if (validated) return true;
+
         Tokenizer tokenizer = new Tokenizer(new PropositionalSignature());
         List<Token> tokens = tokenizer.tokenize(formulaString);
         boolean invalid = false;
@@ -332,6 +370,7 @@ public class PropositionalAST implements AST {
                 ErrorHelper.add(formulaString + " is not a well-formed formula!");
             }
 
+            if (valid && formulaString.isEmpty()) this.formulaString = this.toString();
             return valid;
         }
         catch (Exception e) {
@@ -432,14 +471,7 @@ public class PropositionalAST implements AST {
     }
 
     public PropositionalAST evaluatePartial(PropositionalPartialInterpretation interpretation) {
-        PropositionalAST lastAST = this;
-        PropositionalAST evaluatedAST = evaluatePartialRecursive(lastAST, interpretation);
-        while (!lastAST.isSameFormula(evaluatedAST)) {
-            lastAST = evaluatedAST;
-            evaluatedAST = evaluatePartialRecursive(lastAST, interpretation);
-        }
-
-        return lastAST;
+        return evaluatePartialRecursive(this, interpretation);
     }
 
     public PropositionalAST evaluatePartialRecursive(PropositionalAST node, PropositionalPartialInterpretation interpretation) {
@@ -453,20 +485,13 @@ public class PropositionalAST implements AST {
             PropositionalAST argument2 = evaluatePartialRecursive((PropositionalAST) node.getSubtree(1), interpretation);
 
             if (isContradictionOrTautology(argument1) && isContradictionOrTautology(argument2)) {
-                boolean boolean1 = argument1.isTautology;
-                boolean boolean2 = argument2.isTautology;
-
-                return !boolean1 || boolean2 ? new PropositionalAST(false) : new PropositionalAST(true);
+                return !argument1.isTautology || argument2.isTautology ? new PropositionalAST(false) : new PropositionalAST(true);
             }
             else if (isContradictionOrTautology(argument1) && !isContradictionOrTautology(argument2)){
-                boolean boolean1 = argument1.isTautology;
-
-                return boolean1 ? argument2 : new PropositionalAST(false);
+                return argument1.isTautology ? argument2 : new PropositionalAST(false);
             }
             else if (!isContradictionOrTautology(argument1) && isContradictionOrTautology(argument2)){
-                boolean boolean2 = argument2.isTautology;
-
-                return boolean2 ? new PropositionalAST(false) : argument1;
+                return argument2.isTautology ? new PropositionalAST(false) : argument1;
             }
             else {
                 return formString(argument1, argument2, LogicalOperatorFlyweight.getImplicationString());
@@ -475,11 +500,9 @@ public class PropositionalAST implements AST {
         else if (operator == LogicalOperator.EQUIVALENCE) {
             PropositionalAST argument1 = evaluatePartialRecursive((PropositionalAST) node.getSubtree(0), interpretation);
             PropositionalAST argument2 = evaluatePartialRecursive((PropositionalAST) node.getSubtree(1), interpretation);
-            if (isContradictionOrTautology(argument1) && isContradictionOrTautology(argument2)) {
-                boolean boolean1 = argument1.isTautology;
-                boolean boolean2 = argument2.isTautology;
 
-                return boolean1 == boolean2 ? new PropositionalAST(false) : new PropositionalAST(true);
+            if (isContradictionOrTautology(argument1) && isContradictionOrTautology(argument2)) {
+                return argument1.isTautology == argument2.isTautology ? new PropositionalAST(false) : new PropositionalAST(true);
             }
             else if (isContradictionOrTautology(argument1) && !isContradictionOrTautology(argument2)){
                 return argument2;
@@ -565,12 +588,11 @@ public class PropositionalAST implements AST {
                 String argumentString = ast.toString();
                 if (PropositionalLogicHelper.getOutermostOperation(ast) != LogicalOperator.NOT_A_LOGICAL_OPERATOR) {
                     argumentString = "!(" + argumentString + ")";
-                    return new PropositionalAST(argumentString, true);
                 }
                 else {
                     argumentString = "!" + argumentString;
-                    return new PropositionalAST(argumentString, true);
                 }
+                return new PropositionalAST(argumentString, true);
             }
         }
         else {
@@ -688,9 +710,6 @@ public class PropositionalAST implements AST {
         }
 
         if (childIndex < 0 || childIndex >= effectiveRoot.getChildren().size()) {
-//            throw new IndexOutOfBoundsException(
-//                    "Child index out of range: " + childIndex + " (node has " + effectiveRoot.getChildren().size() + " children)"
-//            );
             PropositionalASTNode childNode = (PropositionalASTNode) effectiveRoot.getChildren().get(childIndex - 1);
             PropositionalASTNode clone = cloneNode(childNode);
 
@@ -814,6 +833,10 @@ public class PropositionalAST implements AST {
         }
 
         List<ASTNode> children = currentNode.getChildren();
+        if (currentNode.getKey().toString().equals("Negation")) {
+            currentNode = (PropositionalASTNode) children.getFirst();
+            return;
+        }
         if (currentChildIndex >= children.size()) {
             ensureChildren(currentNode, currentChildIndex + 1);
             children = currentNode.getChildren();

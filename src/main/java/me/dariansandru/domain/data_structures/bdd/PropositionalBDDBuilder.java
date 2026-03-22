@@ -26,8 +26,17 @@ public class PropositionalBDDBuilder {
     }
 
     public void buildBDD() {
+        if (ast == null || ast.isEmpty()) return;
+
         if (isBuilt) return;
-        if (ast.isContradiction() || ast.isTautology()) return;
+        if (ast.isContradiction()) {
+            uniqueArrayRepresentation = new int[]{0};
+            return;
+        }
+        if (ast.isTautology()) {
+            uniqueArrayRepresentation = new int[]{1};
+            return;
+        }
 
         Set<String> atoms = PropositionalLogicHelper.getAtoms(ast);
         atomList = atoms.stream().sorted().distinct().toList();

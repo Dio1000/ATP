@@ -1,5 +1,6 @@
 package me.dariansandru.domain.proof.inference_rules.propositional;
 
+import me.dariansandru.domain.language.LogicalOperator;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
@@ -60,6 +61,7 @@ public class ContradictionRule implements InferenceRule {
 
             SubGoal subGoal = new SubGoal(goal, PropositionalInferenceRule.CONTRADICTION, ast);
             subGoals.add(subGoal);
+            subGoal.addChild(subGoal);
         }
         return subGoals;
     }
@@ -75,7 +77,8 @@ public class ContradictionRule implements InferenceRule {
         List<SubGoal> subGoals = new ArrayList<>();
         for (AST ast : knowledgeBase) {
             atoms.addAll(PropositionalLogicHelper.getAtoms(ast));
-            if (((PropositionalAST) ast).isAtomic()) continue;
+            if (((PropositionalAST) ast).isAtomic() ||
+                    PropositionalLogicHelper.getOutermostOperation(ast) != LogicalOperator.CONJUNCTION) continue;
 
             PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
             PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
@@ -90,7 +93,7 @@ public class ContradictionRule implements InferenceRule {
 
             PropositionalAST newSubGoal = new PropositionalAST(atom + " " + LogicalOperatorFlyweight.getConjunctionString() + " " + negatedAtom, true);
             SubGoal subGoal = new SubGoal(newSubGoal, PropositionalInferenceRule.CONTRADICTION, newSubGoal);
-            subGoal.addChild(subGoal);
+            subGoals.add(subGoal);
         }
         return subGoals;
     }
