@@ -65,6 +65,10 @@ public class ManualPropositionalProof {
         return (!goals.isEmpty()) ? this.goals.getFirst() : null;
     }
 
+    public List<AST> getKnowledgeBase() {
+        return knowledgeBase;
+    }
+
     private void addHypothesis() {
         for (AST ast : knowledgeBase) {
             KnowledgeBaseRegistry.addObtainedFrom(ast.toString(), "Hypothesis");

@@ -4,7 +4,9 @@ import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.proof.manual_proof.ManualPropositionalProof;
+import me.dariansandru.domain.proof.manual_proof.ManualPropositionalProofStates;
 import me.dariansandru.domain.proof.manual_proof.helper.ManualPropositionalInferenceRuleHelper;
+import me.dariansandru.domain.proof.manual_proof.helper.ManualPropositionalStrategyHelper;
 import me.dariansandru.domain.proof.Strategy;
 import me.dariansandru.utils.global.GlobalAtomID;
 import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
@@ -21,17 +23,14 @@ public class PropositionalProofGUIController {
 
     private JFrame frame;
     private ManualPropositionalProof currentProof;
-    private ManualPropositionalInferenceRuleHelper ruleHelper;
     private boolean proofCreated = false;
 
-    private List<AST> kbListData = new ArrayList<>();
-    private List<AST> goalListData = new ArrayList<>();
+    private final List<AST> kbEntries = new ArrayList<>();
+    private final List<AST> goalListData = new ArrayList<>();
+    private final DefaultListModel<AST> goalModel = new DefaultListModel<>();
 
-    private DefaultListModel<AST> goalModel = new DefaultListModel<>();
-    private JList<AST> goalList = new JList<>(goalModel);
-
-    private List<JCheckBox> kbCheckboxes = new ArrayList<>();
-    private List<JCheckBox> goalCheckboxes = new ArrayList<>();
+    private final List<JCheckBox> kbCheckboxes = new ArrayList<>();
+    private final List<JCheckBox> goalCheckboxes = new ArrayList<>();
     private JPanel kbCheckboxPanel;
     private JPanel goalCheckboxPanel;
 
@@ -49,9 +48,9 @@ public class PropositionalProofGUIController {
     private JButton changeStateBtn;
     private JTextField stateIndexField;
 
-    private List<AST> currentlySelectedFormulas = new ArrayList<>();
-    private List<AST> selectedGoals = new ArrayList<>();
-    private Map<String, CommandInfo> commandMap = new HashMap<>();
+    private final List<AST> selectedKBFormulas = new ArrayList<>();
+    private final List<AST> selectedGoals = new ArrayList<>();
+    private final Map<String, CommandInfo> commandMap = new HashMap<>();
 
     public PropositionalProofGUIController() {
         initializeCommandMap();
@@ -228,16 +227,105 @@ public class PropositionalProofGUIController {
         return controlPanel;
     }
 
-    private void refreshKBCheckboxes() {
-        validateCheckboxes(kbCheckboxPanel, kbCheckboxes, kbListData);
+    private void addToKB() {
+        if (proofCreated) {
+            JOptionPane.showMessageDialog(frame, "Cannot modify Knowledge Base after proof creation. Please reset first.");
+            return;
+        }
+        String text = kbField.getText().trim();
+        if (text.isEmpty()) return;
+
+        try {
+            AST ast = new PropositionalAST(text, true);
+            registerAtoms(List.of(ast));
+            kbEntries.add(ast);
+            refreshKBEntriesDisplay();
+            kbField.setText("");
+        }
+        catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame, "Invalid formula: " + ex.getMessage());
+        }
     }
 
-    private void validateCheckboxes(JPanel kbCheckboxPanel, List<JCheckBox> kbCheckboxes, List<AST> kbListData) {
+    private void refreshKBEntriesDisplay() {
         kbCheckboxPanel.removeAll();
         kbCheckboxes.clear();
 
-        for (int i = 0; i < kbListData.size(); i++) {
-            AST ast = kbListData.get(i);
+        for (int i = 0; i < kbEntries.size(); i++) {
+            AST ast = kbEntries.get(i);
+            JPanel formulaPanel = new JPanel(new BorderLayout(5, 0));
+            formulaPanel.setBorder(BorderFactory.createEmptyBorder(4, 5, 4, 5));
+
+            JCheckBox checkBox = new JCheckBox();
+            checkBox.setEnabled(false);
+            addCheckboxes(i, ast, formulaPanel, checkBox, kbCheckboxes, kbCheckboxPanel);
+        }
+
+        kbCheckboxPanel.revalidate();
+        kbCheckboxPanel.repaint();
+    }
+
+    private void addCheckboxes(int i, AST ast, JPanel formulaPanel, JCheckBox checkBox, List<JCheckBox> kbCheckboxes, JPanel kbCheckboxPanel) {
+        kbCheckboxes.add(checkBox);
+
+        JLabel formulaLabel = new JLabel((i + 1) + ". " + ast.toString());
+        formulaLabel.setFont(new Font("Monospaced", Font.PLAIN, 12));
+
+        formulaPanel.add(checkBox, BorderLayout.WEST);
+        formulaPanel.add(formulaLabel, BorderLayout.CENTER);
+
+        kbCheckboxPanel.add(formulaPanel);
+    }
+
+    private void createProof() {
+        if (kbEntries.isEmpty() || goalListData.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "Please add at least one KB formula and one goal");
+            return;
+        }
+
+        try {
+            for (AST ast : kbEntries) {
+                KnowledgeBaseRegistry.addObtainedFrom(ast.toString(), "Hypothesis");
+            }
+            for (AST ast : goalListData) {
+                KnowledgeBaseRegistry.addObtainedFrom(ast.toString(), "Hypothesis");
+            }
+
+            currentProof = new ManualPropositionalProof(
+                    new ArrayList<>(kbEntries),
+                    new ArrayList<>(goalListData),
+                    null,
+                    1
+            );
+
+            proofCreated = true;
+
+            addKbBtn.setEnabled(false);
+            addGoalBtn.setEnabled(false);
+            kbField.setEnabled(false);
+            goalField.setEnabled(false);
+
+            refreshKBCheckboxes();
+            updateStateDisplay();
+
+            JOptionPane.showMessageDialog(frame, "Proof created successfully!");
+
+        }
+        catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame, "Error creating proof: " + ex.getMessage());
+        }
+    }
+
+    private void refreshKBCheckboxes() {
+        if (currentProof == null) return;
+
+        List<AST> knowledgeBase = currentProof.getKnowledgeBase();
+
+        kbCheckboxPanel.removeAll();
+        kbCheckboxes.clear();
+
+        for (int i = 0; i < knowledgeBase.size(); i++) {
+            AST ast = knowledgeBase.get(i);
             JPanel formulaPanel = new JPanel(new BorderLayout(5, 0));
             formulaPanel.setBorder(BorderFactory.createEmptyBorder(4, 5, 4, 5));
 
@@ -248,8 +336,17 @@ public class PropositionalProofGUIController {
             JLabel formulaLabel = new JLabel((i + 1) + ". " + ast.toString());
             formulaLabel.setFont(new Font("Monospaced", Font.PLAIN, 12));
 
+            String source = KnowledgeBaseRegistry.getObtainedFrom(ast.toString());
+            JLabel sourceLabel = new JLabel(source);
+            sourceLabel.setFont(new Font("SansSerif", Font.ITALIC, 10));
+            sourceLabel.setForeground(Color.GRAY);
+
+            JPanel textPanel = new JPanel(new GridLayout(2, 1));
+            textPanel.add(formulaLabel);
+            textPanel.add(sourceLabel);
+
             formulaPanel.add(checkBox, BorderLayout.WEST);
-            formulaPanel.add(formulaLabel, BorderLayout.CENTER);
+            formulaPanel.add(textPanel, BorderLayout.CENTER);
 
             kbCheckboxPanel.add(formulaPanel);
         }
@@ -258,19 +355,60 @@ public class PropositionalProofGUIController {
         kbCheckboxPanel.repaint();
     }
 
+    private void reset() {
+        kbEntries.clear();
+        kbField.setText("");
+        kbField.setEnabled(true);
+
+        goalListData.clear();
+        goalModel.clear();
+        refreshGoalCheckboxes();
+        refreshKBEntriesDisplay();
+
+        proofCreated = false;
+        currentProof = null;
+
+        addKbBtn.setEnabled(true);
+        addGoalBtn.setEnabled(true);
+        kbField.setEnabled(true);
+        goalField.setEnabled(true);
+
+        stateDisplayArea.setText("");
+        clearRulesPanel();
+
+        JOptionPane.showMessageDialog(frame, "Reset complete.");
+    }
+
     private void refreshGoalCheckboxes() {
         if (goalCheckboxPanel == null) return;
 
-        validateCheckboxes(goalCheckboxPanel, goalCheckboxes, goalListData);
+        goalCheckboxPanel.removeAll();
+        goalCheckboxes.clear();
+
+        for (int i = 0; i < goalListData.size(); i++) {
+            AST ast = goalListData.get(i);
+            JPanel formulaPanel = new JPanel(new BorderLayout(5, 0));
+            formulaPanel.setBorder(BorderFactory.createEmptyBorder(4, 5, 4, 5));
+
+            JCheckBox checkBox = new JCheckBox();
+            checkBox.addActionListener(e -> updateSelectedFormulas());
+            addCheckboxes(i, ast, formulaPanel, checkBox, goalCheckboxes, goalCheckboxPanel);
+        }
+
+        goalCheckboxPanel.revalidate();
+        goalCheckboxPanel.repaint();
     }
 
     private void updateSelectedFormulas() {
-        currentlySelectedFormulas.clear();
+        selectedKBFormulas.clear();
         selectedGoals.clear();
 
-        for (int i = 0; i < kbCheckboxes.size(); i++) {
-            if (kbCheckboxes.get(i).isSelected()) {
-                currentlySelectedFormulas.add(kbListData.get(i));
+        if (currentProof != null) {
+            List<AST> knowledgeBase = currentProof.getKnowledgeBase();
+            for (int i = 0; i < kbCheckboxes.size(); i++) {
+                if (kbCheckboxes.get(i).isSelected()) {
+                    selectedKBFormulas.add(knowledgeBase.get(i));
+                }
             }
         }
 
@@ -280,7 +418,7 @@ public class PropositionalProofGUIController {
             }
         }
 
-        if (currentProof != null && proofCreated && (!currentlySelectedFormulas.isEmpty() || !selectedGoals.isEmpty())) {
+        if (currentProof != null && proofCreated && (!selectedKBFormulas.isEmpty() || !selectedGoals.isEmpty())) {
             updateApplicableItems();
         }
         else {
@@ -289,13 +427,10 @@ public class PropositionalProofGUIController {
     }
 
     private void updateApplicableItems() {
-        if (ruleHelper == null) {
-            ruleHelper = new ManualPropositionalInferenceRuleHelper(kbListData);
-        }
-
         List<InferenceRule> applicableRules = new ArrayList<>();
-        if (!currentlySelectedFormulas.isEmpty()) {
-            applicableRules = ruleHelper.applicableRules(currentlySelectedFormulas);
+        if (!selectedKBFormulas.isEmpty()) {
+            ManualPropositionalInferenceRuleHelper helper = new ManualPropositionalInferenceRuleHelper(currentProof.getKnowledgeBase());
+            applicableRules = helper.applicableRules(selectedKBFormulas);
         }
 
         List<Strategy> applicableStrategies = new ArrayList<>();
@@ -307,8 +442,15 @@ public class PropositionalProofGUIController {
     }
 
     private List<Strategy> getApplicableStrategies(AST ast) {
-        ManualPropositionalInferenceRuleHelper helper = new ManualPropositionalInferenceRuleHelper(List.of(ast));
-        return helper.applicableStrategies(ast);
+        ManualPropositionalStrategyHelper helper = new ManualPropositionalStrategyHelper(null, null, null, List.of(ast));
+        List<Strategy> strategies = new ArrayList<>();
+
+        if (helper.handleImplicationStrategy(0)) strategies.add(Strategy.IMPLICATION_STRATEGY);
+        if (helper.handleConjunctionStrategy(0, null)) strategies.add(Strategy.CONJUNCTION_STRATEGY);
+        if (helper.handleDisjunctionStrategy(0)) strategies.add(Strategy.DISJUNCTION_STRATEGY);
+        if (helper.handleEquivalenceStrategy(0, null)) strategies.add(Strategy.EQUIVALENCE_STRATEGY);
+
+        return strategies;
     }
 
     private void displayRulesAndStrategies(List<InferenceRule> rules, List<Strategy> strategies) {
@@ -397,7 +539,6 @@ public class PropositionalProofGUIController {
 
     private String getRuleDescription(InferenceRule rule) {
         String ruleName = rule.name().toUpperCase();
-
         return switch (ruleName) {
             case "MODUS PONENS" -> "If P → Q and P, then Q";
             case "MODUS TOLLENS" -> "If P → Q and ¬Q, then ¬P";
@@ -409,13 +550,11 @@ public class PropositionalProofGUIController {
             case "TRANSPOSITION" -> "If P → Q, then ¬Q → ¬P";
             case "MATERIAL EQUIVALENCE" -> "If P ↔ Q, then (P → Q) ∧ (Q → P)";
             case "MATERIAL IMPLICATION" -> "If P → Q, then ¬P ∨ Q";
-            case "DEMORGAN" -> "DeMorgan's laws: ¬(P ∧ Q) ↔ (¬P ∨ ¬Q), ¬(P ∨ Q) ↔ (¬P ∧ ¬Q)";
+            case "DEMORGAN" -> "DeMorgan's laws";
             case "CONJUNCTION INTRODUCTION" -> "From P and Q, derive P ∧ Q";
             case "CONJUNCTION ELIMINATION" -> "From P ∧ Q, derive P or Q";
             case "DISJUNCTION INTRODUCTION" -> "From P, derive P ∨ Q";
             case "DISJUNCTION ELIMINATION" -> "From P ∨ Q, P → R, Q → R, derive R";
-            case "IMPLICATION INTRODUCTION" -> "From Q (assuming P), derive P → Q";
-            case "IMPLICATION ELIMINATION" -> "From P → Q and P, derive Q";
             default -> "Apply this inference rule";
         };
     }
@@ -445,17 +584,20 @@ public class PropositionalProofGUIController {
             return;
         }
 
-        int selectedCount = currentlySelectedFormulas.size();
+        int selectedCount = selectedKBFormulas.size();
+
         if (cmdInfo.fixedArity) {
             if (selectedCount != cmdInfo.arity) {
-                JOptionPane.showMessageDialog(frame, String.format("Rule '%s' requires exactly %d formula(s). You selected %d.",
+                JOptionPane.showMessageDialog(frame,
+                        String.format("Rule '%s' requires exactly %d formula(s). You selected %d.",
                                 ruleName, cmdInfo.arity, selectedCount));
                 return;
             }
         }
         else {
             if (cmdInfo.arity > 0 && selectedCount > cmdInfo.arity) {
-                JOptionPane.showMessageDialog(frame, String.format("Rule '%s' requires at most %d formula(s). You selected %d.",
+                JOptionPane.showMessageDialog(frame,
+                        String.format("Rule '%s' requires at most %d formula(s). You selected %d.",
                                 ruleName, cmdInfo.arity, selectedCount));
                 return;
             }
@@ -464,19 +606,23 @@ public class PropositionalProofGUIController {
                 return;
             }
         }
+
+        List<AST> knowledgeBase = currentProof.getKnowledgeBase();
         StringBuilder commandBuilder = new StringBuilder(cmdInfo.command);
         commandBuilder.append("(");
 
-        for (int i = 0; i < currentlySelectedFormulas.size(); i++) {
-            int index = kbListData.indexOf(currentlySelectedFormulas.get(i));
+        for (int i = 0; i < selectedKBFormulas.size(); i++) {
+            int index = knowledgeBase.indexOf(selectedKBFormulas.get(i));
             if (i > 0) commandBuilder.append(", ");
             commandBuilder.append("KB").append(index + 1);
         }
         commandBuilder.append(")");
 
         String command = commandBuilder.toString();
+
         try {
             boolean success = currentProof.executeCommand(command);
+
             if (success) {
                 refreshKBCheckboxes();
                 updateStateDisplay();
@@ -484,6 +630,7 @@ public class PropositionalProofGUIController {
                 for (JCheckBox cb : kbCheckboxes) {
                     cb.setSelected(false);
                 }
+                selectedKBFormulas.clear();
                 updateSelectedFormulas();
 
                 JOptionPane.showMessageDialog(frame, "Rule applied successfully!");
@@ -509,7 +656,8 @@ public class PropositionalProofGUIController {
         }
 
         String strategyName = strategy.name();
-        CommandInfo cmdInfo = commandMap.get(strategyName);
+        String mapKey = strategyName.toUpperCase().replace(" ", "_");
+        CommandInfo cmdInfo = commandMap.get(mapKey);
 
         if (cmdInfo == null) {
             JOptionPane.showMessageDialog(frame, String.format("Strategy '%s' is not yet mapped to a command.", strategyName));
@@ -522,7 +670,9 @@ public class PropositionalProofGUIController {
 
             try {
                 boolean success = currentProof.executeCommand(command);
+
                 if (success) {
+                    refreshKBCheckboxes();
                     updateStateDisplay();
                 }
                 else {
@@ -537,6 +687,7 @@ public class PropositionalProofGUIController {
         for (JCheckBox cb : goalCheckboxes) {
             cb.setSelected(false);
         }
+        selectedGoals.clear();
         updateSelectedFormulas();
         JOptionPane.showMessageDialog(frame, "Strategies applied successfully!");
     }
@@ -550,27 +701,6 @@ public class PropositionalProofGUIController {
     private void refreshRulesPanel() {
         rulesPanel.revalidate();
         rulesPanel.repaint();
-    }
-
-    private void addToKB() {
-        if (proofCreated) {
-            JOptionPane.showMessageDialog(frame, "Cannot modify KB after proof creation. Please reset first.");
-            return;
-        }
-
-        String text = kbField.getText().trim();
-        if (text.isEmpty()) return;
-
-        try {
-            AST ast = new PropositionalAST(text, true);
-            registerAtoms(List.of(ast));
-            kbListData.add(ast);
-            refreshKBCheckboxes();
-            kbField.setText("");
-        }
-        catch (Exception ex) {
-            JOptionPane.showMessageDialog(frame, "Invalid formula: " + ex.getMessage());
-        }
     }
 
     private void addToGoal() {
@@ -589,66 +719,9 @@ public class PropositionalProofGUIController {
             goalModel.addElement(ast);
             refreshGoalCheckboxes();
             goalField.setText("");
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             JOptionPane.showMessageDialog(frame, "Invalid formula: " + ex.getMessage());
         }
-    }
-
-    private void createProof() {
-        if (kbListData.isEmpty() || goalListData.isEmpty()) {
-            JOptionPane.showMessageDialog(frame, "Please add at least one KB formula and one goal");
-            return;
-        }
-
-        try {
-            for (AST ast : kbListData) {
-                KnowledgeBaseRegistry.addObtainedFrom(ast.toString(), "Hypothesis");
-            }
-            for (AST ast : goalListData) {
-                KnowledgeBaseRegistry.addObtainedFrom(ast.toString(), "Hypothesis");
-            }
-
-            currentProof = new ManualPropositionalProof(new ArrayList<>(kbListData), new ArrayList<>(goalListData), null, 1);
-            ruleHelper = new ManualPropositionalInferenceRuleHelper(kbListData);
-            proofCreated = true;
-
-            addKbBtn.setEnabled(false);
-            addGoalBtn.setEnabled(false);
-            kbField.setEnabled(false);
-            goalField.setEnabled(false);
-
-            updateStateDisplay();
-
-            JOptionPane.showMessageDialog(frame, "Proof created successfully!");
-
-        }
-        catch (Exception ex) {
-            JOptionPane.showMessageDialog(frame, "Error creating proof: " + ex.getMessage());
-        }
-    }
-
-    private void reset() {
-        kbListData.clear();
-        goalListData.clear();
-
-        goalModel.clear();
-
-        refreshKBCheckboxes();
-        refreshGoalCheckboxes();
-
-        proofCreated = false;
-        currentProof = null;
-
-        addKbBtn.setEnabled(true);
-        addGoalBtn.setEnabled(true);
-        kbField.setEnabled(true);
-        goalField.setEnabled(true);
-
-        stateDisplayArea.setText("");
-        clearRulesPanel();
-
-        JOptionPane.showMessageDialog(frame, "Reset complete.");
     }
 
     private void handleDone() {
@@ -681,35 +754,51 @@ public class PropositionalProofGUIController {
 
         try {
             int stateIndex = Integer.parseInt(stateIndexField.getText().trim());
+
+            if (stateIndex < 1) {
+                JOptionPane.showMessageDialog(frame, "State index must be at least 1");
+                return;
+            }
             String command = "chstate(S" + stateIndex + ")";
 
             boolean success = currentProof.executeCommand(command);
-
             if (success) {
+                try {
+                    currentProof = ManualPropositionalProofStates.getState(stateIndex);
+                } catch (Exception ignored) {
+
+                }
+
+                refreshKBCheckboxes();
                 updateStateDisplay();
+
+                for (JCheckBox cb : kbCheckboxes) {
+                    cb.setSelected(false);
+                }
+                selectedKBFormulas.clear();
+                updateSelectedFormulas();
+
                 JOptionPane.showMessageDialog(frame, "Changed to state " + stateIndex);
             }
             else {
-                JOptionPane.showMessageDialog(frame, "Failed to change state.");
+                JOptionPane.showMessageDialog(frame, "Failed to change to state " + stateIndex + ". State may not exist or is invalid.");
             }
         }
         catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(frame, "Invalid state index");
+            JOptionPane.showMessageDialog(frame, "Invalid state index. Please enter a number.");
         }
         catch (Exception ex) {
-            JOptionPane.showMessageDialog(frame, "Error: " + ex.getMessage());
+            JOptionPane.showMessageDialog(frame, "Error changing state: " + ex.getMessage());
         }
     }
 
     private void updateStateDisplay() {
         if (currentProof == null || !proofCreated) return;
-
+        
         try {
             String stateText = currentProof.getStateText();
             stateDisplayArea.setText(stateText);
-            refreshKBCheckboxes();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             stateDisplayArea.setText("Error getting state: " + e.getMessage());
         }
     }

@@ -72,6 +72,8 @@ public class Main {
 // -- GENERAL --
 
 // -- BUGS --
+//TODO Implication Strategy does not work in GUI.
+//TODO Make GUI look more beautiful.
 
 // -- NEW FEATURES --
 //TODO Create a new way to output proofs because some lines do not get printed in Automated Proofs.
