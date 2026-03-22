@@ -5,6 +5,7 @@ import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
@@ -21,7 +22,21 @@ public class EquivalenceElimination implements InferenceRule {
 
     @Override
     public boolean canInference(List<AST> asts, AST goal) {
-        return false;
+        if (asts.size() != 1) return false;
+
+        if (PropositionalLogicHelper.getOutermostOperation(asts.getFirst()) != LogicalOperator.EQUIVALENCE) return false;
+        PropositionalAST left = (PropositionalAST) asts.getFirst().getSubtree(0);
+        PropositionalAST right = (PropositionalAST) asts.getFirst().getSubtree(1);
+        System.out.println(left + " " + right);
+
+        PropositionalAST newAST1 = new PropositionalAST(
+                left + " " + LogicalOperatorFlyweight.getImplicationString() + " " + right, true);
+        PropositionalAST newAST2 = new PropositionalAST(
+                right + " " + LogicalOperatorFlyweight.getImplicationString() + " " + left, true);
+
+        derived.add(newAST1);
+        derived.add(newAST2);
+        return true;
     }
 
     @Override

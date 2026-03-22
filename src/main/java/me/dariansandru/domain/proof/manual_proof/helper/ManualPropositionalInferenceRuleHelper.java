@@ -419,13 +419,18 @@ public class ManualPropositionalInferenceRuleHelper {
             return false;
         }
 
-        AST ast1 = ast.getSubtree(0);
-        AST ast2 = ast.getSubtree(1);
-        KnowledgeBaseRegistry.addObtainedFrom(ast1.toString(), List.of(ast.toString()), "Equivalence Simplification");
-        KnowledgeBaseRegistry.addObtainedFrom(ast2.toString(), List.of(ast.toString()), "Equivalence Simplification");
+        PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
+        PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
+        PropositionalAST newAST1 = new PropositionalAST(
+                left + " " + LogicalOperatorFlyweight.getImplicationString() + " " + right, true);
+        PropositionalAST newAST2 = new PropositionalAST(
+                right + " " + LogicalOperatorFlyweight.getImplicationString() + " " + left, true);
 
-        if (!containsEntry(ast1)) knowledgeBase.add(ast1);
-        if (!containsEntry(ast2)) knowledgeBase.add(ast2);
+        KnowledgeBaseRegistry.addObtainedFrom(newAST1.toString(), List.of(ast.toString()), "Equivalence Simplification");
+        KnowledgeBaseRegistry.addObtainedFrom(newAST2.toString(), List.of(ast.toString()), "Equivalence Simplification");
+
+        if (!containsEntry(newAST1)) knowledgeBase.add(newAST1);
+        if (!containsEntry(newAST2)) knowledgeBase.add(newAST2);
         return true;
     }
 
@@ -617,18 +622,4 @@ public class ManualPropositionalInferenceRuleHelper {
 
         return usableInferenceRules;
     }
-
-    public List<Strategy> applicableStrategies(AST ast) {
-        ManualPropositionalStrategyHelper helper = new ManualPropositionalStrategyHelper(null, null, null, List.of(ast));
-        List<Strategy> strategies = new ArrayList<>();
-
-        if (helper.handleImplicationStrategy(0)) strategies.add(Strategy.IMPLICATION_STRATEGY);
-        if (helper.handleConjunctionStrategy(0, null)) strategies.add(Strategy.CONJUNCTION_STRATEGY);
-        if (helper.handleDisjunctionStrategy(0)) strategies.add(Strategy.DISJUNCTION_STRATEGY);
-        if (helper.handleEquivalenceStrategy(0, null)) strategies.add(Strategy.EQUIVALENCE_STRATEGY);
-        //TODO Complete.
-
-        return strategies;
-    }
 }
-

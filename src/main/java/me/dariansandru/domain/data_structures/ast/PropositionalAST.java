@@ -740,6 +740,7 @@ public class PropositionalAST implements AST {
 
     @Override
     public boolean isEquivalentTo(AST other) {
+        if (other == null) return false;
         if (this.isContradiction && other.isContradiction()) return true;
         else if (this.isTautology && other.isTautology()) return true;
         else if (this.isContradiction && !other.isContradiction()) return false;

@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+// WARNING: This class is not used, it only servers as a model for future GUIs.
+
 public class GUIController extends JFrame {
     private final JTextArea outputArea;
     private final ButtonGroup universeGroup;

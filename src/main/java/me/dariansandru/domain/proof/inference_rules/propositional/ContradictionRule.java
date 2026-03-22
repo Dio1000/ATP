@@ -24,7 +24,7 @@ public class ContradictionRule implements InferenceRule {
 
     @Override
     public boolean canInference(List<AST> asts, AST goal) {
-        return false;
+        return PropositionalLogicHelper.buildConjunction(asts).isContradiction();
     }
 
     @Override

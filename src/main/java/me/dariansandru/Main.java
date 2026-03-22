@@ -72,10 +72,13 @@ public class Main {
 // -- GENERAL --
 
 // -- BUGS --
-//TODO Implication Strategy does not work in GUI.
+//TODO Add visual indication that states are completed.
+//TODO Remove the MAAANY confirmations needed.
+//TODO isContradiction and isTautology are not implemented.
 //TODO Make GUI look more beautiful.
 
 // -- NEW FEATURES --
 //TODO Create a new way to output proofs because some lines do not get printed in Automated Proofs.
 //TODO Add more inference rules for Automated Proving (from Manual Proving) and fix old ones. (Look at Natural Deduction to find missing rules)
 //TODO Add creation of custom propositional inference rules packages.
+//TODO For GUI, add Automated Button.

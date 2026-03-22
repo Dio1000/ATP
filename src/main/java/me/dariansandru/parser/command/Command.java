@@ -28,7 +28,7 @@ public enum Command {
     DISJUNCTION_ELIMINATION("diselim", 2, true),
     DISJUNCTIVE_SYLLOGISM("dissyll", 2, true),
     EQUIVALENCE_INTRODUCTION("eqintro", 2, true),
-    EQUIVALENCE_SIMPLIFICATION("eqelim", 1, true),
+    EQUIVALENCE_ELIMINATION("eqelim", 1, true),
     HYPOTHETICAL_SYLLOGISM("hypsyll", 2, true),
     IMPLICATION_INTRODUCTION("implintro", 2, true),
     IMPLICATION_ELIMINATION("implsimpl", 1, true),

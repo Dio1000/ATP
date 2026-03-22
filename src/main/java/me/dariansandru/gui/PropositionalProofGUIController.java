@@ -74,7 +74,7 @@ public class PropositionalProofGUIController {
         commandMap.put("DISJUNCTION ELIMINATION", new CommandInfo("diselim", 2, true));
         commandMap.put("DISJUNCTIVE SYLLOGISM", new CommandInfo("dissyll", 2, true));
         commandMap.put("EQUIVALENCE INTRODUCTION", new CommandInfo("eqintro", 2, true));
-        commandMap.put("EQUIVALENCE SIMPLIFICATION", new CommandInfo("eqelim", 1, true));
+        commandMap.put("EQUIVALENCE ELIMINATION", new CommandInfo("eqelim", 1, true));
         commandMap.put("HYPOTHETICAL SYLLOGISM", new CommandInfo("hypsyll", 2, true));
         commandMap.put("IMPLICATION INTRODUCTION", new CommandInfo("implintro", 2, true));
         commandMap.put("IMPLICATION ELIMINATION", new CommandInfo("implsimpl", 1, true));
@@ -278,8 +278,8 @@ public class PropositionalProofGUIController {
     }
 
     private void createProof() {
-        if (kbEntries.isEmpty() || goalListData.isEmpty()) {
-            JOptionPane.showMessageDialog(frame, "Please add at least one KB formula and one goal");
+        if (goalListData.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "Please add at least one goal");
             return;
         }
 
@@ -297,8 +297,8 @@ public class PropositionalProofGUIController {
                     null,
                     1
             );
-
             proofCreated = true;
+            ManualPropositionalProofStates.addOriginalState(currentProof);
 
             addKbBtn.setEnabled(false);
             addGoalBtn.setEnabled(false);
@@ -435,6 +435,7 @@ public class PropositionalProofGUIController {
 
         List<Strategy> applicableStrategies = new ArrayList<>();
         for (AST goal : selectedGoals) {
+            if (goal.isContradiction()) break;
             applicableStrategies.addAll(getApplicableStrategies(goal));
         }
 
@@ -449,6 +450,7 @@ public class PropositionalProofGUIController {
         if (helper.handleConjunctionStrategy(0, null)) strategies.add(Strategy.CONJUNCTION_STRATEGY);
         if (helper.handleDisjunctionStrategy(0)) strategies.add(Strategy.DISJUNCTION_STRATEGY);
         if (helper.handleEquivalenceStrategy(0, null)) strategies.add(Strategy.EQUIVALENCE_STRATEGY);
+        if (helper.handleNegationStrategy(0)) strategies.add(Strategy.NEGATION_STRATEGY);
 
         return strategies;
     }
@@ -619,7 +621,6 @@ public class PropositionalProofGUIController {
         commandBuilder.append(")");
 
         String command = commandBuilder.toString();
-
         try {
             boolean success = currentProof.executeCommand(command);
 
@@ -672,14 +673,11 @@ public class PropositionalProofGUIController {
                 boolean success = currentProof.executeCommand(command);
 
                 if (success) {
-                    refreshKBCheckboxes();
-                    updateStateDisplay();
-                }
-                else {
+                    refreshCheckboxes();
+                } else {
                     JOptionPane.showMessageDialog(frame, String.format("Failed to apply strategy to goal: %s", goal));
                 }
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 JOptionPane.showMessageDialog(frame, "Error applying strategy: " + ex.getMessage());
             }
         }
@@ -754,34 +752,30 @@ public class PropositionalProofGUIController {
 
         try {
             int stateIndex = Integer.parseInt(stateIndexField.getText().trim());
-
             if (stateIndex < 1) {
                 JOptionPane.showMessageDialog(frame, "State index must be at least 1");
                 return;
             }
-            String command = "chstate(S" + stateIndex + ")";
 
-            boolean success = currentProof.executeCommand(command);
-            if (success) {
-                try {
-                    currentProof = ManualPropositionalProofStates.getState(stateIndex);
-                } catch (Exception ignored) {
-
-                }
-
-                refreshKBCheckboxes();
-                updateStateDisplay();
+            ManualPropositionalProof newState = currentProof.getState(stateIndex);
+            if (newState != null) {
+                currentProof = newState;
+                refreshCheckboxes();
 
                 for (JCheckBox cb : kbCheckboxes) {
                     cb.setSelected(false);
                 }
+                for (JCheckBox cb : goalCheckboxes) {
+                    cb.setSelected(false);
+                }
                 selectedKBFormulas.clear();
+                selectedGoals.clear();
                 updateSelectedFormulas();
 
                 JOptionPane.showMessageDialog(frame, "Changed to state " + stateIndex);
             }
             else {
-                JOptionPane.showMessageDialog(frame, "Failed to change to state " + stateIndex + ". State may not exist or is invalid.");
+                JOptionPane.showMessageDialog(frame, "State " + stateIndex + " does not exist.");
             }
         }
         catch (NumberFormatException ex) {
@@ -792,9 +786,26 @@ public class PropositionalProofGUIController {
         }
     }
 
+    private void refreshCheckboxes() {
+        goalListData.clear();
+        goalModel.clear();
+
+        List<AST> goals = currentProof.getGoals();
+        if (goals != null && !goals.isEmpty()) {
+            goalListData.addAll(goals);
+            for (AST goal : goals) {
+                goalModel.addElement(goal);
+            }
+        }
+
+        refreshGoalCheckboxes();
+        refreshKBCheckboxes();
+        updateStateDisplay();
+    }
+
     private void updateStateDisplay() {
         if (currentProof == null || !proofCreated) return;
-        
+
         try {
             String stateText = currentProof.getStateText();
             stateDisplayArea.setText(stateText);

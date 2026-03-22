@@ -5,8 +5,7 @@ Rules:
 Classical
 
 KB:
-A
-A -> B
+A <-> B
 
 Goals:
-A <-> D
+B <-> A

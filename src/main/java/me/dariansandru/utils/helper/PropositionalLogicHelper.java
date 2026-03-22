@@ -150,4 +150,31 @@ public abstract class PropositionalLogicHelper {
         return new PropositionalAST(formulaString, true);
     }
 
+    public static AST buildConjunction(List<AST> asts) {
+        if (asts.isEmpty()) return new PropositionalAST(true);
+        if (asts.size() == 1) return asts.getFirst();
+
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < asts.size(); i++) {
+            AST current = asts.get(i);
+            String currentString = current.toString();
+
+            LogicalOperator operator = PropositionalLogicHelper.getOutermostOperation(current);
+            if (operator != LogicalOperator.NOT_A_LOGICAL_OPERATOR && operator != LogicalOperator.NEGATION && operator != LogicalOperator.CONJUNCTION) {
+                currentString = "(" + currentString + ")";
+            }
+
+            builder.append(currentString);
+
+            if (i < asts.size() - 1) {
+                builder.append(" ").append(LogicalOperatorFlyweight.getConjunctionString()).append(" ");
+            }
+        }
+
+        String formulaString = builder.toString();
+        LogicalOperator operator = PropositionalLogicHelper.getOutermostOperation(new PropositionalAST(formulaString, true));
+
+        if (operator == LogicalOperator.CONJUNCTION) return new PropositionalAST(formulaString, true);
+        else return new PropositionalAST("(" + formulaString + ")", true);
+    }
 }

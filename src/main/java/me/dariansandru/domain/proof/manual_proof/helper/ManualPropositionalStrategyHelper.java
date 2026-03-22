@@ -38,6 +38,7 @@ public class ManualPropositionalStrategyHelper {
                     ". Outermost logical operator is not '" + LogicalOperatorFlyweight.getImplicationString() + "'!");
             return false;
         }
+        if (this.knowledgeBase == null) return true;
 
         AST newAST1 = ast.getSubtree(0);
         AST newAST2 = ast.getSubtree(1);
@@ -98,6 +99,8 @@ public class ManualPropositionalStrategyHelper {
     }
 
     public boolean handleNegationStrategy(int index) {
+        if (knowledgeBase == null) return true;
+
         AST ast = goals.get(index);
         ast.negate();
         AST contradictionAST = new PropositionalAST(true);

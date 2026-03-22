@@ -332,7 +332,7 @@ public class ManualPropositionalProof {
 
                 return inferenceRuleHelper.handleEquivalenceIntroduction(indices.getFirst(), indices.get(1));
             }
-            case EQUIVALENCE_SIMPLIFICATION -> {
+            case EQUIVALENCE_ELIMINATION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
@@ -440,6 +440,14 @@ public class ManualPropositionalProof {
         }
         ManualPropositionalProofStates.getState(index).prove();
         return true;
+    }
+
+    public ManualPropositionalProof getState(int index) {
+        return ManualPropositionalProofStates.getState(index);
+    }
+
+    public List<AST> getGoals() {
+        return goals;
     }
 
     private boolean handleContradiction(List<Integer> indices) {
