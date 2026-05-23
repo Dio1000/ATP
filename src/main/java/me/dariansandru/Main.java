@@ -10,6 +10,7 @@ import me.dariansandru.domain.proof.inference_rules.helper.CustomInferenceRuleHe
 import me.dariansandru.domain.proof.manual_proof.helper.ManualPropositionalInferenceRuleHelper;
 import me.dariansandru.gui.GUIController;
 import me.dariansandru.gui.PropositionalProofGUIController;
+import me.dariansandru.test.TestPipeline;
 import me.dariansandru.utils.global.GlobalAtomID;
 
 import javax.swing.*;
@@ -51,17 +52,8 @@ public class Main {
             logicController.manualRun();
         }
         else if (Objects.equals(argument, testString)) {
-            PropositionalAST ast1 = new PropositionalAST("A -> B", true);
-            PropositionalAST ast2 = new PropositionalAST("A", true);
-            List<AST> asts = new ArrayList<>();
-            asts.add(ast1);
-            asts.add(ast2);
-            GlobalAtomID.addAtomId("A");
-            GlobalAtomID.addAtomId("B");
-
-            ManualPropositionalInferenceRuleHelper helper = new ManualPropositionalInferenceRuleHelper(new ArrayList<AST>());
-            List<InferenceRule> inferenceRules = helper.applicableRules(asts);
-            for (InferenceRule inferenceRule : inferenceRules) System.out.println(inferenceRule.name());
+            // PropositionalAST ast = new PropositionalAST("P $ Q", true);
+            TestPipeline.test();
         }
         else {
             throw new IllegalStateException("Argument: " + args[0] + " could not be found!");
@@ -72,13 +64,10 @@ public class Main {
 // -- GENERAL --
 
 // -- BUGS --
-//TODO Add visual indication that states are completed.
-//TODO Remove the MAAANY confirmations needed.
 //TODO isContradiction and isTautology are not implemented.
-//TODO Make GUI look more beautiful.
+//TODO negstr with no argument crashed in manual
 
 // -- NEW FEATURES --
 //TODO Create a new way to output proofs because some lines do not get printed in Automated Proofs.
 //TODO Add more inference rules for Automated Proving (from Manual Proving) and fix old ones. (Look at Natural Deduction to find missing rules)
 //TODO Add creation of custom propositional inference rules packages.
-//TODO For GUI, add Automated Button.

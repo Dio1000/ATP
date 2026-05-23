@@ -17,7 +17,7 @@ public class Equivalence implements Predicate {
 
     @Override
     public int getArity() {
-        return 2;
+        return -1;
     }
 
     @Override

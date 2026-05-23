@@ -173,7 +173,7 @@ public class PropositionalBDDBuilder {
 
         if (length1 != length2) return false;
 
-        for (int i = 0; i < length1; i++) {
+        for (int i = 0; i <= length1; i++) {
             if (array1[i] != array2[i]) return false;
         }
 

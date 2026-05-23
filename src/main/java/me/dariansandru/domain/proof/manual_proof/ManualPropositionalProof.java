@@ -494,15 +494,9 @@ public class ManualPropositionalProof {
 
         builder.append("State: ").append(stateIndex).append("\n\n");
 
-        if (!knowledgeBase.isEmpty()) {
-            builder.append(getNumberedText(knowledgeBase, 1, kbName));
-        }
-        if (!goals.isEmpty()) {
-            builder.append(getNumberedText(goals, 1, goalName));
-        }
-        if (!childStates.isEmpty()) {
-            builder.append(getNumberedStateText(childStates, 1, stateName));
-        }
+        if (!knowledgeBase.isEmpty()) builder.append(getNumberedText(knowledgeBase, 1, kbName));
+        if (!goals.isEmpty()) builder.append(getNumberedText(goals, 1, goalName));
+        if (!childStates.isEmpty()) builder.append(getNumberedStateText(childStates, 1, stateName));
 
         return builder.toString();
     }
@@ -522,8 +516,11 @@ public class ManualPropositionalProof {
     private String getNumberedStateText(List<ManualPropositionalProof> states, int startIndex, String prefix) {
         StringBuilder builder = new StringBuilder();
         for (ManualPropositionalProof state : states) {
+            String provenText = state.isProven() ? " (Proven)" : " (" + state.getGoal().toString() + " - Not Proven)";
+
             builder.append(prefix).append(startIndex).append(". ")
                     .append("State ").append(state.getStateIndex())
+                    .append(provenText)
                     .append("\n");
             startIndex++;
         }

@@ -415,7 +415,7 @@ public class ManualPropositionalInferenceRuleHelper {
         AST ast = knowledgeBase.get(index);
 
         if (PropositionalLogicHelper.getOutermostOperation(ast) != LogicalOperator.EQUIVALENCE) {
-            ErrorHelper.add("Cannot apply Equivalence Simplification on " + ast + "!");
+            ErrorHelper.add("Cannot apply Equivalence Eliminatio on " + ast + "!");
             return false;
         }
 
@@ -426,11 +426,15 @@ public class ManualPropositionalInferenceRuleHelper {
         PropositionalAST newAST2 = new PropositionalAST(
                 right + " " + LogicalOperatorFlyweight.getImplicationString() + " " + left, true);
 
-        KnowledgeBaseRegistry.addObtainedFrom(newAST1.toString(), List.of(ast.toString()), "Equivalence Simplification");
-        KnowledgeBaseRegistry.addObtainedFrom(newAST2.toString(), List.of(ast.toString()), "Equivalence Simplification");
+        KnowledgeBaseRegistry.addObtainedFrom(newAST1.toString(), List.of(ast.toString()), "Equivalence Elimination");
+        KnowledgeBaseRegistry.addObtainedFrom(newAST2.toString(), List.of(ast.toString()), "Equivalence Elimination");
 
-        if (!containsEntry(newAST1)) knowledgeBase.add(newAST1);
-        if (!containsEntry(newAST2)) knowledgeBase.add(newAST2);
+        if (!containsEntry(newAST1)) {
+            knowledgeBase.add(newAST1);
+        }
+        if (!containsEntry(newAST2)) {
+            knowledgeBase.add(newAST2);
+        }
         return true;
     }
 
@@ -605,7 +609,9 @@ public class ManualPropositionalInferenceRuleHelper {
 
     public boolean containsEntry(AST entry) {
         for (AST ast : knowledgeBase) {
-            if (ast.isEquivalentTo(entry)) return true;
+            if (ast.isEquivalentTo(entry)) {
+                return true;
+            }
         }
         return false;
     }

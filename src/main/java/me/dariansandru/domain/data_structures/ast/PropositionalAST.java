@@ -33,6 +33,7 @@ public class PropositionalAST implements AST {
     private final boolean isTautology;
 
     private final boolean validated;
+    private boolean isValid = false;
 
     private final PropositionalBDDBuilder builder;
 
@@ -371,11 +372,14 @@ public class PropositionalAST implements AST {
             }
 
             if (valid && formulaString.isEmpty()) this.formulaString = this.toString();
+
+            this.isValid = valid;
             return valid;
         }
         catch (Exception e) {
             ErrorHelper.add("Could not validate formula: " + formulaString);
-            throw new ASTException("Could not validate formula: " + formulaString);
+            // throw new ASTException("Could not validate formula: " + formulaString);
+            return false;
         }
     }
 
@@ -883,6 +887,14 @@ public class PropositionalAST implements AST {
         if (root.getKey() != null) return root;
         if (root.getChildren().isEmpty()) return null;
         return (PropositionalASTNode) root.getChildren().getFirst();
+    }
+
+    public boolean isValid() {
+        return isValid;
+    }
+
+    public String getFormulaString() {
+        return formulaString;
     }
 
 }
