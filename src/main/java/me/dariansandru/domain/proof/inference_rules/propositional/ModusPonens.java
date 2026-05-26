@@ -34,6 +34,7 @@ public class ModusPonens implements InferenceRule {
 
             for (AST other : asts) {
                 if (other != candidate && other.isEquivalentTo(antecedent)) {
+                    if (inDerived(conclusion)) continue;
                     if (other.isSameFormula(antecedent))
                         KnowledgeBaseRegistry.addEntry(conclusion.toString(), "From " + candidate + " and " + antecedent + ", by " + name() + ", we derive " + conclusion, List.of(candidate.toString()));
                     else
@@ -54,6 +55,7 @@ public class ModusPonens implements InferenceRule {
 
     @Override
     public List<AST> inference(List<AST> asts, AST goal) {
+        derived.clear();
         if (!canInference(asts, goal)) return new ArrayList<>();
         return derived;
     }
@@ -90,5 +92,12 @@ public class ModusPonens implements InferenceRule {
     @Override
     public String getText(SubGoal subGoal) {
         return "From " + subGoal.getGoal() + " and " + subGoal.getFormula() + ", by Modus Ponens, " + "we derive " + subGoal.getFormula().getSubtree(1);
+    }
+
+    public boolean inDerived(AST ast) {
+        for (AST derivedAST : derived) {
+            if (ast.isEquivalentTo(derivedAST)) return true;
+        }
+        return false;
     }
 }

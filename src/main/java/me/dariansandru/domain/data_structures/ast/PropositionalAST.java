@@ -6,7 +6,6 @@ import me.dariansandru.domain.language.interpretation.Interpretation;
 import me.dariansandru.domain.language.interpretation.PropositionalInterpretation;
 import me.dariansandru.domain.language.interpretation.PropositionalPartialInterpretation;
 import me.dariansandru.domain.language.interpretation.exception.InvalidInterpretationException;
-import me.dariansandru.domain.language.logical_operator.Negation;
 import me.dariansandru.domain.language.predicate.Predicate;
 import me.dariansandru.domain.language.signature.PropositionalSignature;
 import me.dariansandru.tokenizer.Token;
@@ -26,6 +25,7 @@ public class PropositionalAST implements AST {
 
     private String formulaString;
     private PropositionalASTNode root;
+    private PropositionalASTNode superRoot;
     private PropositionalASTNode currentNode;
 
     private int currentChildIndex;
@@ -68,7 +68,11 @@ public class PropositionalAST implements AST {
 
     public PropositionalAST(String formulaString, boolean shouldValidate) {
         this.formulaString = formulaString;
+        this.superRoot = new PropositionalASTNode(null);
+
         this.root = new PropositionalASTNode(null);
+        this.superRoot.getChildren().add(this.root);
+        this.root.setParent(this.superRoot);
 
         this.root.addChild();
         this.currentNode = (PropositionalASTNode) this.root.getChildren().getFirst();
@@ -365,7 +369,8 @@ public class PropositionalAST implements AST {
                 currentIndex++;
             }
 
-            boolean valid = (currentNode.equals(root)) && !invalid;
+            boolean valid = !invalid && currentNode != null && currentNode.getParent() == superRoot && currentNode == root;
+
             if (!valid) {
                 if (currentNode.getParent() != null) ErrorHelper.add("Expected closing parentheses ')' at this position!", line, position);
                 ErrorHelper.add(formulaString + " is not a well-formed formula!");
@@ -385,35 +390,46 @@ public class PropositionalAST implements AST {
 
     @Override
     public void negate() {
+
+        PropositionalASTNode effectiveRoot = getFormulaNode();
+        if (effectiveRoot == null) return;
+        Predicate predicate = (Predicate) effectiveRoot.getKey();
+
         if (this.isAtomic()) {
-            if (Objects.equals(((Predicate)this.root.getChildren().getFirst().getKey()).getRepresentation(), LogicalOperatorFlyweight.getNegationString())) {
-                root = (PropositionalASTNode) this.root.getChildren().getFirst().getChildren().getFirst();
+            if (Objects.equals(predicate.getRepresentation(), LogicalOperatorFlyweight.getNegationString())) {
+                PropositionalASTNode inner = (PropositionalASTNode) effectiveRoot.getChildren().getFirst();
+
+                this.root = new PropositionalASTNode(null);
+                this.root.getChildren().add(inner);
+                inner.setParent(this.root);
                 return;
             }
-
-            PropositionalASTNode negationNode = new PropositionalASTNode(LogicalOperatorFlyweight.getNegation());
-            negationNode.getChildren().add(root.getChildren().getFirst());
-            root.setParent(negationNode);
-            root = negationNode;
-            root.setParent(null);
+            setParentForNode(effectiveRoot);
             return;
         }
 
         LogicalOperator operator = PropositionalLogicHelper.getOutermostOperation(this);
         if (operator == LogicalOperator.NEGATION) {
-            PropositionalASTNode negNode = (PropositionalASTNode) root.getChildren().getFirst();
-            PropositionalASTNode inner = (PropositionalASTNode) negNode.getChildren().getFirst();
+            PropositionalASTNode inner = (PropositionalASTNode) effectiveRoot.getChildren().getFirst();
 
-            inner.setParent(root);
-            root.getChildren().set(0, inner);
+            this.root = new PropositionalASTNode(null);
+            this.root.getChildren().add(inner);
+            inner.setParent(this.root);
         }
-        else {
-            PropositionalASTNode negationNode = new PropositionalASTNode(LogicalOperatorFlyweight.getNegation());
-            negationNode.getChildren().add(root);
-            root.setParent(negationNode);
-            root = negationNode;
-            root.setParent(null);
-        }
+        else setParentForNode(effectiveRoot);
+        this.formulaString = this.toString();
+    }
+
+    private void setParentForNode(PropositionalASTNode effectiveRoot) {
+        PropositionalASTNode negationNode =
+                new PropositionalASTNode(LogicalOperatorFlyweight.getNegation());
+
+        negationNode.getChildren().add(effectiveRoot);
+        effectiveRoot.setParent(negationNode);
+
+        this.root = new PropositionalASTNode(null);
+        this.root.getChildren().add(negationNode);
+        negationNode.setParent(this.root);
     }
 
     @Override
@@ -666,18 +682,23 @@ public class PropositionalAST implements AST {
     @Override
     public void moveUp() {
         if (currentNode.getParent() == null) {
-            return;
+            throw new ASTNodeException("Invalid structure: moved above root.");
         }
 
         PropositionalASTNode parent = (PropositionalASTNode) currentNode.getParent();
         int childIndex = parent.getChildren().indexOf(currentNode);
+
         currentNode = parent;
+
+        if (currentNode == superRoot) {
+            throw new ASTNodeException("Invalid formula: too many closing parentheses ')'.");
+        }
 
         while (currentNode.getKey() instanceof Predicate predicate &&
                 predicate.getArity() == 1 &&
-                currentNode.getParent() != null) {
+                currentNode.getParent() != superRoot) {
+
             parent = (PropositionalASTNode) currentNode.getParent();
-            childIndex = parent.getChildren().indexOf(currentNode);
             currentNode = parent;
         }
 

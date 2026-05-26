@@ -24,24 +24,35 @@ public class EquivalenceElimination implements InferenceRule {
     public boolean canInference(List<AST> asts, AST goal) {
         if (asts.size() != 1) return false;
 
-        if (PropositionalLogicHelper.getOutermostOperation(asts.getFirst()) != LogicalOperator.EQUIVALENCE) return false;
-        PropositionalAST left = (PropositionalAST) asts.getFirst().getSubtree(0);
-        PropositionalAST right = (PropositionalAST) asts.getFirst().getSubtree(1);
-        System.out.println(left + " " + right);
+        boolean shouldInference = false;
+        for (AST ast : asts) {
+            if (PropositionalLogicHelper.getOutermostOperation(ast) != LogicalOperator.EQUIVALENCE) return false;
+            PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
+            PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
 
-        PropositionalAST newAST1 = new PropositionalAST(
-                left + " " + LogicalOperatorFlyweight.getImplicationString() + " " + right, true);
-        PropositionalAST newAST2 = new PropositionalAST(
-                right + " " + LogicalOperatorFlyweight.getImplicationString() + " " + left, true);
+            PropositionalAST newAST1 = new PropositionalAST(
+                    left + " " + LogicalOperatorFlyweight.getImplicationString() + " " + right, true);
+            PropositionalAST newAST2 = new PropositionalAST(
+                    right + " " + LogicalOperatorFlyweight.getImplicationString() + " " + left, true);
 
-        derived.add(newAST1);
-        derived.add(newAST2);
-        return true;
+            if (!inDerived(newAST1)) {
+                derived.add(newAST1);
+                shouldInference = true;
+            }
+            if (!inDerived(newAST2)) {
+                derived.add(newAST2);
+                shouldInference = true;
+            }
+        }
+        
+        return shouldInference;
     }
 
     @Override
     public List<AST> inference(List<AST> asts, AST goal) {
-        return derived;
+        derived.clear();
+        if (canInference(asts, goal)) return derived;
+        return new ArrayList<>();
     }
 
     @Override
@@ -75,5 +86,12 @@ public class EquivalenceElimination implements InferenceRule {
         PropositionalAST derivedRight = (PropositionalAST) subGoal.getFormula().getSubtree(1);
 
         return "From " + subGoal.getFormula() + " and " + subGoal.getGoal() + " by " + name() + ", we conclude " + ((derivedLeft.isEquivalentTo(subGoal.getGoal())) ? derivedRight : derivedLeft);
+    }
+
+    public boolean inDerived(AST ast) {
+        for (AST derivedAST : derived) {
+            if (ast.isEquivalentTo(derivedAST)) return true;
+        }
+        return false;
     }
 }

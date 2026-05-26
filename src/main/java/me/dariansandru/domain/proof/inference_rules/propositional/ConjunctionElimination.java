@@ -39,12 +39,14 @@ public class ConjunctionElimination implements InferenceRule {
 
             if (!hasLeft)
             {
+                if (inDerived(left)) continue;
                 derived.add(left);
                 KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + " by " + name() + ", we derive " + left, List.of(ast.toString()));
                 shouldInference = true;
             }
             if (!hasRight)
             {
+                if (inDerived(right)) continue;
                 derived.add(right);
                 KnowledgeBaseRegistry.addEntry(right.toString(), "From " + ast + " by " + name() + ", we derive " + right, List.of(ast.toString()));
                 shouldInference = true;
@@ -55,6 +57,7 @@ public class ConjunctionElimination implements InferenceRule {
 
     @Override
     public List<AST> inference(List<AST> asts, AST goal) {
+        derived.clear();
         if (!canInference(asts, goal)) return new ArrayList<>();
         return derived;
     }
@@ -72,6 +75,13 @@ public class ConjunctionElimination implements InferenceRule {
     private boolean contains(List<AST> asts, AST other) {
         for (AST ast : asts) {
             if (ast.isEquivalentTo(other)) return true;
+        }
+        return false;
+    }
+
+    public boolean inDerived(AST ast) {
+        for (AST derivedAST : derived) {
+            if (ast.isEquivalentTo(derivedAST)) return true;
         }
         return false;
     }

@@ -32,6 +32,8 @@ public class DisjunctionIntroduction implements InferenceRule {
             for (AST ast : asts) {
                 if (ast.isEquivalentTo(left)) {
                     AST newAST = new PropositionalAST(ast + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + right, true);
+                    if (inDerived(newAST)) continue;
+
                     KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + ", by " + name() + ", we derive " + newAST, List.of(ast.toString()));
                     derived.add(newAST);
                     shouldInference = true;
@@ -39,6 +41,8 @@ public class DisjunctionIntroduction implements InferenceRule {
                 }
                 else if (ast.isEquivalentTo(right)) {
                     AST newAST = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + ast, true);
+                    if (inDerived(newAST)) continue;
+
                     KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + ", by " + name() + ", we derive " + newAST, List.of(ast.toString()));
                     derived.add(newAST);
                     shouldInference = true;
@@ -52,6 +56,7 @@ public class DisjunctionIntroduction implements InferenceRule {
 
     @Override
     public List<AST> inference(List<AST> asts, AST goal) {
+        derived.clear();
         if (canInference(asts, goal)) return derived;
         else return new ArrayList<>();
     }
@@ -64,5 +69,12 @@ public class DisjunctionIntroduction implements InferenceRule {
     @Override
     public String getText(SubGoal subGoal) {
         return "";
+    }
+
+    public boolean inDerived(AST ast) {
+        for (AST derivedAST : derived) {
+            if (ast.isEquivalentTo(derivedAST)) return true;
+        }
+        return false;
     }
 }

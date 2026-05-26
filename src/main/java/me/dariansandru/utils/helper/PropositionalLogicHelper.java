@@ -177,4 +177,24 @@ public abstract class PropositionalLogicHelper {
         if (operator == LogicalOperator.CONJUNCTION) return new PropositionalAST(formulaString, true);
         else return new PropositionalAST("(" + formulaString + ")", true);
     }
+
+    public static PropositionalAST buildFormula(PropositionalAST ast1, PropositionalAST ast2, String operatorString) {
+
+        String left = ast1.toString();
+        String right = ast2.toString();
+
+        if (!ast1.isAtomic()
+                && PropositionalLogicHelper.getOutermostOperation(ast1) != LogicalOperator.NEGATION
+                && !(left.startsWith("(") && left.endsWith(")"))) {
+            left = "(" + left + ")";
+        }
+
+        if (!ast2.isAtomic()
+                && PropositionalLogicHelper.getOutermostOperation(ast2) != LogicalOperator.NEGATION
+                && !(right.startsWith("(") && right.endsWith(")"))) {
+            right = "(" + right + ")";
+        }
+
+        return new PropositionalAST(left + " " + operatorString + " " + right, true);
+    }
 }

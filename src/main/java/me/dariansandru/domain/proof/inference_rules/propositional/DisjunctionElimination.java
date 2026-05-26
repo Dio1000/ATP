@@ -31,6 +31,7 @@ public class DisjunctionElimination implements InferenceRule {
                     PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.DISJUNCTION) {
                 PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
                 PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
+                if (inDerived(left)) continue;
 
                 if (left.isEquivalentTo(right) || right.isEquivalentTo(left)) {
                     KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + " by " + name() + ", we derive " + left, List.of(ast.toString()));
@@ -44,6 +45,7 @@ public class DisjunctionElimination implements InferenceRule {
 
     @Override
     public List<AST> inference(List<AST> asts, AST goal) {
+        derived.clear();
         if (canInference(asts, goal)) return derived;
         return new ArrayList<>();
     }
@@ -75,5 +77,12 @@ public class DisjunctionElimination implements InferenceRule {
     @Override
     public String getText(SubGoal subGoal) {
         return "";
+    }
+
+    public boolean inDerived(AST ast) {
+        for (AST derivedAST : derived) {
+            if (ast.isEquivalentTo(derivedAST)) return true;
+        }
+        return false;
     }
 }

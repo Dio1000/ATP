@@ -34,11 +34,11 @@ public class DeMorgan implements InferenceRule {
                     left.negate();
                     right.negate();
 
-                    derived.add(left);
-                    derived.add(right);
+                    PropositionalAST newAST = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getConjunctionString() + " " + right, true);
+                    if (inDerived(newAST)) continue;
 
-                    KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + ", by applying " + name() + ", we derive " + left, List.of(String.valueOf(ast)));
-                    KnowledgeBaseRegistry.addEntry(right.toString(), "From " + ast + ", by applying " + name() + ", we derive " + right, List.of(String.valueOf(ast)));
+                    derived.add(newAST);
+                    KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + ", by applying " + name() + ", we derive " + newAST, List.of(ast.toString()));
                     shouldInference = true;
                 }
                 else if (PropositionalLogicHelper.getOutermostOperation(childAST) == LogicalOperator.CONJUNCTION) {
@@ -48,6 +48,8 @@ public class DeMorgan implements InferenceRule {
                     right.negate();
 
                     PropositionalAST newAST = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + right, true);
+                    if (inDerived(newAST)) continue;
+
                     derived.add(newAST);
                     KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + ", by applying " + name() + ", we derive " + newAST, List.of(ast.toString()));
                     shouldInference = true;
@@ -60,6 +62,7 @@ public class DeMorgan implements InferenceRule {
 
     @Override
     public List<AST> inference(List<AST> kb, AST goal) {
+        derived.clear();
         if (!canInference(kb, goal)) return new ArrayList<>();
         return derived;
     }
@@ -72,5 +75,12 @@ public class DeMorgan implements InferenceRule {
     @Override
     public String getText(SubGoal subGoal) {
         return "";
+    }
+
+    public boolean inDerived(AST ast) {
+        for (AST derivedAST : derived) {
+            if (ast.isEquivalentTo(derivedAST)) return true;
+        }
+        return false;
     }
 }

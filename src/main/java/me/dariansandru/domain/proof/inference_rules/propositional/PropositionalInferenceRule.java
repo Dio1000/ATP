@@ -14,6 +14,7 @@ public enum PropositionalInferenceRule {
     IMPLICATION_INTRODUCTION,
     IMPLICATION_ELIMINATION,
     DEMORGAN,
+    MATERIAL_IMPLICATION,
     NO_RULE;
 
     @Override
@@ -32,6 +33,7 @@ public enum PropositionalInferenceRule {
             case IMPLICATION_INTRODUCTION -> "Implication Introduction";
             case IMPLICATION_ELIMINATION -> "Implication Elimination";
             case DEMORGAN -> "DeMorgan";
+            case MATERIAL_IMPLICATION -> "Material Implication";
             case NO_RULE -> "No Rule";
         };
     }

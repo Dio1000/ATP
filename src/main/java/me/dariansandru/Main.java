@@ -52,7 +52,9 @@ public class Main {
             logicController.manualRun();
         }
         else if (Objects.equals(argument, testString)) {
-            // PropositionalAST ast = new PropositionalAST("P $ Q", true);
+            PropositionalAST ast = new PropositionalAST("!(!(P AND Q)) OR !(R OR T)", true);
+            System.out.println(ast.isValid());
+
             TestPipeline.test();
         }
         else {
@@ -62,6 +64,7 @@ public class Main {
 }
 
 // -- GENERAL --
+// TODO: Look into Disjunction Elimination
 
 // -- BUGS --
 //TODO isContradiction and isTautology are not implemented.

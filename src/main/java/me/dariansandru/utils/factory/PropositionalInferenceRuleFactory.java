@@ -21,6 +21,7 @@ public class PropositionalInferenceRuleFactory {
             case IMPLICATION_INTRODUCTION -> new ImplicationIntroduction();
             case IMPLICATION_ELIMINATION -> new ImplicationElimination();
             case DEMORGAN -> new DeMorgan();
+            case MATERIAL_IMPLICATION -> new MaterialImplication();
         };
     }
 }

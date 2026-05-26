@@ -30,17 +30,10 @@ public class ConjunctionIntroduction implements InferenceRule {
                     if (((PropositionalAST) ast1).isAtomic() && !ast.isEquivalentTo(ast1)) {
                         PropositionalAST newAST = new PropositionalAST(ast + " " + LogicalOperatorFlyweight.getConjunctionString() + " " + ast1, true);
 
-                        boolean duplicate = false;
-                        for (AST astString : asts) {
-                            if (Objects.equals(astString.toString(), newAST.toString())) {
-                                duplicate = true;
-                                break;
-                            }
+                        if (!inDerived(newAST)) {
+                            KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + " and " + ast1 + " by " + name() + ", we derive " + newAST, List.of(ast.toString(), ast1.toString()));
+                            derived.add(newAST);
                         }
-
-                        if (duplicate) continue;
-                        KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + " and " + ast1 + " by " + name() + ", we derive " + newAST, List.of(ast.toString(), ast1.toString()));
-                        derived.add(newAST);
                         shouldInference = true;
                     }
                 }
@@ -52,6 +45,7 @@ public class ConjunctionIntroduction implements InferenceRule {
 
     @Override
     public List<AST> inference(List<AST> asts, AST goal) {
+        derived.clear();
         if (canInference(asts, goal)) return derived;
         return new ArrayList<>();
     }
@@ -64,5 +58,12 @@ public class ConjunctionIntroduction implements InferenceRule {
     @Override
     public String getText(SubGoal subGoal) {
         return "";
+    }
+
+    public boolean inDerived(AST ast) {
+        for (AST derivedAST : derived) {
+            if (ast.isEquivalentTo(derivedAST)) return true;
+        }
+        return false;
     }
 }

@@ -39,6 +39,7 @@ public class ModusTollens implements InferenceRule {
                 if (other != candidate && other.isEquivalentTo(negatedConsequent)) {
                     PropositionalAST negatedAntecedent = new PropositionalAST(antecedent.toString(), true);
                     negatedAntecedent.negate();
+                    if (inDerived(negatedAntecedent)) continue;
 
                     KnowledgeBaseRegistry.addEntry(
                             negatedAntecedent.toString(),
@@ -57,6 +58,7 @@ public class ModusTollens implements InferenceRule {
 
     @Override
     public List<AST> inference(List<AST> asts, AST goal) {
+        derived.clear();
         if (!canInference(asts, goal)) return new ArrayList<>();
         return derived;
     }
@@ -99,5 +101,12 @@ public class ModusTollens implements InferenceRule {
     public String getText(SubGoal subGoal) {
         AST negatedAntecedent = subGoal.getGoal();
         return "From " + subGoal.getGoal() + " and " + subGoal.getFormula() + ", by Modus Tollens, we derive " + negatedAntecedent;
+    }
+
+    public boolean inDerived(AST ast) {
+        for (AST derivedAST : derived) {
+            if (ast.isEquivalentTo(derivedAST)) return true;
+        }
+        return false;
     }
 }

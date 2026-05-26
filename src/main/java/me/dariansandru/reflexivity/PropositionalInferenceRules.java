@@ -25,6 +25,7 @@ public class PropositionalInferenceRules implements InferenceRules {
         rules.add(new ImplicationElimination());
         rules.add(new DeMorgan());
         rules.add(new ContradictionRule());
+        rules.add(new MaterialImplication());
 
         return rules;
     }

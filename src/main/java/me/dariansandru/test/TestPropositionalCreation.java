@@ -81,6 +81,36 @@ public abstract class TestPropositionalCreation {
                 {"((P -> Q) <-> (!R OR T))", true},
                 {"!(P <-> Q) AND (R -> T)", true},
 
+                {"P AND (Q OR (R -> T))", true},
+                {"(P OR Q) AND (R OR T) AND (P -> Q)", true},
+                {"((P -> Q) AND (Q -> R)) -> (P -> R)", true},
+                {"!(P AND Q) OR (R AND !T)", true},
+                {"((P <-> Q) AND (Q <-> R)) -> (P <-> R)", true},
+
+                {"P -> Q -> R -> T", true},
+                {"((P -> (Q -> R)) -> T)", true},
+                {"P AND Q OR R AND T OR P", true},
+
+                {"!(P OR Q) AND !(R OR T) OR P", true},
+                {"((P AND Q) OR (R AND T)) -> ((P OR R) AND (Q OR T))", true},
+
+                {"(((P))) AND (((Q))) AND (((R)))", true},
+                {"!((P AND Q) -> (R OR T))", true},
+                {"(P -> Q) -> (Q -> R) -> (P -> R)", true},
+
+                {"(P AND Q AND R AND T)", true},
+                {"(P OR Q OR R OR T)", true},
+
+                {"!(P -> Q) OR (R -> T) AND (Q -> P)", true},
+                {"((P AND (Q OR R)) -> (T AND P))", true},
+
+                {"(P <-> Q) <-> (R <-> T)", true},
+                {"((P AND Q) -> R) AND ((R -> T) -> P)", true},
+
+                {"!!(P AND (Q OR R))", true},
+                {"!(P AND Q) AND !(R AND T) AND P", true},
+                {"(P -> (Q -> (R -> T)))", true},
+
                 {"P AND", false},
                 {"AND P Q", false},
                 {"P OR OR Q", false},
