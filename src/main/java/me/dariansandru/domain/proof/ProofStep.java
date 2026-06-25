@@ -1,4 +1,3 @@
 package me.dariansandru.domain.proof;
 
-public record ProofStep(String text, int indent) {
-}
+public record ProofStep(String text, int indent) {}

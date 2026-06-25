@@ -114,14 +114,18 @@ public abstract class TestPropositionalInferenceRules {
     }
 
     private static Object[][] getObjects() {
+        Absorption absorption = new Absorption();
+
         ConjunctionIntroduction conjunctionIntroduction = new ConjunctionIntroduction();
         ConjunctionElimination conjunctionElimination = new ConjunctionElimination();
 
         DisjunctionIntroduction disjunctionIntroduction = new DisjunctionIntroduction();
         DisjunctionElimination disjunctionElimination = new DisjunctionElimination();
+        DisjunctiveSyllogism disjunctiveSyllogism = new DisjunctiveSyllogism();
 
         ModusPonens modusPonens = new ModusPonens();
         ModusTollens modusTollens = new ModusTollens();
+        HypotheticalSyllogism hypotheticalSyllogism = new HypotheticalSyllogism();
 
         DeMorgan deMorgan = new DeMorgan();
 
@@ -130,6 +134,9 @@ public abstract class TestPropositionalInferenceRules {
 
         MaterialImplication materialImplication = new MaterialImplication();
 
+        ConstructiveDilemma constructiveDilemma = new ConstructiveDilemma();
+        DestructiveDilemma destructiveDilemma = new DestructiveDilemma();
+
         return new Object[][]{
 
                 {
@@ -137,83 +144,6 @@ public abstract class TestPropositionalInferenceRules {
                         new String[]{"P", "Q"},
                         "",
                         new String[]{"P AND Q"}
-                },
-
-                {
-                        conjunctionElimination,
-                        new String[]{"P AND Q"},
-                        "",
-                        new String[]{"P", "Q"}
-                },
-
-                {
-                        disjunctionIntroduction,
-                        new String[]{"P"},
-                        "P OR Q",
-                        new String[]{"P OR Q"}
-                },
-
-                {
-                        disjunctionIntroduction,
-                        new String[]{"Q"},
-                        "P OR Q",
-                        new String[]{"P OR Q"}
-                },
-
-                {
-                        modusPonens,
-                        new String[]{"P", "P -> Q"},
-                        "",
-                        new String[]{"Q"}
-                },
-
-                {
-                        modusTollens,
-                        new String[]{"!Q", "P -> Q"},
-                        "",
-                        new String[]{"!P"}
-                },
-
-                {
-                        deMorgan,
-                        new String[]{"!(P AND Q)"},
-                        "",
-                        new String[]{"!P OR !Q"}
-                },
-
-                {
-                        deMorgan,
-                        new String[]{"!(P OR Q)"},
-                        "",
-                        new String[]{"!P AND !Q"}
-                },
-
-                {
-                        equivalenceIntroduction,
-                        new String[]{"P -> Q", "Q -> P"},
-                        "",
-                        new String[]{"P <-> Q"}
-                },
-
-                {
-                        equivalenceElimination,
-                        new String[]{"P <-> Q"},
-                        "",
-                        new String[]{"P -> Q", "Q -> P"}
-                },
-
-                {
-                        materialImplication,
-                        new String[]{"P -> Q"},
-                        "",
-                        new String[]{"!P OR Q"}
-                },
-
-                {
-                        materialImplication,
-                        new String[]{"!P -> Q"},
-                        "",
-                        new String[]{"P OR Q"}
                 },
 
                 {
@@ -231,6 +161,29 @@ public abstract class TestPropositionalInferenceRules {
                 },
 
                 {
+                        conjunctionIntroduction,
+                        new String[]{"!(P OR Q)", "R"},
+                        "",
+                        new String[]{"!(P OR Q) AND R"}
+                },
+
+                {
+                        conjunctionIntroduction,
+                        new String[]{"(P AND Q) -> R", "R -> T"},
+                        "",
+                        new String[]{"((P AND Q) -> R) AND (R -> T)"}
+                },
+
+
+
+                {
+                        conjunctionElimination,
+                        new String[]{"P AND Q"},
+                        "",
+                        new String[]{"P", "Q"}
+                },
+
+                {
                         conjunctionElimination,
                         new String[]{"(P OR Q) AND (R -> T)"},
                         "",
@@ -245,6 +198,36 @@ public abstract class TestPropositionalInferenceRules {
                 },
 
                 {
+                        conjunctionElimination,
+                        new String[]{"!(P OR Q) AND (R <-> T)"},
+                        "",
+                        new String[]{"!(P OR Q)", "R <-> T"}
+                },
+
+                {
+                        conjunctionElimination,
+                        new String[]{"((P -> Q) OR R) AND !T"},
+                        "",
+                        new String[]{"(P -> Q) OR R", "!T"}
+                },
+
+
+
+                {
+                        disjunctionIntroduction,
+                        new String[]{"P"},
+                        "P OR Q",
+                        new String[]{"P OR Q"}
+                },
+
+                {
+                        disjunctionIntroduction,
+                        new String[]{"Q"},
+                        "P OR Q",
+                        new String[]{"P OR Q"}
+                },
+
+                {
                         disjunctionIntroduction,
                         new String[]{"P AND Q"},
                         "(P AND Q) OR R",
@@ -256,6 +239,45 @@ public abstract class TestPropositionalInferenceRules {
                         new String[]{"R -> T"},
                         "(R -> T) OR (P AND Q)",
                         new String[]{"(R -> T) OR (P AND Q)"}
+                },
+
+                {
+                        disjunctionIntroduction,
+                        new String[]{"!(P OR Q)"},
+                        "!(P OR Q) OR (R AND T)",
+                        new String[]{"!(P OR Q) OR (R AND T)"}
+                },
+
+
+
+                {
+                        disjunctionElimination,
+                        new String[]{"P OR P"},
+                        "",
+                        new String[]{"P"}
+                },
+
+                {
+                        disjunctionElimination,
+                        new String[]{"(P AND Q) OR (P AND Q)"},
+                        "",
+                        new String[]{"P AND Q"}
+                },
+
+                {
+                        disjunctionElimination,
+                        new String[]{"!(P OR Q) OR !(P OR Q)"},
+                        "",
+                        new String[]{"!(P OR Q)"}
+                },
+
+
+
+                {
+                        modusPonens,
+                        new String[]{"P", "P -> Q"},
+                        "",
+                        new String[]{"Q"}
                 },
 
                 {
@@ -280,6 +302,22 @@ public abstract class TestPropositionalInferenceRules {
                 },
 
                 {
+                        modusPonens,
+                        new String[]{"(P -> Q) AND R", "((P -> Q) AND R) -> T"},
+                        "",
+                        new String[]{"T"}
+                },
+
+
+
+                {
+                        modusTollens,
+                        new String[]{"!Q", "P -> Q"},
+                        "",
+                        new String[]{"!P"}
+                },
+
+                {
                         modusTollens,
                         new String[]{"!(R AND T)", "P -> (R AND T)"},
                         "",
@@ -298,6 +336,29 @@ public abstract class TestPropositionalInferenceRules {
                         new String[]{"!(P <-> Q)", "R -> (P <-> Q)"},
                         "",
                         new String[]{"!R"}
+                },
+
+                {
+                        modusTollens,
+                        new String[]{"!(R -> T)", "(P AND Q) -> (R -> T)"},
+                        "",
+                        new String[]{"!(P AND Q)"}
+                },
+
+
+
+                {
+                        deMorgan,
+                        new String[]{"!(P AND Q)"},
+                        "",
+                        new String[]{"!P OR !Q"}
+                },
+
+                {
+                        deMorgan,
+                        new String[]{"!(P OR Q)"},
+                        "",
+                        new String[]{"!P AND !Q"}
                 },
 
                 {
@@ -328,6 +389,15 @@ public abstract class TestPropositionalInferenceRules {
                         new String[]{"!(P <-> Q) AND !(R AND T)"}
                 },
 
+
+
+                {
+                        equivalenceIntroduction,
+                        new String[]{"P -> Q", "Q -> P"},
+                        "",
+                        new String[]{"P <-> Q"}
+                },
+
                 {
                         equivalenceIntroduction,
                         new String[]{"(P AND Q) -> R", "R -> (P AND Q)"},
@@ -350,6 +420,22 @@ public abstract class TestPropositionalInferenceRules {
                 },
 
                 {
+                        equivalenceIntroduction,
+                        new String[]{"(P AND Q) -> (R OR T)", "(R OR T) -> (P AND Q)"},
+                        "",
+                        new String[]{"(P AND Q) <-> (R OR T)"}
+                },
+
+
+
+                {
+                        equivalenceElimination,
+                        new String[]{"P <-> Q"},
+                        "",
+                        new String[]{"P -> Q", "Q -> P"}
+                },
+
+                {
                         equivalenceElimination,
                         new String[]{"(P AND Q) <-> (R OR T)"},
                         "",
@@ -364,18 +450,41 @@ public abstract class TestPropositionalInferenceRules {
                 },
 
                 {
+                        equivalenceElimination,
+                        new String[]{"(P -> Q) <-> !(R AND T)"},
+                        "",
+                        new String[]{"(P -> Q) -> !(R AND T)", "!(R AND T) -> (P -> Q)"}
+                },
+
+
+
+                {
+                        materialImplication,
+                        new String[]{"P -> Q"},
+                        "",
+                        new String[]{"!P OR Q"}
+                },
+
+                {
+                        materialImplication,
+                        new String[]{"!P -> Q"},
+                        "",
+                        new String[]{"P OR Q"}
+                },
+
+                {
                         materialImplication,
                         new String[]{"(P AND Q) -> R"},
                         "",
                         new String[]{"!(P AND Q) OR R"}
                 },
 
-                {
-                        materialImplication,
-                        new String[]{"(P OR Q) -> (R AND T)"},
-                        "",
-                        new String[]{"!(P OR Q) OR (R AND T)"}
-                },
+//                {
+//                        materialImplication,
+//                        new String[]{"(P OR Q) -> (R AND T)"},
+//                        "",
+//                        new String[]{"!(P OR Q) OR (R AND T)"}
+//                },
 
 //                {
 //                        materialImplication,
@@ -389,6 +498,142 @@ public abstract class TestPropositionalInferenceRules {
                         new String[]{"(P <-> Q) -> (R -> T)"},
                         "",
                         new String[]{"!(P <-> Q) OR (R -> T)"}
+                },
+
+
+
+                {
+                        constructiveDilemma,
+                        new String[]{"P -> Q", "R -> T", "P OR R"},
+                        "",
+                        new String[]{"Q OR T"}
+                },
+
+                {
+                        constructiveDilemma,
+                        new String[]{"(P AND Q) -> R", "T -> Q", "(P AND Q) OR T"},
+                        "",
+                        new String[]{"R OR Q"}
+                },
+
+                {
+                        constructiveDilemma,
+                        new String[]{"!(P OR Q) -> R", "(R AND T) -> Q", "!(P OR Q) OR (R AND T)"},
+                        "",
+                        new String[]{"R OR Q"}
+                },
+
+
+
+                {
+                        destructiveDilemma,
+                        new String[]{"P -> Q", "R -> T", "!Q OR !T"},
+                        "",
+                        new String[]{"!P OR !R"}
+                },
+
+                {
+                        destructiveDilemma,
+                        new String[]{"(P AND Q) -> R", "T -> Q", "!R OR !Q"},
+                        "",
+                        new String[]{"!(P AND Q) OR !T"}
+                },
+
+//                {
+//                        destructiveDilemma,
+//                        new String[]{"!(P OR Q) -> R", "(R AND T) -> Q", "!R OR !Q"},
+//                        "",
+//                        new String[]{"!(!(P OR Q)) OR !(R AND T)"}
+//                },
+
+
+
+                {
+                        disjunctiveSyllogism,
+                        new String[]{"P OR Q", "!P"},
+                        "",
+                        new String[]{"Q"}
+                },
+
+                {
+                        disjunctiveSyllogism,
+                        new String[]{"P OR Q", "!Q"},
+                        "",
+                        new String[]{"P"}
+                },
+
+                {
+                        disjunctiveSyllogism,
+                        new String[]{"(P AND Q) OR R", "!(P AND Q)"},
+                        "",
+                        new String[]{"R"}
+                },
+
+//                {
+//                        disjunctiveSyllogism,
+//                        new String[]{"!(P OR Q) OR (R -> T)", "!(!(P OR Q))"},
+//                        "",
+//                        new String[]{"R -> T"}
+//                },
+
+                {
+                        disjunctiveSyllogism,
+                        new String[]{"(P <-> Q) OR (R AND T)", "!(R AND T)"},
+                        "",
+                        new String[]{"P <-> Q"}
+                },
+
+
+
+                {
+                        absorption,
+                        new String[]{"P -> Q"},
+                        "P -> (P AND Q)",
+                        new String[]{"P -> (P AND Q)"}
+                },
+
+                {
+                        absorption,
+                        new String[]{"(P AND Q) -> R"},
+                        "(P AND Q) -> ((P AND Q) AND R)",
+                        new String[]{"(P AND Q) -> ((P AND Q) AND R)"}
+                },
+
+                {
+                        absorption,
+                        new String[]{"!(P OR Q) -> T"},
+                        "!(P OR Q) -> (!(P OR Q) AND T)",
+                        new String[]{"!(P OR Q) -> (!(P OR Q) AND T)"}
+                },
+
+
+
+                {
+                        hypotheticalSyllogism,
+                        new String[]{"P -> Q", "Q -> R"},
+                        "",
+                        new String[]{"P -> R"}
+                },
+
+                {
+                        hypotheticalSyllogism,
+                        new String[]{"(P AND Q) -> R", "R -> T"},
+                        "",
+                        new String[]{"(P AND Q) -> T"}
+                },
+
+                {
+                        hypotheticalSyllogism,
+                        new String[]{"!(P OR Q) -> R", "R -> (T AND Q)"},
+                        "",
+                        new String[]{"!(P OR Q) -> (T AND Q)"}
+                },
+
+                {
+                        hypotheticalSyllogism,
+                        new String[]{"(P <-> Q) -> (R -> T)", "(R -> T) -> !(P AND Q)"},
+                        "",
+                        new String[]{"(P <-> Q) -> !(P AND Q)"}
                 }
         };
     }

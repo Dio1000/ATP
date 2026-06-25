@@ -40,7 +40,7 @@ public class LogicController {
             ErrorHelper.printAndReset();
             return;
         }
-        
+
         UniverseOfDiscourse universeOfDiscourse = Parser.getUniverseOfDiscourse(lines);
         this.signature = SignatureFactory.createSignature(universeOfDiscourse);
         FormulaParser parser = ParserFactory.createParser(signature);
@@ -63,15 +63,15 @@ public class LogicController {
         OutputDevice.writeToConsole("Syntax validated!");
 
         // TRIGGER WARNING! VOODOO
-        List<AST> voodooKnowledgeBaseAST = new ArrayList<>();
-        List<AST> voodooGoalAST = new ArrayList<>();
-
-        voodooKnowledgeBaseAST.add(new PropositionalAST("A", true));
-        voodooGoalAST.add(new PropositionalAST("A", true));
-        GlobalAtomID.addAtomId("A");
-
-        PropositionalProof voodooProof = new PropositionalProof(signature, voodooKnowledgeBaseAST, voodooGoalAST);
-        voodooProof.proveWithoutPrinting();
+//        List<AST> voodooKnowledgeBaseAST = new ArrayList<>();
+//        List<AST> voodooGoalAST = new ArrayList<>();
+//
+//        voodooKnowledgeBaseAST.add(new PropositionalAST("A", true));
+//        voodooGoalAST.add(new PropositionalAST("A", true));
+//        GlobalAtomID.addAtomId("A");
+//
+//        PropositionalProof voodooProof = new PropositionalProof(signature, voodooKnowledgeBaseAST, voodooGoalAST);
+//        voodooProof.proveWithoutPrinting();
         // VOODOO ENDED
     }
 

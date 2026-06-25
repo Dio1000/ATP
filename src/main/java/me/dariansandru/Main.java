@@ -3,21 +3,11 @@ package me.dariansandru;
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.util.SystemInfo;
 import me.dariansandru.controller.LogicController;
-import me.dariansandru.domain.data_structures.ast.AST;
-import me.dariansandru.domain.data_structures.ast.PropositionalAST;
-import me.dariansandru.domain.proof.inference_rules.InferenceRule;
-import me.dariansandru.domain.proof.inference_rules.helper.CustomInferenceRuleHelper;
-import me.dariansandru.domain.proof.manual_proof.helper.ManualPropositionalInferenceRuleHelper;
-import me.dariansandru.gui.GUIController;
 import me.dariansandru.gui.PropositionalProofGUIController;
 import me.dariansandru.test.TestPipeline;
-import me.dariansandru.utils.global.GlobalAtomID;
+import me.dariansandru.utils.global.GlobalFlags;
 
 import javax.swing.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
 
 public class Main {
 
@@ -30,47 +20,31 @@ public class Main {
     public static void main(String[] args) {
 
         if (args.length == 0) throw new IllegalStateException("No arguments were provided!");
+
+        GlobalFlags.getFlags(args);
         final String argument = args[0];
 
-        if (args.length == 2) throw new IllegalStateException("Too many arguments were provided!");
-        else if (Objects.equals(argument, guiString)) {
-            if (SystemInfo.isMacOS) {
-                System.setProperty( "apple.laf.useScreenMenuBar", "true" );
-                System.setProperty( "apple.awt.application.name", "Automated Theorem Prover" );
-                System.setProperty( "apple.awt.application.appearance", "NSAppearanceNameDarkAqua" );
+        switch (argument) {
+            case guiString -> {
+                if (SystemInfo.isMacOS) {
+                    System.setProperty("apple.laf.useScreenMenuBar", "true");
+                    System.setProperty("apple.awt.application.name", "Automated Theorem Prover");
+                    System.setProperty("apple.awt.application.appearance", "NSAppearanceNameDarkAqua");
+                }
+
+                FlatDarkLaf.setup();
+                SwingUtilities.invokeLater(PropositionalProofGUIController::new);
             }
-
-            FlatDarkLaf.setup();
-            SwingUtilities.invokeLater(PropositionalProofGUIController::new);
-        }
-        else if (Objects.equals(argument, automatedString)) {
-            LogicController logicController = new LogicController(inputFile);
-            logicController.automatedRun();
-        }
-        else if (Objects.equals(argument, manualString)) {
-            LogicController logicController = new LogicController(inputFile);
-            logicController.manualRun();
-        }
-        else if (Objects.equals(argument, testString)) {
-            PropositionalAST ast = new PropositionalAST("!(!(P AND Q)) OR !(R OR T)", true);
-            System.out.println(ast.isValid());
-
-            TestPipeline.test();
-        }
-        else {
-            throw new IllegalStateException("Argument: " + args[0] + " could not be found!");
+            case automatedString -> {
+                LogicController logicController = new LogicController(inputFile);
+                logicController.automatedRun();
+            }
+            case manualString -> {
+                LogicController logicController = new LogicController(inputFile);
+                logicController.manualRun();
+            }
+            case testString -> TestPipeline.test();
+            case null, default -> throw new IllegalStateException("Argument: " + args[0] + " could not be found!");
         }
     }
 }
-
-// -- GENERAL --
-// TODO: Look into Disjunction Elimination
-
-// -- BUGS --
-//TODO isContradiction and isTautology are not implemented.
-//TODO negstr with no argument crashed in manual
-
-// -- NEW FEATURES --
-//TODO Create a new way to output proofs because some lines do not get printed in Automated Proofs.
-//TODO Add more inference rules for Automated Proving (from Manual Proving) and fix old ones. (Look at Natural Deduction to find missing rules)
-//TODO Add creation of custom propositional inference rules packages.

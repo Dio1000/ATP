@@ -12,36 +12,42 @@ import me.dariansandru.utils.helper.PropositionalLogicHelper;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MaterialImplication implements InferenceRule {
+public class HypotheticalSyllogism implements InferenceRule {
 
     private final List<AST> derived = new ArrayList<>();
 
     @Override
     public String name() {
-        return "Material Implication";
+        return "Hypothetical Syllogism";
     }
 
     @Override
     public boolean canInference(List<AST> kb, AST goal) {
         boolean shouldInference = false;
 
-        for (AST ast : kb) {
-            if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.IMPLICATION) {
-                PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
-                PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
-                left.negate();
+        for (AST ast1 : kb) {
+            if (PropositionalLogicHelper.getOutermostOperation(ast1) == LogicalOperator.IMPLICATION) {
+                PropositionalAST left1 = (PropositionalAST) ast1.getSubtree(0);
+                PropositionalAST right1 = (PropositionalAST) ast1.getSubtree(1);
 
-                PropositionalAST newAST = PropositionalLogicHelper.buildFormula(left, right, LogicalOperatorFlyweight.getDisjunctionString());
-                if (inDerived(newAST)) continue;
+                for (AST ast2 : kb) {
+                    if (PropositionalLogicHelper.getOutermostOperation(ast2) == LogicalOperator.IMPLICATION) {
+                        PropositionalAST left2 = (PropositionalAST) ast2.getSubtree(0);
+                        PropositionalAST right2 = (PropositionalAST) ast2.getSubtree(1);
 
-                // FIX: Standardized spacing
-                KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + ", by " + name() + ", we derive " + newAST, List.of(ast.toString()));
+                        if (right1.isEquivalentTo(left2)) {
+                            PropositionalAST newAST = PropositionalLogicHelper.buildFormula(left1, right2, LogicalOperatorFlyweight.getImplicationString());
+                            if (inDerived(newAST)) continue;
 
-                derived.add(newAST);
-                shouldInference = true;
+                            KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast1 + " and " + ast2 + ", by " + name() + ", we derive " + newAST, List.of(ast1.toString(), ast2.toString()));
+
+                            derived.add(newAST);
+                            shouldInference = true;
+                        }
+                    }
+                }
             }
         }
-
         return shouldInference;
     }
 

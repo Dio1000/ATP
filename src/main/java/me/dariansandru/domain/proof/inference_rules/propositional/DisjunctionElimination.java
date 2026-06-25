@@ -23,21 +23,22 @@ public class DisjunctionElimination implements InferenceRule {
 
     @Override
     public boolean canInference(List<AST> asts, AST goal) {
-        if (goal == null) return false;
-
         boolean shouldDerive = false;
+
         for (AST ast : asts) {
-            if (((PropositionalAST) goal).isAtomic() &&
-                    PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.DISJUNCTION) {
+            if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.DISJUNCTION) {
                 PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
                 PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
+
                 if (inDerived(left)) continue;
 
-                if (left.isEquivalentTo(right) || right.isEquivalentTo(left)) {
-                    KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + " by " + name() + ", we derive " + left, List.of(ast.toString()));
+                // FIX: Only derive and flag IF they are actually equivalent
+                if (left.isEquivalentTo(right)) {
+                    // FIX: Standardized string spacing so the Text Helper prints it cleanly
+                    KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + ", by " + name() + ", we derive " + left, List.of(ast.toString()));
+                    derived.add(left);
+                    shouldDerive = true;
                 }
-                derived.add(left);
-                shouldDerive = true;
             }
         }
         return shouldDerive;
@@ -60,9 +61,10 @@ public class DisjunctionElimination implements InferenceRule {
                 PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
                 PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
 
-                PropositionalAST newAST1 = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getImplicationString() + " " + asts[0], true);
-                PropositionalAST newAST2 = new PropositionalAST(right + " " + LogicalOperatorFlyweight.getImplicationString() + " " + asts[0], true);
+                PropositionalAST newAST1 = PropositionalLogicHelper.buildFormula(left, (PropositionalAST) asts[0], LogicalOperatorFlyweight.getImplicationString());
+                PropositionalAST newAST2 = PropositionalLogicHelper.buildFormula(right, (PropositionalAST) asts[0], LogicalOperatorFlyweight.getImplicationString());
 
+                // Registry correctly uses List.of(ast) mapping the child subgoals to the original disjunction
                 KnowledgeBaseRegistry.addEntry(newAST1.toString(), "From " + ast + ", to prove " + asts[0] + ", assume " + left + " and prove " + asts[0], List.of(ast.toString()));
                 KnowledgeBaseRegistry.addEntry(newAST2.toString(), "From " + ast + ", to prove " + asts[0] + ", assume " + right + " and prove " + asts[0], List.of(ast.toString()));
 

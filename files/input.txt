@@ -5,8 +5,11 @@ Rules:
 Classical
 
 KB:
-A <-> !A
+(A AND W) -> P
+!A -> I
+!W -> M
+!P
+E -> (!I AND !M)
 
 Goals:
-A
-
+!E

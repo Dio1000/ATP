@@ -25,13 +25,13 @@ public class DisjunctionIntroduction implements InferenceRule {
     public boolean canInference(List<AST> asts, AST goal) {
         boolean shouldInference = false;
 
-        if (PropositionalLogicHelper.getOutermostOperation(goal) == LogicalOperator.DISJUNCTION) {
-            AST left = goal.getSubtree(0);
-            AST right = goal.getSubtree(1);
+        if (goal != null && PropositionalLogicHelper.getOutermostOperation(goal) == LogicalOperator.DISJUNCTION) {
+            PropositionalAST left = (PropositionalAST) goal.getSubtree(0);
+            PropositionalAST right = (PropositionalAST) goal.getSubtree(1);
 
             for (AST ast : asts) {
                 if (ast.isEquivalentTo(left)) {
-                    AST newAST = new PropositionalAST(ast + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + right, true);
+                    AST newAST = PropositionalLogicHelper.buildFormula((PropositionalAST) ast, right, LogicalOperatorFlyweight.getDisjunctionString());
                     if (inDerived(newAST)) continue;
 
                     KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + ", by " + name() + ", we derive " + newAST, List.of(ast.toString()));
@@ -40,7 +40,7 @@ public class DisjunctionIntroduction implements InferenceRule {
                     break;
                 }
                 else if (ast.isEquivalentTo(right)) {
-                    AST newAST = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + ast, true);
+                    AST newAST = PropositionalLogicHelper.buildFormula(left, (PropositionalAST) ast, LogicalOperatorFlyweight.getDisjunctionString());
                     if (inDerived(newAST)) continue;
 
                     KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + ", by " + name() + ", we derive " + newAST, List.of(ast.toString()));

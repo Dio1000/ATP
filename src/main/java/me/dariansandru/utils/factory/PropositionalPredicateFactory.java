@@ -28,6 +28,12 @@ public class PropositionalPredicateFactory {
                 else throw new IllegalStateException(lexeme + " is not the representation of any logical operator!");
             }
             case PREDICATE -> {
+                if (lexeme.equals("Contradiction")) {
+                    return new PropositionalAtom(lexeme, true);
+                }
+                if (lexeme.equals("Tautology")) {
+                    return new PropositionalAtom(lexeme, false);
+                }
                 if (lexeme.matches("^[A-Z][0-9]*$")) {
                     return new PropositionalAtom(lexeme, false);
                 }

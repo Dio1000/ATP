@@ -13,13 +13,15 @@ import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.data_structures.ast.PropositionalASTNode;
 import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
+import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
+import me.dariansandru.utils.helper.Logger;
 import me.dariansandru.utils.helper.ProofTextHelper;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class PropositionalProof implements Proof{
+public class PropositionalProof implements Proof {
 
     private final List<InferenceRule> inferenceRules;
     private final List<AST> knowledgeBase;
@@ -65,7 +67,6 @@ public class PropositionalProof implements Proof{
         for (PropositionalProofState root : roots) {
             if (isProven) {
                 System.out.println();
-                ProofTextHelper.print();
 
                 long endTime = System.nanoTime();
                 long duration = endTime - startTime;
@@ -158,12 +159,20 @@ public class PropositionalProof implements Proof{
                 for (int i = 0 ; i < childNumber ; i++) {
                     List<AST> newKB1 = new ArrayList<>();
                     newKB1.add(ast.getSubtree(i));
+                    KnowledgeBaseRegistry.addEntry(ast.getSubtree(i).toString(), "Strategy: Proof By Cases", List.of());
 
                     PropositionalProofState newState = new PropositionalProofState(newKB1, List.of(state.getGoal()), inferenceRules);
                     setCurrentStateIndex(newState);
                     state.addChild(newState);
                 }
                 newKB.remove(disjunctionAST);
+
+                for (ProofState childState : state.getChildren()) {
+                    PropositionalProofState child = (PropositionalProofState) childState;
+                    List<Strategy> childStrats = child.notifyProof();
+                    Strategy next = childStrats.isEmpty() ? Strategy.NO_STRATEGY : childStrats.getFirst();
+                    buildTree(child, indent + 1, next);
+                }
                 break;
             }
         }
@@ -181,10 +190,16 @@ public class PropositionalProof implements Proof{
     }
 
     private void solveImplication(ProofState state, int indent) {
+        Logger.addStrategy(Strategy.IMPLICATION_STRATEGY);
         addAssumptionAndConclusionText(state, indent);
 
         ImplicationStrategy(state);
-        buildTree(state.getChildren().getFirst(), indent + 1, ((PropositionalProofState) state).notifyProof().getFirst());
+
+        PropositionalProofState child = (PropositionalProofState) state.getChildren().getFirst();
+        List<Strategy> childStrats = child.notifyProof();
+        Strategy next = childStrats.isEmpty() ? Strategy.NO_STRATEGY : childStrats.getFirst();
+
+        buildTree(child, indent + 1, next);
     }
 
     private void solveEquivalence(ProofState state, int indent) {
@@ -200,13 +215,17 @@ public class PropositionalProof implements Proof{
         ProofTextHelper.addConclusionStep(conclusions.getLast(), indent);
 
         EquivalenceStrategy(state);
-        buildTree(state.getChildren().getFirst(), indent + 1, ((PropositionalProofState) state).notifyProof().getFirst());
-        buildTree(state.getChildren().get(1), indent + 1, ((PropositionalProofState) state).notifyProof().getFirst());
+
+        for (ProofState childState : state.getChildren()) {
+            PropositionalProofState child = (PropositionalProofState) childState;
+            List<Strategy> childStrats = child.notifyProof();
+            Strategy next = childStrats.isEmpty() ? Strategy.NO_STRATEGY : childStrats.getFirst();
+            buildTree(child, indent + 1, next);
+        }
     }
 
     private void solveConjunction(ProofState state, int indent) {
-        String assumption;
-        assumption = state.getGoal().toString();
+        String assumption = state.getGoal().toString();
         String[] parts = assumption.split(LogicalOperatorFlyweight.getConjunctionString());
         assumptions.add(ProofTextHelper.getConjunctionAssumption(assumption, parts));
         conclusions.add(ProofTextHelper.getConclusion(
@@ -215,30 +234,32 @@ public class PropositionalProof implements Proof{
         ProofTextHelper.addConclusionStep(conclusions.getLast(), indent);
 
         ConjunctionStrategy(state);
-        int childrenNumber = state.getChildren().size();
-        for (int i = 0 ; i < childrenNumber ; i++)
-            buildTree(state.getChildren().get(i), indent + 1, ((PropositionalProofState) state).notifyProof().getFirst());
+
+        for (ProofState childState : state.getChildren()) {
+            PropositionalProofState child = (PropositionalProofState) childState;
+            List<Strategy> childStrats = child.notifyProof();
+            Strategy next = childStrats.isEmpty() ? Strategy.NO_STRATEGY : childStrats.getFirst();
+            buildTree(child, indent + 1, next);
+        }
     }
 
     private void solveDisjunction(ProofState state, int indent) {
         String assumption = state.getGoal().toString();
         String[] parts = assumption.split(LogicalOperatorFlyweight.getDisjunctionString());
-        assumptions.add(ProofTextHelper.getDisjunctionAssumption(assumption, parts));
-        conclusions.add(ProofTextHelper.getConclusion(
-                state.getGoal().toString()));
-        ProofTextHelper.addAssumptionStep(assumptions.getLast(), indent);
-        ProofTextHelper.addConclusionStep(conclusions.getLast(), indent);
 
         assumptions.add(ProofTextHelper.getDisjunctionAssumption(assumption, parts));
-        conclusions.add(ProofTextHelper.getConclusion(
-                state.getGoal().toString()));
+        conclusions.add(ProofTextHelper.getConclusion(state.getGoal().toString()));
         ProofTextHelper.addAssumptionStep(assumptions.getLast(), indent);
         ProofTextHelper.addConclusionStep(conclusions.getLast(), indent);
 
         DisjunctionStrategy(state);
-        int childrenNumber = state.getChildren().size();
-        for (int i = 0 ; i < childrenNumber ; i++)
-            buildTree(state.getChildren().get(i), indent + 1, ((PropositionalProofState) state).notifyProof().getFirst());
+
+        for (ProofState childState : state.getChildren()) {
+            PropositionalProofState child = (PropositionalProofState) childState;
+            List<Strategy> childStrats = child.notifyProof();
+            Strategy next = childStrats.isEmpty() ? Strategy.NO_STRATEGY : childStrats.getFirst();
+            buildTree(child, indent + 1, next);
+        }
     }
 
     private void solveNegation(ProofState state, int indent) {
@@ -248,9 +269,17 @@ public class PropositionalProof implements Proof{
         ProofTextHelper.addConclusionStep(conclusions.getLast(), indent);
 
         NegationStrategy(state);
+
+        if (!state.getChildren().isEmpty()) {
+            PropositionalProofState child = (PropositionalProofState) state.getChildren().getFirst();
+            List<Strategy> childStrats = child.notifyProof();
+            Strategy next = childStrats.isEmpty() ? Strategy.NO_STRATEGY : childStrats.getFirst();
+            buildTree(child, indent + 1, next);
+        }
     }
 
     private void EquivalenceStrategy(ProofState state) {
+        Logger.addStrategy(Strategy.EQUIVALENCE_STRATEGY);
         AST goal = state.getGoal();
 
         String implication = LogicalOperatorFlyweight.getImplicationString();
@@ -271,17 +300,17 @@ public class PropositionalProof implements Proof{
     }
 
     private void ImplicationStrategy(ProofState state) {
+        Logger.addStrategy(Strategy.IMPLICATION_STRATEGY);
         List<AST> newKnowledgeBase = new ArrayList<>(state.getKnowledgeBase());
         List<AST> newGoals = new ArrayList<>();
 
         AST goal = state.getGoal();
 
         AST newKBEntry = goal.getSubtree(0);
-        newKBEntry.validate(0);
         newKnowledgeBase.add(newKBEntry);
+        KnowledgeBaseRegistry.addEntry(newKBEntry.toString(), "Strategy: Implication Strategy", List.of());
 
         AST newGoal = goal.getSubtree(1);
-        newGoal.validate(0);
         newGoals.add(newGoal);
 
         PropositionalProofState newState = new PropositionalProofState(newKnowledgeBase, newGoals, inferenceRules);
@@ -291,13 +320,17 @@ public class PropositionalProof implements Proof{
     }
 
     private void NegationStrategy(ProofState state) {
+        Logger.addStrategy(Strategy.NEGATION_STRATEGY);
         List<AST> newKnowledgeBase = new ArrayList<>(state.getKnowledgeBase());
         List<AST> newGoals = new ArrayList<>();
 
         PropositionalAST kbEntry = (PropositionalAST) state.getGoals().getFirst();
-        kbEntry.negate();
+        PropositionalAST newKBEntry = new PropositionalAST(kbEntry.getFormulaString(), true);
+        newKBEntry.negate();
 
-        newKnowledgeBase.add(kbEntry);
+        newKnowledgeBase.add(newKBEntry);
+        KnowledgeBaseRegistry.addEntry(newKBEntry.toString(), "Strategy: Negation Strategy", List.of());
+
         newGoals.add(new PropositionalAST(true));
 
         PropositionalProofState newState =
@@ -308,6 +341,7 @@ public class PropositionalProof implements Proof{
     }
 
     private void ConjunctionStrategy(ProofState state) {
+        Logger.addStrategy(Strategy.CONJUNCTION_STRATEGY);
         if (state.getGoals().size() != 1) {
             int children = state.getGoals().size();
 
@@ -327,8 +361,8 @@ public class PropositionalProof implements Proof{
         extractGoals(state);
     }
 
-
     private void DisjunctionStrategy(ProofState state) {
+        Logger.addStrategy(Strategy.DISJUNCTION_STRATEGY);
         extractGoals(state);
     }
 

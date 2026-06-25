@@ -6,6 +6,7 @@ import me.dariansandru.domain.language.LogicalOperator;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
+import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
@@ -40,8 +41,9 @@ public class EquivalenceIntroduction implements InferenceRule {
                 AST secondRight = second.getSubtree(1);
 
                 if (firstLeft.isEquivalentTo(secondRight) && firstRight.isEquivalentTo(secondLeft)) {
-                    PropositionalAST equivalence = new PropositionalAST(firstLeft + " " + LogicalOperatorFlyweight.getEquivalenceString() + " " + firstRight, true);
+                    PropositionalAST equivalence = PropositionalLogicHelper.buildFormula((PropositionalAST) firstLeft, (PropositionalAST) firstRight, LogicalOperatorFlyweight.getEquivalenceString());
                     if (!inDerived(equivalence)) {
+                        KnowledgeBaseRegistry.addEntry(equivalence.toString(), "From " + first + " and " + second + ", by " + name() + ", we derive " + equivalence, List.of(first.toString(), second.toString()));
                         derived.add(equivalence);
                         shouldInference = true;
                     }
@@ -72,6 +74,8 @@ public class EquivalenceIntroduction implements InferenceRule {
 
         PropositionalAST implication1 = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getImplicationString() + " " + right, true);
         PropositionalAST implication2 = new PropositionalAST(right + " " + LogicalOperatorFlyweight.getImplicationString() + " " + left, true);
+
+        KnowledgeBaseRegistry.addEntry(goal.toString(), "From " + implication1 + " and " + implication2 + ", by " + name() + ", we derive " + goal, List.of(implication1.toString(), implication2.toString()));
 
         subGoals.add(new SubGoal(implication1, PropositionalInferenceRule.EQUIVALENCE_INTRODUCTION, goal));
         subGoals.add(new SubGoal(implication2, PropositionalInferenceRule.EQUIVALENCE_INTRODUCTION, goal));

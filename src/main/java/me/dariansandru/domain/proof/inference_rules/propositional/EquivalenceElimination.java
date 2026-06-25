@@ -6,6 +6,7 @@ import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
+import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
@@ -30,21 +31,21 @@ public class EquivalenceElimination implements InferenceRule {
             PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
             PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
 
-            PropositionalAST newAST1 = new PropositionalAST(
-                    left + " " + LogicalOperatorFlyweight.getImplicationString() + " " + right, true);
-            PropositionalAST newAST2 = new PropositionalAST(
-                    right + " " + LogicalOperatorFlyweight.getImplicationString() + " " + left, true);
+            PropositionalAST newAST1 = PropositionalLogicHelper.buildFormula(left, right, LogicalOperatorFlyweight.getImplicationString());
+            PropositionalAST newAST2 = PropositionalLogicHelper.buildFormula(right, left, LogicalOperatorFlyweight.getImplicationString());
 
             if (!inDerived(newAST1)) {
+                KnowledgeBaseRegistry.addEntry(newAST1.toString(), "From " + ast + ", by " + name() + ", we derive " + newAST1, List.of(ast.toString()));
                 derived.add(newAST1);
                 shouldInference = true;
             }
             if (!inDerived(newAST2)) {
+                KnowledgeBaseRegistry.addEntry(newAST2.toString(), "From " + ast + ", by " + name() + ", we derive " + newAST2, List.of(ast.toString()));
                 derived.add(newAST2);
                 shouldInference = true;
             }
         }
-        
+
         return shouldInference;
     }
 
@@ -67,10 +68,12 @@ public class EquivalenceElimination implements InferenceRule {
                 PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
 
                 if (left.isEquivalentTo(asts[0])) {
+                    KnowledgeBaseRegistry.addEntry(asts[0].toString(), "From " + ast + " and " + right + ", by " + name() + ", we derive " + asts[0], List.of(ast.toString(), right.toString()));
                     SubGoal subGoal = new SubGoal(right, PropositionalInferenceRule.EQUIVALENCE_ELIMINATION, ast);
                     subGoals.add(subGoal);
                 }
                 else if (right.isEquivalentTo(asts[0])) {
+                    KnowledgeBaseRegistry.addEntry(asts[0].toString(), "From " + ast + " and " + left + ", by " + name() + ", we derive " + asts[0], List.of(ast.toString(), left.toString()));
                     SubGoal subGoal = new SubGoal(left, PropositionalInferenceRule.EQUIVALENCE_ELIMINATION, ast);
                     subGoals.add(subGoal);
                 }

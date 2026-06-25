@@ -31,15 +31,19 @@ public class ImplicationIntroduction implements InferenceRule {
                 PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
 
                 if (left.isEquivalentTo(goal) || right.isEquivalentTo(goal)) {
-                    PropositionalAST newAST1 = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getImplicationString() + " " + right, true);
-                    PropositionalAST newAST2 = new PropositionalAST(right + " " + LogicalOperatorFlyweight.getImplicationString() + " " + left, true);
+                    PropositionalAST newAST1 = PropositionalLogicHelper.buildFormula(left, right, LogicalOperatorFlyweight.getImplicationString());
+                    PropositionalAST newAST2 = PropositionalLogicHelper.buildFormula(right, left, LogicalOperatorFlyweight.getImplicationString());
 
-                    derived.add(newAST1);
-                    derived.add(newAST2);
-
-                    KnowledgeBaseRegistry.addEntry(newAST1.toString(), "From " + ast + " by " + name() + ", we derive " + newAST1, List.of(ast.toString()));
-                    KnowledgeBaseRegistry.addEntry(newAST2.toString(), "From " + ast + " by " + name() + ", we derive " + newAST2, List.of(ast.toString()));
-                    shouldInference = true;
+                    if (!inDerived(newAST1)) {
+                        derived.add(newAST1);
+                        KnowledgeBaseRegistry.addEntry(newAST1.toString(), "From " + ast + ", by " + name() + ", we derive " + newAST1, List.of(ast.toString()));
+                        shouldInference = true;
+                    }
+                    if (!inDerived(newAST2)) {
+                        derived.add(newAST2);
+                        KnowledgeBaseRegistry.addEntry(newAST2.toString(), "From " + ast + ", by " + name() + ", we derive " + newAST2, List.of(ast.toString()));
+                        shouldInference = true;
+                    }
                 }
             }
         }
@@ -49,6 +53,7 @@ public class ImplicationIntroduction implements InferenceRule {
 
     @Override
     public List<AST> inference(List<AST> kb, AST goal) {
+        derived.clear();
         if (!canInference(kb, goal)) return new ArrayList<>();
         return derived;
     }
@@ -61,5 +66,12 @@ public class ImplicationIntroduction implements InferenceRule {
     @Override
     public String getText(SubGoal subGoal) {
         return "";
+    }
+
+    public boolean inDerived(AST ast) {
+        for (AST derivedAST : derived) {
+            if (ast.isEquivalentTo(derivedAST)) return true;
+        }
+        return false;
     }
 }

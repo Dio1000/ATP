@@ -24,8 +24,9 @@ public class PropositionalLogicLoader implements Loader {
         int index = 0;
         while (index < lines.size()) {
             String line = lines.get(index).trim();
+            String lineRuleName = line.contains("=") ? line.split("=")[1] : "";
 
-            if (line.equals(ruleName)) {
+            if (lineRuleName.equals(ruleName)) {
                 index++;
                 while (index < lines.size()) {
                     line = lines.get(index).trim();
@@ -43,7 +44,6 @@ public class PropositionalLogicLoader implements Loader {
                         String[] parts = line.split(":", 2);
                         conclusion = new PropositionalAST(parts[1].trim(), true);
                     }
-
                     index++;
                 }
                 break;

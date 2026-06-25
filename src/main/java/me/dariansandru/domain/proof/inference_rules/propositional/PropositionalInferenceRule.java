@@ -15,6 +15,11 @@ public enum PropositionalInferenceRule {
     IMPLICATION_ELIMINATION,
     DEMORGAN,
     MATERIAL_IMPLICATION,
+    HYPOTHETICAL_SYLLOGISM,
+    ABSORPTION,
+    CONSTRUCTIVE_DILEMMA,
+    DESTRUCTIVE_DILEMMA,
+    DISJUNCTIVE_SYLLOGISM,
     NO_RULE;
 
     @Override
@@ -34,6 +39,11 @@ public enum PropositionalInferenceRule {
             case IMPLICATION_ELIMINATION -> "Implication Elimination";
             case DEMORGAN -> "DeMorgan";
             case MATERIAL_IMPLICATION -> "Material Implication";
+            case HYPOTHETICAL_SYLLOGISM -> "Hypothetical Syllogism";
+            case ABSORPTION -> "Absorption";
+            case CONSTRUCTIVE_DILEMMA -> "Constructive Dilemma";
+            case DESTRUCTIVE_DILEMMA -> "Destructive Dilemma";
+            case DISJUNCTIVE_SYLLOGISM -> "Disjunctive Syllogism";
             case NO_RULE -> "No Rule";
         };
     }

@@ -15,6 +15,7 @@ import me.dariansandru.domain.data_structures.ast.exception.ASTException;
 import me.dariansandru.domain.data_structures.ast.exception.ASTNodeException;
 import me.dariansandru.utils.factory.PropositionalPredicateFactory;
 import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
+import me.dariansandru.utils.global.GlobalFlags;
 import me.dariansandru.utils.helper.ErrorHelper;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 import me.dariansandru.utils.helper.WarningHelper;
@@ -96,7 +97,10 @@ public class PropositionalAST implements AST {
             this.checkTautology();
         }
 
-        if (shouldValidate) this.validate(0);
+        if (shouldValidate) {
+            this.validate(0);
+            this.formulaString = this.toString();
+        }
 
         this.checkContradiction();
         this.checkTautology();
@@ -259,6 +263,7 @@ public class PropositionalAST implements AST {
         int currentIndex = 0;
         try{
             for (Token token : tokens) {
+                if (GlobalFlags.printTreeFlag) printTree(token);
                 position = token.position();
 
                 if (token.type() == Type.SEPARATOR) {
@@ -368,9 +373,9 @@ public class PropositionalAST implements AST {
                 }
                 currentIndex++;
             }
+            if (GlobalFlags.printTreeFlag) printTree(null);
 
             boolean valid = !invalid && currentNode != null && currentNode.getParent() == superRoot && currentNode == root;
-
             if (!valid) {
                 if (currentNode.getParent() != null) ErrorHelper.add("Expected closing parentheses ')' at this position!", line, position);
                 ErrorHelper.add(formulaString + " is not a well-formed formula!");
@@ -390,33 +395,39 @@ public class PropositionalAST implements AST {
 
     @Override
     public void negate() {
-
         PropositionalASTNode effectiveRoot = getFormulaNode();
         if (effectiveRoot == null) return;
+
         Predicate predicate = (Predicate) effectiveRoot.getKey();
 
         if (this.isAtomic()) {
             if (Objects.equals(predicate.getRepresentation(), LogicalOperatorFlyweight.getNegationString())) {
+                // Double negation: remove the negation
                 PropositionalASTNode inner = (PropositionalASTNode) effectiveRoot.getChildren().getFirst();
 
                 this.root = new PropositionalASTNode(null);
                 this.root.getChildren().add(inner);
                 inner.setParent(this.root);
-                return;
+            } else {
+                // Wrap in negation
+                setParentForNode(effectiveRoot);
             }
-            setParentForNode(effectiveRoot);
-            return;
+        } else {
+            LogicalOperator operator = PropositionalLogicHelper.getOutermostOperation(this);
+            if (operator == LogicalOperator.NEGATION) {
+                // Double negation: remove the negation
+                PropositionalASTNode inner = (PropositionalASTNode) effectiveRoot.getChildren().getFirst();
+
+                this.root = new PropositionalASTNode(null);
+                this.root.getChildren().add(inner);
+                inner.setParent(this.root);
+            } else {
+                // Wrap in negation
+                setParentForNode(effectiveRoot);
+            }
         }
 
-        LogicalOperator operator = PropositionalLogicHelper.getOutermostOperation(this);
-        if (operator == LogicalOperator.NEGATION) {
-            PropositionalASTNode inner = (PropositionalASTNode) effectiveRoot.getChildren().getFirst();
-
-            this.root = new PropositionalASTNode(null);
-            this.root.getChildren().add(inner);
-            inner.setParent(this.root);
-        }
-        else setParentForNode(effectiveRoot);
+        // CRITICAL: Update the formula string after modification
         this.formulaString = this.toString();
     }
 
@@ -918,4 +929,22 @@ public class PropositionalAST implements AST {
         return formulaString;
     }
 
+    public void printTree(Token token) {
+        System.out.println("AST Tree:");
+        System.out.println("Token: " + token);
+        printTreeRecursive(getFormulaNode(), 0, this.currentNode);
+    }
+
+    private void printTreeRecursive(PropositionalASTNode node, int depth, PropositionalASTNode pointer) {
+        if (node == null) return;
+        String indent = "  ".repeat(depth);
+
+        String keyStr;
+        if (node.getKey() == null) keyStr = "NULL";
+        else keyStr = node.getKey().toString();
+        boolean isPointer = node == pointer;
+
+        System.out.println(indent + (isPointer ? "-- " : "   ") + "Node: " + keyStr + " | children: " + node.getChildren().size());
+        for (ASTNode child : node.getChildren()) printTreeRecursive((PropositionalASTNode) child, depth + 1, pointer);
+    }
 }

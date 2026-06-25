@@ -6,6 +6,7 @@ import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
+import me.dariansandru.utils.helper.Logger;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
@@ -26,7 +27,6 @@ public class ModusPonens implements InferenceRule {
 
         for (AST candidate : asts) {
             if (!(candidate instanceof PropositionalAST pCandidate)) continue;
-
             if (PropositionalLogicHelper.getOutermostOperation(pCandidate) != LogicalOperator.IMPLICATION) continue;
 
             AST antecedent = pCandidate.getSubtree(0);
@@ -35,10 +35,13 @@ public class ModusPonens implements InferenceRule {
             for (AST other : asts) {
                 if (other != candidate && other.isEquivalentTo(antecedent)) {
                     if (inDerived(conclusion)) continue;
-                    if (other.isSameFormula(antecedent))
-                        KnowledgeBaseRegistry.addEntry(conclusion.toString(), "From " + candidate + " and " + antecedent + ", by " + name() + ", we derive " + conclusion, List.of(candidate.toString()));
-                    else
-                        KnowledgeBaseRegistry.addEntry(conclusion.toString(), "From " + candidate + " and " + other + " (which is equivalent to " + antecedent + "), by " + name() + ", we derive " + conclusion, List.of(candidate.toString()));
+
+                    if (other.isSameFormula(antecedent)) {
+                        KnowledgeBaseRegistry.addEntry(conclusion.toString(), "From " + antecedent + " and " + candidate + ", by " + name() + ", we derive " + conclusion, List.of(candidate.toString(), antecedent.toString()));
+                    } else {
+                        KnowledgeBaseRegistry.addEntry(conclusion.toString(), "From " + other + " (which is equivalent to " + antecedent + ") and " + candidate + ", by " + name() + ", we derive " + conclusion, List.of(candidate.toString(), other.toString()));
+                    }
+
                     derived.add(conclusion);
                     break;
                 }
@@ -57,6 +60,7 @@ public class ModusPonens implements InferenceRule {
     public List<AST> inference(List<AST> asts, AST goal) {
         derived.clear();
         if (!canInference(asts, goal)) return new ArrayList<>();
+        Logger.addRule(this);
         return derived;
     }
 
@@ -75,7 +79,7 @@ public class ModusPonens implements InferenceRule {
                     PropositionalAST newGoal = (PropositionalAST) ast.getSubtree(0);
                     SubGoal newSubGoal = new SubGoal(newGoal, PropositionalInferenceRule.MODUS_PONENS, ast);
 
-                    KnowledgeBaseRegistry.addEntry(right.toString(), "From " + newSubGoal.getGoal() + " and " + ast + ", by " + name() + ", we derive " + right, List.of(ast.toString()));
+                    KnowledgeBaseRegistry.addEntry(right.toString(), "From " + newSubGoal.getGoal() + " and " + ast + ", by " + name() + ", we derive " + right, List.of(ast.toString(), newSubGoal.getGoal().toString()));
                     subGoals.add(newSubGoal);
                 }
 

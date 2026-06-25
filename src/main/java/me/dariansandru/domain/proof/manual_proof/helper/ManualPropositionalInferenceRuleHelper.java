@@ -339,7 +339,7 @@ public class ManualPropositionalInferenceRuleHelper {
         AST newAST = new PropositionalAST("(" + left + " " + LogicalOperatorFlyweight.getImplicationString() + " " + right + ") " +
                 LogicalOperatorFlyweight.getConjunctionString() + "(" + right + " " + LogicalOperatorFlyweight.getImplicationString() + " " + left + ")", true);
         KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast.toString()), "Material Equivalence");
-        if (!containsEntry(newAST)) knowledgeBase.add(newAST);
+        knowledgeBase.add(newAST);
         return true;
     }
 
@@ -356,7 +356,7 @@ public class ManualPropositionalInferenceRuleHelper {
         antecedent.negate();
         AST newAST = new PropositionalAST(antecedent + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + conclusion, true);
         KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast.toString()), "Material Equivalence");
-        if (!containsEntry(newAST)) knowledgeBase.add(newAST);
+        knowledgeBase.add(newAST);
         return true;
     }
 
@@ -459,52 +459,21 @@ public class ManualPropositionalInferenceRuleHelper {
         return true;
     }
 
-    public boolean handleDisjunctionElimination(int index1, int index2) {
-        AST ast1 = knowledgeBase.get(index1);
-        AST ast2 = knowledgeBase.get(index2);
+    public boolean handleDisjunctionElimination(int index) {
+        AST ast = knowledgeBase.get(index);
 
-        if (PropositionalLogicHelper.getOutermostOperation(ast1) == LogicalOperator.DISJUNCTION) {
-            AST left = ast1.getSubtree(0);
-            AST right = ast1.getSubtree(1);
+        if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.DISJUNCTION) {
+            PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
+            PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
 
-            AST negatedLeft = new PropositionalAST(left.toString(), true);
-            AST negatedRight = new PropositionalAST(right.toString(), true);
-            negatedLeft.negate();
-            negatedRight.negate();
-
-            if (negatedLeft.isEquivalentTo(ast2)) {
-                KnowledgeBaseRegistry.addObtainedFrom(right.toString(), List.of(ast1.toString(), ast2.toString()), "Disjunction Elimination");
-                if (!containsEntry(right)) knowledgeBase.add(right);
-                return true;
-            }
-            else if (negatedRight.isEquivalentTo(ast2)) {
-                KnowledgeBaseRegistry.addObtainedFrom(left.toString(), List.of(ast1.toString(), ast2.toString()), "Disjunction Elimination");
-                if (!containsEntry(left)) knowledgeBase.add(left);
-                return true;
-            }
-        }
-        else if (PropositionalLogicHelper.getOutermostOperation(ast2) == LogicalOperator.DISJUNCTION) {
-            AST left = ast2.getSubtree(0);
-            AST right = ast2.getSubtree(1);
-
-            AST negatedLeft = new PropositionalAST(left.toString(), true);
-            AST negatedRight = new PropositionalAST(right.toString(), true);
-            negatedLeft.negate();
-            negatedRight.negate();
-
-            if (negatedLeft.isEquivalentTo(ast1)) {
-                KnowledgeBaseRegistry.addObtainedFrom(right.toString(), List.of(ast1.toString(), ast2.toString()), "Disjunction Elimination");
-                if (!containsEntry(right)) knowledgeBase.add(right);
-                return true;
-            }
-            else if (negatedRight.isEquivalentTo(ast1)) {
-                KnowledgeBaseRegistry.addObtainedFrom(left.toString(), List.of(ast1.toString(), ast2.toString()), "Disjunction Elimination");
-                if (!containsEntry(left)) knowledgeBase.add(left);
+            if (left.isEquivalentTo(right) || right.isEquivalentTo(left)) {
+                KnowledgeBaseRegistry.addObtainedFrom(left.toString(), "Disjunction Elimination");
+                knowledgeBase.add(left);
                 return true;
             }
         }
 
-        ErrorHelper.add("Cannot apply Disjunction Elimination on " + ast1 + " and " + ast2 + "!");
+        ErrorHelper.add("Cannot apply Disjunction Elimination on " + ast + "!");
         return false;
     }
 

@@ -1,11 +1,13 @@
 rule='ModPon'
-a: A -> B
 a: A
+a: A -> B
 c: B
 end
 
 rule='SomeRule'
 a: A
 a: B
-c: A AND B
+a: C
+c: A AND B AND C
 end
+

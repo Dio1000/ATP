@@ -14,7 +14,7 @@ public abstract class KnowledgeBaseRegistry {
 
     public static void getAllEntries() {
         for (String string : entryStringMap.keySet()) {
-            System.out.println(string + " " + entryStringMap.get(string));
+            System.out.println(string + "| " + entryStringMap.get(string) + "| " + entryFromMap.get(string));
         }
     }
 
@@ -27,10 +27,35 @@ public abstract class KnowledgeBaseRegistry {
         for (String parent : from) {
             entryChildMap.put(parent, formula);
         }
+
+        if (origin.startsWith("Strategy:")) {
+            addObtainedFrom(formula, from, origin);
+            return;
+        }
+
+        String ruleName = getRuleName(origin);
+        addObtainedFrom(formula, from, ruleName);
+    }
+
+    private static String getRuleName(String origin) {
+        String ruleName = "Premise";
+        if (origin.contains("by ")) {
+            int start = origin.indexOf("by ") + 3;
+            int end = origin.indexOf(", we derive", start);
+            if (end == -1) end = origin.indexOf(", we conclude", start);
+            if (end == -1) end = origin.indexOf(", because", start);
+
+            if (end != -1) {
+                ruleName = origin.substring(start, end).trim();
+            } else {
+                ruleName = origin.substring(start).trim();
+            }
+        }
+        return ruleName;
     }
 
     public static void addObtainedFrom(String formula, List<String> from, String rule) {
-        entryObtainedMap.put(formula, from);
+        entryObtainedMap.put(formula, new ArrayList<>(from));
         entryRuleMap.put(formula, rule);
     }
 
@@ -42,7 +67,7 @@ public abstract class KnowledgeBaseRegistry {
     public static String getObtainedFrom(String formula) {
         StringBuilder builder = new StringBuilder();
         List<String> obtained = entryObtainedMap.get(formula);
-        if (obtained.isEmpty()) {
+        if (obtained == null || obtained.isEmpty()) {
             builder.append(formula).append(" (").append(entryRuleMap.get(formula)).append(")");
             return builder.toString();
         }
@@ -56,6 +81,10 @@ public abstract class KnowledgeBaseRegistry {
         }
 
         return builder.append(")").toString();
+    }
+
+    public static String getRule(String formula) {
+        return entryRuleMap.getOrDefault(formula, "Premise");
     }
 
     public static boolean hasEntry(String formula) {
@@ -87,5 +116,4 @@ public abstract class KnowledgeBaseRegistry {
     public static boolean isUsed(String formula) {
         return entryIsUsedMap.getOrDefault(formula, false);
     }
-
 }

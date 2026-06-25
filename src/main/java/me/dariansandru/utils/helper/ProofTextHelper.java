@@ -7,8 +7,12 @@ import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 public abstract class ProofTextHelper {
 
@@ -17,6 +21,9 @@ public abstract class ProofTextHelper {
     private static final List<ProofStep> conclusionSteps = new ArrayList<>();
     private static final List<List<ProofStep>> proofSteps = new ArrayList<>();
     private static int rightMostIndent = 0;
+
+    private static final List<String> formalProofSteps = new ArrayList<>();
+    private static final Map<String, Integer> formalStepMap = new HashMap<>();
 
     public static void addAssumptionStep(String step, int indent) {
         ProofStep newStep = new ProofStep(step, indent);
@@ -30,26 +37,20 @@ public abstract class ProofTextHelper {
         if (indent >= rightMostIndent) rightMostIndent = indent + 1;
     }
 
+    public static void getProofText(String formula) {
+        List<ProofStep> proofText = new ArrayList<>();
+        Set<String> visited = new HashSet<>();
+        addDerivationSteps(formula, rightMostIndent, proofText, visited);
+        proofSteps.add(proofText);
+        buildFormalProof(formula);
+    }
+
     public static void getProofText(SubGoal subGoal) {
         List<ProofStep> proofText = new ArrayList<>();
-        String formula = subGoal.getGoal().toString();
-
-        ProofStep firstProofStep = new ProofStep("We derive " + subGoal.getGoal() + " from the Knowledge Base", rightMostIndent);
-        proofText.add(firstProofStep);
-        subGoal= subGoal.getParent();
-
-        while (subGoal != null) {
-            if (subGoal.getGoal().toString().equals("Contradiction")) {
-                subGoal = subGoal.getParent();
-                continue;
-            }
-            ProofStep proofStep = new ProofStep(KnowledgeBaseRegistry.getString(subGoal.getGoal().toString()), rightMostIndent);
-            proofText.add(proofStep);
-            subGoal = subGoal.getParent();
-        }
-
-        addDerivationSteps(formula, rightMostIndent + 1, proofText);
+        Set<String> visited = new HashSet<>();
+        addDerivationSteps(subGoal.getGoal().toString(), rightMostIndent, proofText, visited);
         proofSteps.add(proofText);
+        buildFormalProof(subGoal.getGoal().toString());
     }
 
     public static void getProofTextHypothesis(SubGoal subGoal) {
@@ -66,57 +67,58 @@ public abstract class ProofTextHelper {
             subGoal = subGoal.getParent();
         }
 
-        addDerivationSteps(formula, rightMostIndent + 1, proofText);
+        Set<String> visited = new HashSet<>();
+        addDerivationSteps(formula, rightMostIndent + 1, proofText, visited);
         proofSteps.add(proofText);
+        buildFormalProof(formula);
+    }
+
+    public static void getProofTextContradiction(AST first, AST second) {
+        KnowledgeBaseRegistry.addEntry("Contradiction", "From " + first + " and " + second + ", we derive a contradiction", List.of(first.toString(), second.toString()));
+        KnowledgeBaseRegistry.addObtainedFrom("Contradiction", List.of(first.toString(), second.toString()), "Contradiction");
+
+        List<ProofStep> proofText = new ArrayList<>();
+        Set<String> visited = new HashSet<>();
+
+        addDerivationSteps("Contradiction", rightMostIndent, proofText, visited);
+        proofSteps.add(proofText);
+
+        buildFormalProof("Contradiction");
     }
 
     public static void getProofTextContradiction(AST ast) {
+        KnowledgeBaseRegistry.addEntry("Contradiction", "From " + ast + " we derive a contradiction", List.of(ast.toString()));
+        KnowledgeBaseRegistry.addObtainedFrom("Contradiction", List.of(ast.toString()), "Contradiction");
+
         List<ProofStep> proofText = new ArrayList<>();
-        String formula = ast.toString();
+        Set<String> visited = new HashSet<>();
 
-        ProofStep step = new ProofStep(
-                "We derive a contradiction because " + formula +
-                        ", from the Knowledge Base, is a direct contradiction",
-                rightMostIndent
-        );
-        ProofStep lastStep = new ProofStep(
-                "Thus, we have derived a contradiction",
-                rightMostIndent
-        );
-        proofText.add(step);
-
-        addDerivationSteps(formula, rightMostIndent + 1, proofText);
-        proofText.add(lastStep);
+        addDerivationSteps("Contradiction", rightMostIndent, proofText, visited);
         proofSteps.add(proofText);
+
+        buildFormalProof("Contradiction");
     }
 
-    private static void addDerivationSteps(String formula, int indent, List<ProofStep> proofText) {
+    private static void addDerivationSteps(String formula, int indent, List<ProofStep> proofText, Set<String> visited) {
+        if (visited.contains(formula)) return;
+        visited.add(formula);
+
+        String ruleText = KnowledgeBaseRegistry.getString(formula);
         List<String> parents = KnowledgeBaseRegistry.from(formula);
-        if (parents == null || parents.isEmpty()) return;
 
-        ProofStep step = new ProofStep(
-                KnowledgeBaseRegistry.getString(formula),
-                indent
-        );
-        proofText.add(step);
-
-        for (String parent : parents) {
-            addDerivationSteps(parent, indent + 1, proofText);
-        }
-    }
-
-    private static void addDerivationStepsReversed(String formula, int indent, List<ProofStep> steps) {
-        List<String> parents = KnowledgeBaseRegistry.from(formula);
-        if (parents == null || parents.isEmpty()) return;
-
-        for (String parent : parents) {
-            addDerivationStepsReversed(parent, indent + 1, steps);
+        if (ruleText != null && !ruleText.isEmpty() && !ruleText.equals("Hypothesis")) {
+            proofText.add(new ProofStep(ruleText, indent));
+        } else if (parents == null || parents.isEmpty()) {
+            if (!formula.equals("Contradiction") && !formula.contains("->") && !formula.contains("<->") && !formula.contains("AND") && !formula.contains("OR")) {
+                proofText.add(new ProofStep("We derive " + formula + " from the Knowledge Base", indent));
+            }
         }
 
-        steps.add(new ProofStep(
-                KnowledgeBaseRegistry.getString(formula),
-                indent
-        ));
+        if (parents != null && !parents.isEmpty()) {
+            for (String parent : parents) {
+                addDerivationSteps(parent, indent + 1, proofText, visited);
+            }
+        }
     }
 
     private static List<ProofStep> getAllByIndentation(List<ProofStep> steps, int indent) {
@@ -218,27 +220,9 @@ public abstract class ProofTextHelper {
         } while (!(currentIndentation == -1 && isConclusion));
     }
 
-    private static ProofStep getByIndentation(List<ProofStep> steps, int indentation) {
-        for (ProofStep proofStep : steps)
-            if (proofStep.indent() == indentation)
-                return proofStep;
-        return null;
-    }
-
-    private static void removeStep(List<ProofStep> steps, String text, int indent) {
-        for (int i = 0; i < steps.size(); i++) {
-            ProofStep step = steps.get(i);
-            if (step.indent() == indent && step.text().equals(text)) {
-                steps.remove(i);
-                return;
-            }
-        }
-    }
-
     public static String getConclusion(String conclusion) {
         Random random = new Random();
         int seed = random.nextInt(0, 3);
-
         return switch (seed) {
             case 0 -> "Therefore " + conclusion;
             case 1 -> "Thus " + conclusion;
@@ -258,24 +242,20 @@ public abstract class ProofTextHelper {
     public static String getConjunctionAssumption(String conjunction, String... strings) {
         StringBuilder builder = new StringBuilder();
         builder.append("To prove ").append(conjunction).append(", prove ").append(strings[0].strip());
-
         for (int i = 1; i < strings.length; i++) {
             if (i == strings.length - 1) builder.append(" and ").append(strings[i].strip());
             else builder.append(", ").append(strings[i].strip());
         }
-
         return builder.toString();
     }
 
     public static String getDisjunctionAssumption(String disjunction, String... strings) {
         StringBuilder builder = new StringBuilder();
         builder.append("To prove ").append(disjunction).append(", prove ").append(strings[0].strip());
-
         for (int i = 1; i < strings.length; i++) {
             if (i == strings.length - 1) builder.append(" or ").append(strings[i].strip());
             builder.append(", ").append(strings[i].strip());
         }
-
         return builder.toString();
     }
 
@@ -316,7 +296,6 @@ public abstract class ProofTextHelper {
             indentation--;
         }
         builder.append(step.text());
-
         return builder.toString();
     }
 
@@ -326,5 +305,212 @@ public abstract class ProofTextHelper {
         conclusionSteps.clear();
         proofSteps.clear();
         rightMostIndent = 0;
+        formalProofSteps.clear();
+        formalStepMap.clear();
+    }
+
+    private static void getFormalStepsChronological(String formula, List<String> chronological, Set<String> visited) {
+        if (visited.contains(formula)) return;
+        visited.add(formula);
+
+        List<String> parents = KnowledgeBaseRegistry.from(formula);
+        if (parents != null && !parents.isEmpty()) {
+            for (String parent : parents) {
+                getFormalStepsChronological(parent, chronological, visited);
+            }
+        }
+        chronological.add(formula);
+    }
+
+    public static void buildFormalProof(String targetFormula) {
+        List<String> chronological = new ArrayList<>();
+        Set<String> visited = new HashSet<>();
+        getFormalStepsChronological(targetFormula, chronological, visited);
+
+        List<String> premises = new ArrayList<>();
+        List<String> derived = new ArrayList<>();
+
+        for (String formula : chronological) {
+            List<String> parents = KnowledgeBaseRegistry.from(formula);
+            if (parents == null || parents.isEmpty()) {
+                premises.add(formula);
+            } else {
+                derived.add(formula);
+            }
+        }
+
+        List<String> orderedSteps = new ArrayList<>(premises);
+        orderedSteps.addAll(derived);
+
+        formalProofSteps.clear();
+        formalStepMap.clear();
+
+        for (int i = 0; i < orderedSteps.size(); i++) {
+            String formula = orderedSteps.get(i);
+            int stepNum = i + 1;
+            formalStepMap.put(formula, stepNum);
+
+            List<String> parents = KnowledgeBaseRegistry.from(formula);
+            String ruleName = KnowledgeBaseRegistry.getRule(formula);
+
+            if (parents == null || parents.isEmpty()) {
+                if (ruleName == null || ruleName.isEmpty() || ruleName.equals("Hypothesis")) {
+                    ruleName = "Premise";
+                }
+            }
+            else {
+                if (ruleName == null || ruleName.isEmpty() || ruleName.equals("Hypothesis") || ruleName.equals("Premise")) {
+                    ruleName = "Derived";
+                }
+            }
+
+            StringBuilder line = new StringBuilder();
+            line.append(stepNum).append(". ").append(formula).append(" (").append(ruleName);
+
+            if (parents != null && !parents.isEmpty()) {
+                line.append(": ");
+                for (int j = 0; j < parents.size(); j++) {
+                    Integer parentIndex = formalStepMap.get(parents.get(j));
+                    line.append(parentIndex != null ? parentIndex : "?");
+                    if (j < parents.size() - 1) line.append(", ");
+                }
+            }
+            line.append(")");
+            formalProofSteps.add(line.toString());
+        }
+    }
+
+    public static void buildFormalProofContradiction(AST first, AST second) {
+        List<String> chronological = new ArrayList<>();
+        Set<String> visited = new HashSet<>();
+        getFormalStepsChronological(first.toString(), chronological, visited);
+        getFormalStepsChronological(second.toString(), chronological, visited);
+
+        List<String> premises = new ArrayList<>();
+        List<String> derived = new ArrayList<>();
+
+        for (String formula : chronological) {
+            List<String> parents = KnowledgeBaseRegistry.from(formula);
+            if (parents == null || parents.isEmpty()) {
+                premises.add(formula);
+            } else {
+                derived.add(formula);
+            }
+        }
+
+        List<String> orderedSteps = new ArrayList<>(premises);
+        orderedSteps.addAll(derived);
+
+        formalProofSteps.clear();
+        formalStepMap.clear();
+
+        for (int i = 0; i < orderedSteps.size(); i++) {
+            String formula = orderedSteps.get(i);
+            int stepNum = i + 1;
+            formalStepMap.put(formula, stepNum);
+
+            List<String> parents = KnowledgeBaseRegistry.from(formula);
+            String ruleName = KnowledgeBaseRegistry.getRule(formula);
+
+            if (parents == null || parents.isEmpty()) {
+                if (ruleName == null || ruleName.isEmpty() || ruleName.equals("Hypothesis")) {
+                    ruleName = "Premise";
+                }
+            } else {
+                if (ruleName == null || ruleName.isEmpty() || ruleName.equals("Hypothesis") || ruleName.equals("Premise")) {
+                    ruleName = "Derived";
+                }
+            }
+
+            StringBuilder line = new StringBuilder();
+            line.append(stepNum).append(". ").append(formula).append(" (").append(ruleName);
+
+            if (parents != null && !parents.isEmpty()) {
+                line.append(": ");
+                for (int j = 0; j < parents.size(); j++) {
+                    Integer parentIndex = formalStepMap.get(parents.get(j));
+                    line.append(parentIndex != null ? parentIndex : "?");
+                    if (j < parents.size() - 1) line.append(", ");
+                }
+            }
+            line.append(")");
+            formalProofSteps.add(line.toString());
+        }
+
+        int finalStepNum = orderedSteps.size() + 1;
+        Integer p1 = formalStepMap.get(first.toString());
+        Integer p2 = formalStepMap.get(second.toString());
+        formalProofSteps.add(finalStepNum + ". Contradiction (Derived: " + p1 + ", " + p2 + ")");
+    }
+
+    public static void buildFormalProofContradiction(AST ast) {
+        List<String> chronological = new ArrayList<>();
+        Set<String> visited = new HashSet<>();
+        getFormalStepsChronological(ast.toString(), chronological, visited);
+
+        List<String> premises = new ArrayList<>();
+        List<String> derived = new ArrayList<>();
+
+        for (String formula : chronological) {
+            List<String> parents = KnowledgeBaseRegistry.from(formula);
+            if (parents == null || parents.isEmpty()) {
+                premises.add(formula);
+            } else {
+                derived.add(formula);
+            }
+        }
+
+        List<String> orderedSteps = new ArrayList<>(premises);
+        orderedSteps.addAll(derived);
+
+        formalProofSteps.clear();
+        formalStepMap.clear();
+
+        for (int i = 0; i < orderedSteps.size(); i++) {
+            String formula = orderedSteps.get(i);
+            int stepNum = i + 1;
+            formalStepMap.put(formula, stepNum);
+
+            List<String> parents = KnowledgeBaseRegistry.from(formula);
+            String ruleName = KnowledgeBaseRegistry.getRule(formula);
+
+            if (parents == null || parents.isEmpty()) {
+                if (ruleName == null || ruleName.isEmpty() || ruleName.equals("Hypothesis")) {
+                    ruleName = "Premise";
+                }
+            } else {
+                if (ruleName == null || ruleName.isEmpty() || ruleName.equals("Hypothesis") || ruleName.equals("Premise")) {
+                    ruleName = "Derived";
+                }
+            }
+
+            StringBuilder line = new StringBuilder();
+            line.append(stepNum).append(". ").append(formula).append(" (").append(ruleName);
+
+            if (parents != null && !parents.isEmpty()) {
+                line.append(": ");
+                for (int j = 0; j < parents.size(); j++) {
+                    Integer parentIndex = formalStepMap.get(parents.get(j));
+                    line.append(parentIndex != null ? parentIndex : "?");
+                    if (j < parents.size() - 1) line.append(", ");
+                }
+            }
+            line.append(")");
+            formalProofSteps.add(line.toString());
+        }
+
+        int finalStepNum = orderedSteps.size() + 1;
+        Integer p1 = formalStepMap.get(ast.toString());
+        formalProofSteps.add(finalStepNum + ". Contradiction (Derived: " + p1 + ")");
+    }
+
+    public static void printFormalProof() {
+        for (String step : formalProofSteps) {
+            System.out.println(step);
+        }
+    }
+
+    public static String getFormalProofString() {
+        return String.join("\n", formalProofSteps);
     }
 }

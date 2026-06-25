@@ -22,6 +22,11 @@ public class PropositionalInferenceRuleFactory {
             case IMPLICATION_ELIMINATION -> new ImplicationElimination();
             case DEMORGAN -> new DeMorgan();
             case MATERIAL_IMPLICATION -> new MaterialImplication();
+            case HYPOTHETICAL_SYLLOGISM -> new HypotheticalSyllogism();
+            case ABSORPTION -> new Absorption();
+            case CONSTRUCTIVE_DILEMMA -> new ConstructiveDilemma();
+            case DESTRUCTIVE_DILEMMA -> new DestructiveDilemma();
+            case DISJUNCTIVE_SYLLOGISM -> new DisjunctiveSyllogism();
         };
     }
 }

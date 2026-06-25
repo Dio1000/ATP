@@ -6,6 +6,7 @@ import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
+import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;
@@ -59,6 +60,13 @@ public class ContradictionRule implements InferenceRule {
             AST goal = new PropositionalAST(String.valueOf(ast), true);
             goal.negate();
 
+            // FIX: Track the dependency in the Registry
+            KnowledgeBaseRegistry.addEntry(
+                    goal.toString(),
+                    "To derive a contradiction, we attempt to prove " + goal + " since we already have " + ast,
+                    List.of(ast.toString())
+            );
+
             SubGoal subGoal = new SubGoal(goal, PropositionalInferenceRule.CONTRADICTION, ast);
             subGoals.add(subGoal);
             subGoal.addChild(subGoal);
@@ -68,13 +76,13 @@ public class ContradictionRule implements InferenceRule {
 
     public List<SubGoal> implicationContradiction(List<AST> knowledgeBase) {
         List<SubGoal> subGoals = new ArrayList<>();
-
         return subGoals;
     }
-    
+
     public List<SubGoal> conjunctionContradiction(List<AST> knowledgeBase) {
         Set<String> atoms = new HashSet<>();
         List<SubGoal> subGoals = new ArrayList<>();
+
         for (AST ast : knowledgeBase) {
             atoms.addAll(PropositionalLogicHelper.getAtoms(ast));
             if (((PropositionalAST) ast).isAtomic() ||
@@ -82,6 +90,13 @@ public class ContradictionRule implements InferenceRule {
 
             PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
             PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
+
+            // FIX: Track the dependency in the Registry
+            KnowledgeBaseRegistry.addEntry(
+                    left.toString(),
+                    "To derive a contradiction from " + ast + ", we target " + left,
+                    List.of(ast.toString())
+            );
 
             SubGoal subGoal = new SubGoal(left, PropositionalInferenceRule.CONTRADICTION, ast, List.of(right));
             subGoals.add(subGoal);
@@ -92,6 +107,14 @@ public class ContradictionRule implements InferenceRule {
             negatedAtom.negate();
 
             PropositionalAST newSubGoal = new PropositionalAST(atom + " " + LogicalOperatorFlyweight.getConjunctionString() + " " + negatedAtom, true);
+
+            // FIX: Track the dependency in the Registry
+            KnowledgeBaseRegistry.addEntry(
+                    newSubGoal.toString(),
+                    "A direct contradiction requires proving " + newSubGoal,
+                    List.of()
+            );
+
             SubGoal subGoal = new SubGoal(newSubGoal, PropositionalInferenceRule.CONTRADICTION, newSubGoal);
             subGoals.add(subGoal);
         }

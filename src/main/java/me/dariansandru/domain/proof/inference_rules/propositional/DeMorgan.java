@@ -18,7 +18,7 @@ public class DeMorgan implements InferenceRule {
 
     @Override
     public String name() {
-        return "DeMorgan";
+        return "De Morgan";
     }
 
     @Override
@@ -34,11 +34,11 @@ public class DeMorgan implements InferenceRule {
                     left.negate();
                     right.negate();
 
-                    PropositionalAST newAST = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getConjunctionString() + " " + right, true);
+                    PropositionalAST newAST = PropositionalLogicHelper.buildFormula(left, right, LogicalOperatorFlyweight.getConjunctionString());
                     if (inDerived(newAST)) continue;
 
+                    KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + ", by " + name() + ", we derive " + newAST, List.of(ast.toString()));
                     derived.add(newAST);
-                    KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + ", by applying " + name() + ", we derive " + newAST, List.of(ast.toString()));
                     shouldInference = true;
                 }
                 else if (PropositionalLogicHelper.getOutermostOperation(childAST) == LogicalOperator.CONJUNCTION) {
@@ -47,11 +47,11 @@ public class DeMorgan implements InferenceRule {
                     left.negate();
                     right.negate();
 
-                    PropositionalAST newAST = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getDisjunctionString() + " " + right, true);
+                    PropositionalAST newAST = PropositionalLogicHelper.buildFormula(left, right, LogicalOperatorFlyweight.getDisjunctionString());
                     if (inDerived(newAST)) continue;
 
+                    KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + ", by " + name() + ", we derive " + newAST, List.of(ast.toString()));
                     derived.add(newAST);
-                    KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + ", by applying " + name() + ", we derive " + newAST, List.of(ast.toString()));
                     shouldInference = true;
                 }
             }

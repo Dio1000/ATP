@@ -1,5 +1,6 @@
 package me.dariansandru.domain.proof.manual_proof;
 
+import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.language.LogicalOperator;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.proof.manual_proof.helper.ManualPropositionalInferenceRuleHelper;
@@ -360,7 +361,7 @@ public class ManualPropositionalProof {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
 
-                return inferenceRuleHelper.handleDisjunctionElimination(indices.getFirst(), indices.get(1));
+                return inferenceRuleHelper.handleDisjunctionElimination(indices.getFirst());
             }
             case DISJUNCTION_SIMPLIFICATION -> {
                 List<Integer> indices = getIndexOfArityN(command);
@@ -380,19 +381,20 @@ public class ManualPropositionalProof {
 
                 int currentIndex = 0;
                 while (currentIndex < argumentCount) {
-                    String currentArgument = arguments.getFirst();
+                    String currentArgument = arguments.get(currentIndex);
                     String type = getArgumentType(currentArgument);
                     int index = getArgumentIndex(currentArgument);
 
                     if (!type.equals(kbName)) {
                          inferenceRuleHelper.addKBError(command);
                     }
-
                     indices.add(index);
                     currentIndex++;
                 }
 
                 isProven = handleContradiction(indices);
+                if (isProven) knowledgeBase.add(new PropositionalAST(true));
+                return isProven;
             }
             case CHANGE_STATE -> {
                 int index = getIntegerIndex();
@@ -451,6 +453,7 @@ public class ManualPropositionalProof {
     }
 
     private boolean handleContradiction(List<Integer> indices) {
+        if (indices == null) return false;
         int indexCount = indices.size();
 
         if (indexCount == 1) {
@@ -469,9 +472,10 @@ public class ManualPropositionalProof {
         else if (indexCount == 2) {
             AST ast1 = knowledgeBase.get(indices.getFirst());
             AST ast2 = knowledgeBase.get(indices.get(1));
-            ast1.negate();
 
-            if (ast1.isEquivalentTo(ast2)) return true;
+            PropositionalAST ast1Copy = new PropositionalAST(ast1.toString(), true);
+            ast1Copy.negate();
+            if (ast1Copy.isEquivalentTo(ast2)) return true;
 
             ErrorHelper.add("Cannot derive a Contradiction from " + ast1 + " and " + ast2 + "!");
             return false;

@@ -22,7 +22,6 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
     private final Set<String> atoms = new HashSet<>();
     private final Map<String, String> atomVariableMap = new HashMap<>();
 
-    private final List<List<AST>> usedEntries = new ArrayList<>();
     private final List<AST> derived = new ArrayList<>();
 
     public CustomPropositionalInferenceRule(String name, List<AST> antecedents, AST conclusion) {
@@ -52,6 +51,10 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
         return conclusion;
     }
 
+    public int getArity() {
+        return antecedents.size();
+    }
+
     @Override
     public boolean canInference(List<AST> kb, AST goal) {
         resetState();
@@ -74,9 +77,7 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
         Arrays.fill(matchedTo, -1);
         if (!canMatchAll(matches, antecedents.size(), kb.size(), matchedTo)) return false;
 
-        boolean found = false;
         List<List<AST>> potentialEntries = new ArrayList<>();
-
         int[] currentAssignment = new int[antecedents.size()];
         Arrays.fill(currentAssignment, -1);
         boolean[] usedKb = new boolean[kb.size()];
@@ -86,15 +87,13 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
             entry.sort(Comparator.comparingInt(AST::getLength));
         }
 
+        // Check all potential entries - no usedEntries tracking
         for (List<AST> entry : potentialEntries) {
-            if (usedEntries.contains(entry)) continue;
-            if (!found && isInferenceRuleApplicable(entry)) {
-                found = true;
-                usedEntries.add(entry);
+            if (isInferenceRuleApplicable(entry)) {
+                return true;
             }
         }
-
-        return found;
+        return false;
     }
 
     private boolean isInferenceRuleApplicable(List<AST> kbSubset) {

@@ -40,15 +40,19 @@ public class ConjunctionElimination implements InferenceRule {
             if (!hasLeft)
             {
                 if (inDerived(left)) continue;
+
+                KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + ", by " + name() + ", we derive " + left, List.of(ast.toString()));
+
                 derived.add(left);
-                KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + " by " + name() + ", we derive " + left, List.of(ast.toString()));
                 shouldInference = true;
             }
             if (!hasRight)
             {
                 if (inDerived(right)) continue;
+
+                KnowledgeBaseRegistry.addEntry(right.toString(), "From " + ast + ", by " + name() + ", we derive " + right, List.of(ast.toString()));
+
                 derived.add(right);
-                KnowledgeBaseRegistry.addEntry(right.toString(), "From " + ast + " by " + name() + ", we derive " + right, List.of(ast.toString()));
                 shouldInference = true;
             }
         }
@@ -69,7 +73,7 @@ public class ConjunctionElimination implements InferenceRule {
 
     @Override
     public String getText(SubGoal subGoal) {
-        return "From " + subGoal.getGoal() + " and " + subGoal.getFormula() + " by " + name() + ", we can derive " + subGoal.getFormula();
+        return "From " + subGoal.getGoal() + " and " + subGoal.getFormula() + ", by " + name() + ", we can derive " + subGoal.getFormula();
     }
 
     private boolean contains(List<AST> asts, AST other) {

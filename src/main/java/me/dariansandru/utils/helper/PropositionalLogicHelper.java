@@ -51,6 +51,8 @@ public abstract class PropositionalLogicHelper {
 
     public static Set<String> getAtoms(AST ast) {
         Set<String> atoms = new HashSet<>();
+        if (ast == null) return atoms;
+
         collectAtoms((PropositionalASTNode) ast.getRoot(), atoms);
         return atoms;
     }

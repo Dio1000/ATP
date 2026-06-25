@@ -43,7 +43,7 @@ public class ModusTollens implements InferenceRule {
 
                     KnowledgeBaseRegistry.addEntry(
                             negatedAntecedent.toString(),
-                            "From " + other + " and " + candidate + ", by " + name() + ", we derive " + negatedAntecedent,
+                            "From " + candidate + " and " + other + ", by " + name() + ", we derive " + negatedAntecedent,
                             List.of(candidate.toString(), other.toString())
                     );
 
@@ -81,11 +81,10 @@ public class ModusTollens implements InferenceRule {
                 if (negatedConsequent.isEquivalentTo(asts[0])) {
                     PropositionalAST negatedAntecedent = new PropositionalAST(antecedent.toString(), true);
                     negatedAntecedent.negate();
-
                     KnowledgeBaseRegistry.addEntry(
                             negatedAntecedent.toString(),
                             "From " + ast + " and " + negatedConsequent + ", by " + name() + ", we derive " + negatedAntecedent,
-                            List.of(ast.toString())
+                            List.of(ast.toString(), negatedConsequent.toString())
                     );
 
                     SubGoal newSubGoal = new SubGoal(negatedAntecedent, PropositionalInferenceRule.MODUS_TOLLENS, ast);
