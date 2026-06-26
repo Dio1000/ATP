@@ -14,6 +14,12 @@ import me.dariansandru.utils.helper.WarningHelper;
 import java.util.ArrayList;
 import java.util.List;
 
+/*
+This class is not yet used as the exploration of the different meta logic attributes is
+out of the scope of the project at the moment. It is left in the project for further
+expansion, refinement and correction. Using it in its current state may result in
+errors or undefined behaviour.
+ */
 public abstract class CustomInferenceRuleHelper {
 
     public static void checkPropositionalProperties(String packageName) {
@@ -67,7 +73,6 @@ public abstract class CustomInferenceRuleHelper {
     private static boolean isComplete(List<InferenceRule> inferenceRules) {
         return resolutionCheck(inferenceRules)
                 && contradictionCheck(inferenceRules);
-                //&& explosionCheck(inferenceRules);
     }
 
     private static boolean resolutionCheck(List<InferenceRule> inferenceRules) {

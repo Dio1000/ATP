@@ -8,6 +8,7 @@ import me.dariansandru.domain.language.interpretation.PropositionalPartialInterp
 import me.dariansandru.domain.language.interpretation.exception.InvalidInterpretationException;
 import me.dariansandru.domain.language.predicate.Predicate;
 import me.dariansandru.domain.language.signature.PropositionalSignature;
+import me.dariansandru.io.OutputDevice;
 import me.dariansandru.tokenizer.Token;
 import me.dariansandru.tokenizer.Tokenizer;
 import me.dariansandru.tokenizer.Type;
@@ -171,7 +172,6 @@ public class PropositionalAST implements AST {
 
     @Override
     public String toString() {
-        // TODO: Find a way to also be able to print the formula itself, even if it is a contradiction / tautology
         if (this.isContradiction) return "Contradiction";
         if (this.isTautology) return "Tautology";
 
@@ -188,13 +188,10 @@ public class PropositionalAST implements AST {
     }
 
     private String buildString(PropositionalASTNode node) {
-        if (node == null || node.getKey() == null) {
-            return "";
-        }
+        if (node == null || node.getKey() == null) return "";
 
         Predicate predicate = (Predicate) node.getKey();
         int arity = predicate.getArity();
-
         switch (arity) {
             case 0 -> {
                 return predicate.getRepresentation();
@@ -230,24 +227,15 @@ public class PropositionalAST implements AST {
         if (string.length() < 2) return string;
         if (string.charAt(0) != '(' || string.charAt(string.length() - 1) != ')') return string;
 
-        int d = 0;
+        int depth = 0;
         for (int i = 0; i < string.length() - 1; i++) {
             char character = string.charAt(i);
-            if (character == '(') d++;
-            else if (character == ')') d--;
-            if (d == 0 && i < string.length() - 1) return string;
+            if (character == '(') depth++;
+            else if (character == ')') depth--;
+
+            if (depth == 0 && i < string.length() - 1) return string;
         }
         return string.substring(1, string.length() - 1);
-    }
-
-    @Override
-    public AST copy() {
-        return new PropositionalAST(formulaString);
-    }
-
-    @Override
-    public AST simplify() {
-        return null;
     }
 
     @Override
@@ -377,18 +365,17 @@ public class PropositionalAST implements AST {
 
             boolean valid = !invalid && currentNode != null && currentNode.getParent() == superRoot && currentNode == root;
             if (!valid) {
+                assert currentNode != null;
                 if (currentNode.getParent() != null) ErrorHelper.add("Expected closing parentheses ')' at this position!", line, position);
                 ErrorHelper.add(formulaString + " is not a well-formed formula!");
             }
 
             if (valid && formulaString.isEmpty()) this.formulaString = this.toString();
-
             this.isValid = valid;
             return valid;
         }
         catch (Exception e) {
             ErrorHelper.add("Could not validate formula: " + formulaString);
-            // throw new ASTException("Could not validate formula: " + formulaString);
             return false;
         }
     }
@@ -399,41 +386,32 @@ public class PropositionalAST implements AST {
         if (effectiveRoot == null) return;
 
         Predicate predicate = (Predicate) effectiveRoot.getKey();
-
         if (this.isAtomic()) {
             if (Objects.equals(predicate.getRepresentation(), LogicalOperatorFlyweight.getNegationString())) {
-                // Double negation: remove the negation
                 PropositionalASTNode inner = (PropositionalASTNode) effectiveRoot.getChildren().getFirst();
 
                 this.root = new PropositionalASTNode(null);
                 this.root.getChildren().add(inner);
                 inner.setParent(this.root);
-            } else {
-                // Wrap in negation
-                setParentForNode(effectiveRoot);
             }
-        } else {
+            else setParentForNode(effectiveRoot);
+        }
+        else {
             LogicalOperator operator = PropositionalLogicHelper.getOutermostOperation(this);
             if (operator == LogicalOperator.NEGATION) {
-                // Double negation: remove the negation
                 PropositionalASTNode inner = (PropositionalASTNode) effectiveRoot.getChildren().getFirst();
 
                 this.root = new PropositionalASTNode(null);
                 this.root.getChildren().add(inner);
                 inner.setParent(this.root);
-            } else {
-                // Wrap in negation
-                setParentForNode(effectiveRoot);
             }
+            else setParentForNode(effectiveRoot);
         }
-
-        // CRITICAL: Update the formula string after modification
         this.formulaString = this.toString();
     }
 
     private void setParentForNode(PropositionalASTNode effectiveRoot) {
-        PropositionalASTNode negationNode =
-                new PropositionalASTNode(LogicalOperatorFlyweight.getNegation());
+        PropositionalASTNode negationNode = new PropositionalASTNode(LogicalOperatorFlyweight.getNegation());
 
         negationNode.getChildren().add(effectiveRoot);
         effectiveRoot.setParent(negationNode);
@@ -471,9 +449,7 @@ public class PropositionalAST implements AST {
             }
 
             for (int index = 0; index < childrenNumber; index++) {
-                if (!arguments.get(index)) {
-                    return false;
-                }
+                if (!arguments.get(index)) return false;
             }
             return true;
         }
@@ -486,15 +462,11 @@ public class PropositionalAST implements AST {
             }
 
             for (int index = 0; index < childrenNumber; index++) {
-                if (arguments.get(index)) {
-                    return true;
-                }
+                if (arguments.get(index)) return true;
             }
             return false;
         }
-        else if (operator == LogicalOperator.NEGATION) {
-            return !evaluateRecursive((PropositionalAST) node.getSubtree(0), interpretation);
-        }
+        else if (operator == LogicalOperator.NEGATION) return !evaluateRecursive((PropositionalAST) node.getSubtree(0), interpretation);
         else {
             String atomString = node.toString();
             return (boolean) interpretation.getValue(atomString);
@@ -506,9 +478,7 @@ public class PropositionalAST implements AST {
     }
 
     public PropositionalAST evaluatePartialRecursive(PropositionalAST node, PropositionalPartialInterpretation interpretation) {
-        if (isContradictionOrTautology(node)) {
-            return node;
-        }
+        if (isContradictionOrTautology(node)) return node;
 
         LogicalOperator operator = PropositionalLogicHelper.getOutermostOperation(node);
         if (operator == LogicalOperator.IMPLICATION) {
@@ -588,7 +558,6 @@ public class PropositionalAST implements AST {
 
             boolean existsTautology = false;
             boolean allContradiction = true;
-
             StringBuilder disjunctionBuilder = new StringBuilder();
             for (int index = 0 ; index < childrenNumber ; index++) {
                 PropositionalAST ast = arguments.get(index);
@@ -620,9 +589,7 @@ public class PropositionalAST implements AST {
                 if (PropositionalLogicHelper.getOutermostOperation(ast) != LogicalOperator.NOT_A_LOGICAL_OPERATOR) {
                     argumentString = "!(" + argumentString + ")";
                 }
-                else {
-                    argumentString = "!" + argumentString;
-                }
+                else argumentString = "!" + argumentString;
                 return new PropositionalAST(argumentString, true);
             }
         }
@@ -634,7 +601,6 @@ public class PropositionalAST implements AST {
                 if ((Boolean) value) return new PropositionalAST(false);
                 else return new PropositionalAST(true);
             }
-
             else return new PropositionalAST(atomString, true);
         }
     }
@@ -670,6 +636,95 @@ public class PropositionalAST implements AST {
     }
 
     @Override
+    public boolean isEquivalentTo(AST other) {
+        if (other == null) return false;
+        if (this.isContradiction && other.isContradiction()) return true;
+        else if (this.isTautology && other.isTautology()) return true;
+        else if (this.isContradiction && !other.isContradiction()) return false;
+        else if (!this.isContradiction && other.isContradiction()) return false;
+
+        this.buildBDD();
+        if (!(other instanceof PropositionalAST)) {
+            throw new ASTException("Cannot compare Propositional AST to other types of ASTs!");
+        }
+        ((PropositionalAST) other).buildBDD();
+
+        return this.getBuilder().equals(((PropositionalAST) other).getBuilder());
+    }
+
+    @Override
+    public boolean isSameFormula(AST other) {
+        if (this.isTautology && other.isTautology()) return true;
+        else if (this.isContradiction && other.isContradiction()) return true;
+
+        return this.formulaString.equals(other.toString());
+    }
+
+    @Override
+    public boolean hasSameStructure(AST other) {
+        if (isContradictionOrTautology(this) && isContradictionOrTautology((PropositionalAST) other)) {
+            if (this.isTautology && ((PropositionalAST) other).isTautology) return true;
+            else if (this.isContradiction && ((PropositionalAST) other).isContradiction) return true;
+            else return false;
+        }
+        else if (!isContradictionOrTautology(this) && isContradictionOrTautology((PropositionalAST) other)) return false;
+        else if (isContradictionOrTautology(this) && !isContradictionOrTautology((PropositionalAST) other)) return false;
+        return hasSameStructureRecursive(this, other);
+    }
+
+    private boolean hasSameStructureRecursive(AST pattern, AST target) {
+        LogicalOperator patternOperator = PropositionalLogicHelper.getOutermostOperation(pattern);
+        LogicalOperator targetOperator  = PropositionalLogicHelper.getOutermostOperation(target);
+
+        if (patternOperator == LogicalOperator.NOT_A_LOGICAL_OPERATOR) return true;
+        if (patternOperator != targetOperator) return false;
+
+        PropositionalASTNode nodePattern = (PropositionalASTNode) pattern.getRoot();
+        PropositionalASTNode nodeTarget  = (PropositionalASTNode) target.getRoot();
+        if (nodePattern.getChildren().size() > nodeTarget.getChildren().size()) return false;
+
+        for (int i = 0; i < nodePattern.getChildren().size(); i++) {
+            AST subtreePattern = pattern.getSubtree(i);
+            AST subtreeTarget  = target.getSubtree(i);
+            if (!hasSameStructureRecursive(subtreePattern, subtreeTarget)) return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return this.formulaString.isEmpty();
+    }
+
+    @Override
+    public boolean isContradiction() {
+        return isContradiction;
+    }
+
+    @Override
+    public void checkContradiction() {
+    }
+
+    @Override
+    public boolean isTautology() {
+        return isTautology;
+    }
+
+    @Override
+    public void checkTautology() {
+    }
+
+    @Override
+    public AST copy() {
+        return new PropositionalAST(formulaString);
+    }
+
+    @Override
+    public AST simplify() {
+        return null;
+    }
+
+    @Override
     public void moveLeft() {
         if (currentNode.getParent() == null) {
             throw new ASTNodeException("Current node has no parent, cannot move left.");
@@ -700,7 +755,6 @@ public class PropositionalAST implements AST {
         int childIndex = parent.getChildren().indexOf(currentNode);
 
         currentNode = parent;
-
         if (currentNode == superRoot) {
             throw new ASTNodeException("Invalid formula: too many closing parentheses ')'.");
         }
@@ -708,7 +762,6 @@ public class PropositionalAST implements AST {
         while (currentNode.getKey() instanceof Predicate predicate &&
                 predicate.getArity() == 1 &&
                 currentNode.getParent() != superRoot) {
-
             parent = (PropositionalASTNode) currentNode.getParent();
             currentNode = parent;
         }
@@ -774,89 +827,6 @@ public class PropositionalAST implements AST {
         return count;
     }
 
-    @Override
-    public boolean isEquivalentTo(AST other) {
-        if (other == null) return false;
-        if (this.isContradiction && other.isContradiction()) return true;
-        else if (this.isTautology && other.isTautology()) return true;
-        else if (this.isContradiction && !other.isContradiction()) return false;
-        else if (!this.isContradiction && other.isContradiction()) return false;
-
-        this.buildBDD();
-        if (!(other instanceof PropositionalAST)) {
-            throw new ASTException("Cannot compare Propositional AST to other types of ASTs!");
-        }
-        ((PropositionalAST) other).buildBDD();
-
-        return this.getBuilder().equals(((PropositionalAST) other).getBuilder());
-    }
-
-    @Override
-    public boolean isSameFormula(AST other) {
-        if (this.isTautology && other.isTautology()) return true;
-        else if (this.isContradiction && other.isContradiction()) return true;
-
-        return this.formulaString.equals(other.toString());
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return this.formulaString.isEmpty();
-    }
-
-    @Override
-    public boolean isContradiction() {
-        return isContradiction;
-    }
-
-    @Override
-    public void checkContradiction() {
-    }
-
-    public boolean isTautology() {
-        return isTautology;
-    }
-
-    @Override
-    public void checkTautology() {
-    }
-
-    @Override
-    public boolean hasSameStructure(AST other) {
-        if (isContradictionOrTautology(this) && isContradictionOrTautology((PropositionalAST) other)) {
-            if (this.isTautology && ((PropositionalAST) other).isTautology) return true;
-            else if (this.isContradiction && ((PropositionalAST) other).isContradiction) return true;
-            else return false;
-        }
-        else if (!isContradictionOrTautology(this) && isContradictionOrTautology((PropositionalAST) other)) return false;
-        else if (isContradictionOrTautology(this) && !isContradictionOrTautology((PropositionalAST) other)) return false;
-        return hasSameStructureRecursive(this, other);
-    }
-
-    private boolean hasSameStructureRecursive(AST pattern, AST target) {
-        LogicalOperator patternOperator = PropositionalLogicHelper.getOutermostOperation(pattern);
-        LogicalOperator targetOperator  = PropositionalLogicHelper.getOutermostOperation(target);
-
-        if (patternOperator == LogicalOperator.NOT_A_LOGICAL_OPERATOR) return true;
-        if (patternOperator != targetOperator) return false;
-
-        PropositionalASTNode nodePattern = (PropositionalASTNode) pattern.getRoot();
-        PropositionalASTNode nodeTarget  = (PropositionalASTNode) target.getRoot();
-
-        if (nodePattern.getChildren().size() > nodeTarget.getChildren().size())
-            return false;
-
-        for (int i = 0; i < nodePattern.getChildren().size(); i++) {
-            AST subtreePattern = pattern.getSubtree(i);
-            AST subtreeTarget  = target.getSubtree(i);
-
-            if (!hasSameStructureRecursive(subtreePattern, subtreeTarget))
-                return false;
-        }
-
-        return true;
-    }
-
     private void ensureChildren(PropositionalASTNode node, int count) {
         while (node.getChildren().size() < count) {
             node.addChild();
@@ -903,7 +873,6 @@ public class PropositionalAST implements AST {
 
         Predicate predicate = (Predicate) effectiveRoot.getKey();
         if (predicate.getArity() == 0) return true;
-
         if (predicate.getRepresentation().equals(LogicalOperatorFlyweight.getNegationString())
                 && effectiveRoot.getChildren().size() == 1) {
             PropositionalASTNode child = (PropositionalASTNode) effectiveRoot.getChildren().getFirst();
@@ -911,7 +880,6 @@ public class PropositionalAST implements AST {
                 return childPredicate.getArity() == 0;
             }
         }
-
         return false;
     }
 
@@ -939,12 +907,12 @@ public class PropositionalAST implements AST {
         if (node == null) return;
         String indent = "  ".repeat(depth);
 
-        String keyStr;
-        if (node.getKey() == null) keyStr = "NULL";
-        else keyStr = node.getKey().toString();
+        String keyString;
+        if (node.getKey() == null) keyString = "NULL";
+        else keyString = node.getKey().toString();
         boolean isPointer = node == pointer;
 
-        System.out.println(indent + (isPointer ? "-- " : "   ") + "Node: " + keyStr + " | children: " + node.getChildren().size());
+        OutputDevice.writeToConsole(indent + (isPointer ? "-- " : "   ") + "Node: " + keyString + " | children: " + node.getChildren().size());
         for (ASTNode child : node.getChildren()) printTreeRecursive((PropositionalASTNode) child, depth + 1, pointer);
     }
 }

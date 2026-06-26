@@ -80,8 +80,6 @@ public class ManualPropositionalProof {
     }
 
     public void prove() {
-        boolean isDoneTextPrinted = false;
-
         if (this.stateIndex == 1) {
             addHypothesis();
             if (goals.size() != 1) {
@@ -113,12 +111,8 @@ public class ManualPropositionalProof {
             if (this.isProven) break;
         }
 
-        if (this.parent == null) {
-            OutputDevice.writeToConsole("Proof completed!");
-        }
-        else {
-            OutputDevice.writeToConsole("Proof State completed!");
-        }
+        if (this.parent == null) OutputDevice.writeToConsole("Proof completed!");
+        else OutputDevice.writeToConsole("Proof State completed!");
     }
 
     int getIntegerIndex() {
@@ -126,9 +120,7 @@ public class ManualPropositionalProof {
         String type = getArgumentType(argument);
         int index = getArgumentIndex(argument);
 
-        if (!type.isEmpty() && !type.equals("S") && !type.equals("s")) {
-            return -1;
-        }
+        if (!type.isEmpty() && !type.equals("S") && !type.equals("s")) return -1;
         return index + 1;
     }
 
@@ -138,12 +130,12 @@ public class ManualPropositionalProof {
         int index = getArgumentIndex(argument);
 
         if (!type.equals(goalName)) {
-             inferenceRuleHelper.addGoalError(command);
+            inferenceRuleHelper.addGoalError(command);
             return -1;
         }
 
         if (index >= goals.size()) {
-             inferenceRuleHelper.addOutOfBoundsError(index);
+            inferenceRuleHelper.addOutOfBoundsError(index);
             return -1;
         }
 
@@ -161,27 +153,23 @@ public class ManualPropositionalProof {
                 inferenceRuleHelper.addKBError(command);
                 return new ArrayList<>();
             }
-
             if (index > knowledgeBase.size()) {
                 inferenceRuleHelper.addOutOfBoundsError(index);
                 return new ArrayList<>();
             }
             indices.add(index);
         }
-
         return indices;
     }
 
     private String getArgumentType(String argument) {
         StringBuilder type = new StringBuilder();
 
-        int idx = 0;
-        while (idx < argument.length()) {
-            if ('0' < argument.charAt(idx) && argument.charAt(idx) <= '9') {
-                break;
-            }
-            else type.append(argument.charAt(idx));
-            idx++;
+        int index = 0;
+        while (index < argument.length()) {
+            if ('0' < argument.charAt(index) && argument.charAt(index) <= '9') break;
+            else type.append(argument.charAt(index));
+            index++;
         }
 
         return type.toString();
@@ -199,7 +187,6 @@ public class ManualPropositionalProof {
             else index.append(argument.charAt(idx));
             idx++;
         }
-
         return Integer.parseInt(index.toString()) - 1;
     }
 
@@ -354,8 +341,6 @@ public class ManualPropositionalProof {
             case DISJUNCTION_INTRODUCTION -> {
                 List<Integer> indices = getIndexOfArityN(command);
                 if (indices.isEmpty()) return false;
-
-                // TODO Complete
             }
             case DISJUNCTION_ELIMINATION -> {
                 List<Integer> indices = getIndexOfArityN(command);
@@ -401,7 +386,6 @@ public class ManualPropositionalProof {
                 return handleChangeState(index);
             }
             case DONE -> {
-                //TODO Look into case of Disjunction (not all goals need to be in the KB)
                 for (AST goal : goals) {
                     boolean found = false;
                     for (AST kb : knowledgeBase) {
@@ -495,7 +479,6 @@ public class ManualPropositionalProof {
 
     public String getStateText() {
         StringBuilder builder = new StringBuilder();
-
         builder.append("State: ").append(stateIndex).append("\n\n");
 
         if (!knowledgeBase.isEmpty()) builder.append(getNumberedText(knowledgeBase, 1, kbName));

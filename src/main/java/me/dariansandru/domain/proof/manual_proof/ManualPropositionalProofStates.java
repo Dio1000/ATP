@@ -1,6 +1,6 @@
 package me.dariansandru.domain.proof.manual_proof;
 
-import me.dariansandru.domain.data_structures.BiMap;
+import me.dariansandru.domain.data_structures.other.BiMap;
 
 public abstract class ManualPropositionalProofStates {
 
@@ -13,9 +13,7 @@ public abstract class ManualPropositionalProofStates {
     }
 
     public static ManualPropositionalProof getState(int index) {
-        if (index == 1) {
-            return originalState;
-        }
+        if (index == 1) return originalState;
         return (ManualPropositionalProof) stateIndexMap.get(index);
     }
 

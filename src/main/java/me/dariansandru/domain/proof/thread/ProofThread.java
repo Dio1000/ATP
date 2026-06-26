@@ -2,7 +2,7 @@ package me.dariansandru.domain.proof.thread;
 
 import me.dariansandru.domain.proof.proof_states.ProofState;
 
-public class ProofThread implements Runnable {
+public class ProofThread extends Thread {
 
     private boolean isProven = false;
     private ProofState proofState;

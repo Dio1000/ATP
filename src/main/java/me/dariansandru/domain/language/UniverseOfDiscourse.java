@@ -1,6 +1,6 @@
 package me.dariansandru.domain.language;
 
-import me.dariansandru.domain.data_structures.BiMap;
+import me.dariansandru.domain.data_structures.other.BiMap;
 
 public enum UniverseOfDiscourse {
 

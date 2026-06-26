@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class PropositionalPartialInterpretation implements Interpretation{
+public class PropositionalPartialInterpretation implements Interpretation {
 
     private final Map<String, Integer> interpretation = new HashMap<>();
 
@@ -23,6 +23,7 @@ public class PropositionalPartialInterpretation implements Interpretation{
     public Object getValue(Object value) {
         if (value == null || value == "") return -1;
         Integer integer = interpretation.get(value);
+
         if (integer == 1) return true;
         else if (integer == 0) return false;
         else return -1;

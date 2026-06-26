@@ -1,6 +1,6 @@
 package me.dariansandru.parser.command;
 
-import me.dariansandru.domain.data_structures.BiMap;
+import me.dariansandru.domain.data_structures.other.BiMap;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.ArrayList;

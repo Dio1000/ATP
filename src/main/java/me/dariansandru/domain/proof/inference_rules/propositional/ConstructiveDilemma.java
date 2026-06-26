@@ -44,7 +44,6 @@ public class ConstructiveDilemma implements InferenceRule {
                                     if (inDerived(newAST)) continue;
 
                                     KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast1 + ", " + ast2 + " and " + ast3 + ", by " + name() + ", we derive " + newAST, List.of(ast1.toString(), ast2.toString(), ast3.toString()));
-
                                     derived.add(newAST);
                                     shouldInference = true;
                                 }

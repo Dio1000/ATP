@@ -7,11 +7,9 @@ import me.dariansandru.domain.language.signature.Signature;
 import me.dariansandru.domain.language.signature.SignatureFactory;
 import me.dariansandru.domain.proof.automated_proof.PropositionalProof;
 import me.dariansandru.domain.proof.inference_rules.custom.CustomPropositionalInferenceRule;
-import me.dariansandru.utils.helper.PropositionalLogicHelper;
 import me.dariansandru.utils.loader.PropositionalLogicLoader;
 
 import javax.swing.*;
-import javax.swing.border.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
@@ -22,889 +20,967 @@ import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CustomRuleEditor {
 
-    // ── Palette (shared with PropositionalProofGUIController) ─────────────────
-    private static final Color BG_DEEP     = new Color(0x0F1117);
-    private static final Color BG_SURFACE  = new Color(0x1A1D27);
-    private static final Color BG_RAISED   = new Color(0x22263A);
-    private static final Color ACCENT      = new Color(0x6C63FF);
-    private static final Color ACCENT_SOFT = new Color(0x3D3880);
-    private static final Color SUCCESS     = new Color(0x3DDC84);
-    private static final Color WARN        = new Color(0xFF8C00);
-    private static final Color DANGER      = new Color(0xFF5C6A);
-    private static final Color TEXT_PRI    = new Color(0xECEFF4);
-    private static final Color TEXT_SEC    = new Color(0x8A8FA8);
-    private static final Color TEXT_DIM    = new Color(0x565A72);
-    private static final Color BORDER      = new Color(0x2E3350);
+    private static final Color BACKGROUND_DEEP = new Color(0x0F1117);
+    private static final Color BACKGROUND_SURFACE = new Color(0x1A1D27);
+    private static final Color BACKGROUND_RAISED = new Color(0x22263A);
+    private static final Color ACCENT_COLOR = new Color(0x6C63FF);
+    private static final Color ACCENT_SOFT_COLOR = new Color(0x3D3880);
+    private static final Color SUCCESS_COLOR = new Color(0x3DDC84);
+    private static final Color WARNING_COLOR = new Color(0xFF8C00);
+    private static final Color DANGER_COLOR = new Color(0xFF5C6A);
+    private static final Color TEXT_PRIMARY_COLOR = new Color(0xECEFF4);
+    private static final Color TEXT_SECONDARY_COLOR = new Color(0x8A8FA8);
+    private static final Color TEXT_DIM_COLOR = new Color(0x565A72);
+    private static final Color BORDER_COLOR = new Color(0x2E3350);
 
-    // ── Fonts ─────────────────────────────────────────────────────────────────
-    private static final Font FONT_TITLE   = new Font("SansSerif", Font.BOLD,  14);
-    private static final Font FONT_LABEL   = new Font("SansSerif", Font.PLAIN, 12);
-    private static final Font FONT_LABEL_B = new Font("SansSerif", Font.BOLD,  12);
-    private static final Font FONT_MONO    = new Font("Monospaced", Font.PLAIN, 13);
-    private static final Font FONT_SMALL   = new Font("SansSerif", Font.PLAIN, 10);
-    private static final Font FONT_BTN     = new Font("SansSerif", Font.BOLD,  12);
+    private static final Font TITLE_FONT = new Font("SansSerif", Font.BOLD, 14);
+    private static final Font LABEL_FONT = new Font("SansSerif", Font.PLAIN, 12);
+    private static final Font LABEL_BOLD_FONT = new Font("SansSerif", Font.BOLD, 12);
+    private static final Font MONOSPACED_FONT = new Font("Monospaced", Font.PLAIN, 13);
+    private static final Font SMALL_FONT = new Font("SansSerif", Font.PLAIN, 10);
+    private static final Font BUTTON_FONT = new Font("SansSerif", Font.BOLD, 12);
 
-    // ── State ─────────────────────────────────────────────────────────────────
-    private JFrame frame;
-    private JLabel statusLabel;                 // BUG FIX #1: stored field, not getComponent()
+    private JFrame mainFrame;
+    private JLabel statusLabel;
 
-    private final DefaultListModel<RuleDefinition> ruleModel = new DefaultListModel<>();
+    private final DefaultListModel<RuleDefinition> ruleListModel = new DefaultListModel<>();
     private JList<RuleDefinition> ruleList;
 
     private JTextField ruleNameField;
-    private JTextArea  antecedentsArea;
-    private JTextArea  conclusionArea;
+    private JTextArea antecedentsTextArea;
+    private JTextArea conclusionTextArea;
 
-    private JLabel validationBadge;
-    private JLabel validationDetail;
+    private JLabel validationBadgeLabel;
+    private JLabel validationDetailLabel;
 
-    private JButton updateRuleBtn;
-    private JButton validateRuleBtn;
+    private JButton updateRuleButton;
+    private JButton validateRuleButton;
 
-    private final List<RuleDefinition> rules = new ArrayList<>();
+    private final List<RuleDefinition> rulesList = new ArrayList<>();
     private RuleDefinition currentRule;
-    private boolean dirty = false;             // BUG FIX #6: dirty tracking
+    private boolean isDirty = false;
 
-    private String  currentPackageName;
+    private String currentPackageName;
     private boolean isEditingPackage;
-    private File    currentPackageDirectory;
+    private File currentPackageDirectory;
 
-    private final PropositionalLogicLoader loader = new PropositionalLogicLoader();
+    private final PropositionalLogicLoader logicLoader = new PropositionalLogicLoader();
 
-    // BUG FIX #2: one shared executor — never leak a new one per validation call
-    private final ExecutorService validatorExecutor = Executors.newSingleThreadExecutor(r -> {
-        Thread t = new Thread(r, "rule-validator");
-        t.setDaemon(true);
-        return t;
+    private final ExecutorService validationExecutor = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "rule-validator");
+        thread.setDaemon(true);
+        return thread;
     });
-    private Future<?> pendingValidation;
 
-    // ═════════════════════════════════════════════════════════════════════════
+    private final ExecutorService proofExecutor = Executors.newCachedThreadPool(runnable -> {
+        Thread thread = new Thread(runnable, "proof-worker");
+        thread.setDaemon(true);
+        return thread;
+    });
+
+    private Future<?> pendingValidationTask;
+    private volatile Future<Boolean> pendingProofFuture;
+    private long validationRunId = 0;
+
     public CustomRuleEditor() {
         this.currentPackageName = "new_package";
-        this.isEditingPackage   = false;
-        initialize();
+        this.isEditingPackage = false;
+        this.initialize();
     }
 
     public CustomRuleEditor(String packageName) {
         this.currentPackageName = packageName;
-        this.isEditingPackage   = true;
-        initialize();
-        loadPackage(packageName);
+        this.isEditingPackage = true;
+        this.initialize();
+        this.loadPackage(packageName);
     }
 
-    // =========================================================================
-    // Frame construction
-    // =========================================================================
     private void initialize() {
-        frame = new JFrame("Custom Rule Editor"
-                + (isEditingPackage ? "  —  " + currentPackageName : "  —  New Package"));
-        frame.setSize(1160, 780);
-        frame.setMinimumSize(new Dimension(900, 560));
-        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        frame.getContentPane().setBackground(BG_DEEP);
-        frame.setLayout(new BorderLayout());
+        this.mainFrame = new JFrame("Custom Rule Editor" + (this.isEditingPackage ? "  —  " + this.currentPackageName : "  —  New Package"));
+        this.mainFrame.setSize(1160, 780);
+        this.mainFrame.setMinimumSize(new Dimension(900, 560));
+        this.mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        this.mainFrame.getContentPane().setBackground(BACKGROUND_DEEP);
+        this.mainFrame.setLayout(new BorderLayout());
 
-        frame.addWindowListener(new WindowAdapter() {
-            @Override public void windowClosing(WindowEvent e) {
-                if (confirmDiscard("close")) {
-                    validatorExecutor.shutdownNow();
-                    frame.dispose();
+        this.mainFrame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent event) {
+                if (CustomRuleEditor.this.confirmDiscard("close")) {
+                    CustomRuleEditor.this.validationExecutor.shutdownNow();
+                    CustomRuleEditor.this.proofExecutor.shutdownNow();
+                    CustomRuleEditor.this.mainFrame.dispose();
                 }
             }
         });
 
-        frame.add(buildTitleBar(),  BorderLayout.NORTH);
-        frame.add(buildBody(),      BorderLayout.CENTER);
-        frame.add(buildStatusBar(), BorderLayout.SOUTH);
+        this.mainFrame.add(this.buildTitleBar(), BorderLayout.NORTH);
+        this.mainFrame.add(this.buildBody(), BorderLayout.CENTER);
+        this.mainFrame.add(this.buildStatusBar(), BorderLayout.SOUTH);
 
-        frame.setVisible(true);
+        this.mainFrame.setVisible(true);
     }
 
-    // ── Title bar ─────────────────────────────────────────────────────────────
     private JPanel buildTitleBar() {
-        JPanel bar = new JPanel(new BorderLayout());
-        bar.setBackground(BG_DEEP);
-        bar.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER),
+        JPanel titleBarPanel = new JPanel(new BorderLayout());
+        titleBarPanel.setBackground(BACKGROUND_DEEP);
+        titleBarPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COLOR),
                 BorderFactory.createEmptyBorder(12, 18, 12, 18)));
 
-        JLabel title = new JLabel("⚙  Custom Inference Rule Editor");
-        title.setFont(FONT_TITLE);
-        title.setForeground(TEXT_PRI);
+        JLabel titleLabel = new JLabel("⚙  Custom Inference Rule Editor");
+        titleLabel.setFont(TITLE_FONT);
+        titleLabel.setForeground(TEXT_PRIMARY_COLOR);
 
-        bar.add(title,         BorderLayout.WEST);
-        bar.add(buildToolbar(), BorderLayout.EAST);
-        return bar;
+        titleBarPanel.add(titleLabel, BorderLayout.WEST);
+        titleBarPanel.add(this.buildToolbar(), BorderLayout.EAST);
+        return titleBarPanel;
     }
 
     private JPanel buildToolbar() {
-        JPanel p = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        p.setOpaque(false);
+        JPanel toolbarPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        toolbarPanel.setOpaque(false);
 
-        JButton newPkgBtn  = mkBtn("New Package",  new Color(0x444968));
-        JButton saveBtn    = mkBtn("Save Package",  SUCCESS);
-        JButton importBtn  = mkBtn("Import .atpf",  new Color(0x00BCD4));
-        JButton exportBtn  = mkBtn("Export Package", new Color(0x9C27B0));
-        JButton newRuleBtn = mkBtn("+ New Rule",    ACCENT);
-        JButton deleteBtn  = mkBtn("Delete Rule",   DANGER);
+        JButton newPackageButton = this.createButton("New Package", new Color(0x444968));
+        JButton savePackageButton = this.createButton("Save Package", SUCCESS_COLOR);
+        JButton importButton = this.createButton("Import .atpf", new Color(0x00BCD4));
+        JButton exportButton = this.createButton("Export Package", new Color(0x9C27B0));
+        JButton newRuleButton = this.createButton("+ New Rule", ACCENT_COLOR);
+        JButton deleteRuleButton = this.createButton("Delete Rule", DANGER_COLOR);
 
-        newPkgBtn .addActionListener(e -> newPackage());
-        saveBtn   .addActionListener(e -> savePackage());
-        importBtn .addActionListener(e -> importRules());
-        exportBtn .addActionListener(e -> exportPackage());
-        newRuleBtn.addActionListener(e -> createNewRule());
-        deleteBtn .addActionListener(e -> deleteSelectedRule());
+        newPackageButton.addActionListener(event -> this.createNewPackage());
+        savePackageButton.addActionListener(event -> this.savePackage());
+        importButton.addActionListener(event -> this.importRules());
+        exportButton.addActionListener(event -> this.exportPackage());
+        newRuleButton.addActionListener(event -> this.createNewRule());
+        deleteRuleButton.addActionListener(event -> this.deleteSelectedRule());
 
-        p.add(newPkgBtn); p.add(saveBtn);
-        p.add(Box.createHorizontalStrut(10));
-        p.add(importBtn); p.add(exportBtn);
-        p.add(Box.createHorizontalStrut(10));
-        p.add(newRuleBtn); p.add(deleteBtn);
-        return p;
+        toolbarPanel.add(newPackageButton);
+        toolbarPanel.add(savePackageButton);
+        toolbarPanel.add(Box.createHorizontalStrut(10));
+        toolbarPanel.add(importButton);
+        toolbarPanel.add(exportButton);
+        toolbarPanel.add(Box.createHorizontalStrut(10));
+        toolbarPanel.add(newRuleButton);
+        toolbarPanel.add(deleteRuleButton);
+        return toolbarPanel;
     }
 
-    // ── Body: rule list + editor ──────────────────────────────────────────────
     private JSplitPane buildBody() {
-        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                buildRuleList(), buildEditor());
-        split.setDividerSize(6);
-        split.setResizeWeight(0.28);
-        split.setBackground(BG_DEEP);
-        split.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        return split;
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, this.buildRuleList(), this.buildEditor());
+        splitPane.setDividerSize(6);
+        splitPane.setResizeWeight(0.28);
+        splitPane.setBackground(BACKGROUND_DEEP);
+        splitPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        return splitPane;
     }
 
-    // ── Rule list (left) ──────────────────────────────────────────────────────
     private JPanel buildRuleList() {
-        JPanel panel = new JPanel(new BorderLayout(0, 8));
-        panel.setBackground(BG_SURFACE);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER),
+        JPanel ruleListPanel = new JPanel(new BorderLayout(0, 8));
+        ruleListPanel.setBackground(BACKGROUND_SURFACE);
+        ruleListPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
                 BorderFactory.createEmptyBorder(12, 12, 12, 12)));
 
-        JLabel hdr = new JLabel("Rules in Package");
-        hdr.setFont(FONT_LABEL_B);
-        hdr.setForeground(TEXT_PRI);
+        JLabel headerLabel = new JLabel("Rules in Package");
+        headerLabel.setFont(LABEL_BOLD_FONT);
+        headerLabel.setForeground(TEXT_PRIMARY_COLOR);
 
-        ruleList = new JList<>(ruleModel);
-        ruleList.setBackground(BG_DEEP);
-        ruleList.setForeground(TEXT_PRI);
-        ruleList.setSelectionBackground(ACCENT_SOFT);
-        ruleList.setSelectionForeground(TEXT_PRI);
-        ruleList.setFixedCellHeight(44);
-        ruleList.setCellRenderer(new RuleCellRenderer());  // BUG FIX #4
+        this.ruleList = new JList<>(this.ruleListModel);
+        this.ruleList.setBackground(BACKGROUND_DEEP);
+        this.ruleList.setForeground(TEXT_PRIMARY_COLOR);
+        this.ruleList.setSelectionBackground(ACCENT_SOFT_COLOR);
+        this.ruleList.setSelectionForeground(TEXT_PRIMARY_COLOR);
+        this.ruleList.setFixedCellHeight(44);
+        this.ruleList.setCellRenderer(new RuleCellRenderer());
 
-        ruleList.addListSelectionListener(e -> {
-            if (e.getValueIsAdjusting()) return;
-            RuleDefinition sel = ruleList.getSelectedValue();
-            if (sel == null || sel == currentRule) return;
-            // BUG FIX #6: warn about unsaved edits before switching
-            if (dirty && !confirmDiscard("switch rules")) {
-                ruleList.setSelectedValue(currentRule, false);
+        this.ruleList.addListSelectionListener(event -> {
+            if (event.getValueIsAdjusting()) {
                 return;
             }
-            loadRuleIntoEditor(sel);
+            RuleDefinition selectedRule = this.ruleList.getSelectedValue();
+            if (selectedRule == null || selectedRule == this.currentRule) {
+                return;
+            }
+            if (this.isDirty && !this.confirmDiscard("switch rules")) {
+                this.ruleList.setSelectedValue(this.currentRule, false);
+                return;
+            }
+            this.loadRuleIntoEditor(selectedRule);
         });
 
-        JScrollPane scroll = styledScroll(ruleList);
-        panel.add(hdr,    BorderLayout.NORTH);
-        panel.add(scroll, BorderLayout.CENTER);
+        JScrollPane scrollPane = this.createStyledScrollPane(this.ruleList);
+        ruleListPanel.add(headerLabel, BorderLayout.NORTH);
+        ruleListPanel.add(scrollPane, BorderLayout.CENTER);
 
-        JLabel hint = new JLabel("Select a rule to edit it");
-        hint.setFont(FONT_SMALL);
-        hint.setForeground(TEXT_DIM);
-        panel.add(hint, BorderLayout.SOUTH);
-        return panel;
+        JLabel hintLabel = new JLabel("Select a rule to edit it");
+        hintLabel.setFont(SMALL_FONT);
+        hintLabel.setForeground(TEXT_DIM_COLOR);
+        ruleListPanel.add(hintLabel, BorderLayout.SOUTH);
+        return ruleListPanel;
     }
 
-    // ── Editor (right) ────────────────────────────────────────────────────────
     private JPanel buildEditor() {
-        JPanel panel = new JPanel(new BorderLayout(0, 12));
-        panel.setBackground(BG_SURFACE);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER),
+        JPanel editorPanel = new JPanel(new BorderLayout(0, 12));
+        editorPanel.setBackground(BACKGROUND_SURFACE);
+        editorPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
                 BorderFactory.createEmptyBorder(16, 16, 12, 16)));
 
-        // ── Name row ──
-        JPanel nameRow = new JPanel(new BorderLayout(10, 0));
-        nameRow.setBackground(BG_SURFACE);
+        JPanel nameRowPanel = new JPanel(new BorderLayout(10, 0));
+        nameRowPanel.setBackground(BACKGROUND_SURFACE);
 
         JLabel nameLabel = new JLabel("Rule name");
-        nameLabel.setFont(FONT_LABEL_B);
-        nameLabel.setForeground(TEXT_SEC);
+        nameLabel.setFont(LABEL_BOLD_FONT);
+        nameLabel.setForeground(TEXT_SECONDARY_COLOR);
         nameLabel.setPreferredSize(new Dimension(90, -1));
 
-        ruleNameField = styledField();
-        ruleNameField.setFont(FONT_MONO);
+        this.ruleNameField = this.createStyledTextField();
+        this.ruleNameField.setFont(MONOSPACED_FONT);
 
-        validationBadge  = new JLabel("");
-        validationBadge.setFont(FONT_LABEL_B);
-        validationDetail = new JLabel("Not validated");
-        validationDetail.setFont(FONT_SMALL);
-        validationDetail.setForeground(TEXT_DIM);
+        this.validationBadgeLabel = new JLabel("");
+        this.validationBadgeLabel.setFont(LABEL_BOLD_FONT);
+        this.validationDetailLabel = new JLabel("Not validated");
+        this.validationDetailLabel.setFont(SMALL_FONT);
+        this.validationDetailLabel.setForeground(TEXT_DIM_COLOR);
 
-        JPanel validRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
-        validRow.setOpaque(false);
-        validRow.add(validationBadge);
-        validRow.add(validationDetail);
+        JPanel validationRowPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        validationRowPanel.setOpaque(false);
+        validationRowPanel.add(this.validationBadgeLabel);
+        validationRowPanel.add(this.validationDetailLabel);
 
-        nameRow.add(nameLabel,   BorderLayout.WEST);
-        nameRow.add(ruleNameField, BorderLayout.CENTER);
-        nameRow.add(validRow,    BorderLayout.EAST);
+        nameRowPanel.add(nameLabel, BorderLayout.WEST);
+        nameRowPanel.add(this.ruleNameField, BorderLayout.CENTER);
+        nameRowPanel.add(validationRowPanel, BorderLayout.EAST);
 
-        // ── Antecedents ──
-        JPanel antPanel = new JPanel(new BorderLayout(0, 4));
-        antPanel.setBackground(BG_SURFACE);
-        antPanel.add(sectionLabel("Antecedents", "one formula per line  ·  e.g.  A -> B"), BorderLayout.NORTH);
-        antecedentsArea = styledArea();
-        antPanel.add(styledScroll(antecedentsArea), BorderLayout.CENTER);
+        JPanel antecedentsPanel = new JPanel(new BorderLayout(0, 4));
+        antecedentsPanel.setBackground(BACKGROUND_SURFACE);
+        antecedentsPanel.add(this.createSectionLabel("Antecedents", "one formula per line  ·  e.g.  A -> B"), BorderLayout.NORTH);
+        this.antecedentsTextArea = this.createStyledTextArea();
+        antecedentsPanel.add(this.createStyledScrollPane(this.antecedentsTextArea), BorderLayout.CENTER);
 
-        // ── Conclusion ──
-        JPanel concPanel = new JPanel(new BorderLayout(0, 4));
-        concPanel.setBackground(BG_SURFACE);
-        concPanel.add(sectionLabel("Conclusion", "a single formula"), BorderLayout.NORTH);
-        conclusionArea = styledArea();
-        conclusionArea.setRows(4);
-        concPanel.add(styledScroll(conclusionArea), BorderLayout.CENTER);
+        JPanel conclusionPanel = new JPanel(new BorderLayout(0, 4));
+        conclusionPanel.setBackground(BACKGROUND_SURFACE);
+        conclusionPanel.add(this.createSectionLabel("Conclusion", "a single formula"), BorderLayout.NORTH);
+        this.conclusionTextArea = this.createStyledTextArea();
+        this.conclusionTextArea.setRows(4);
+        conclusionPanel.add(this.createStyledScrollPane(this.conclusionTextArea), BorderLayout.CENTER);
 
-        // ── Content split ──
-        JSplitPane content = new JSplitPane(JSplitPane.VERTICAL_SPLIT, antPanel, concPanel);
-        content.setResizeWeight(0.65);
-        content.setDividerSize(5);
-        content.setBackground(BG_SURFACE);
+        JSplitPane contentSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, antecedentsPanel, conclusionPanel);
+        contentSplitPane.setResizeWeight(0.65);
+        contentSplitPane.setDividerSize(5);
+        contentSplitPane.setBackground(BACKGROUND_SURFACE);
 
-        // ── Bottom button row ──
-        validateRuleBtn = mkBtn("Validate Rule", WARN);
-        updateRuleBtn   = mkBtn("Save Rule",     ACCENT);
-        validateRuleBtn.addActionListener(e -> validateCurrentRule());
-        updateRuleBtn  .addActionListener(e -> updateCurrentRule());
+        this.validateRuleButton = this.createButton("Validate Rule", WARNING_COLOR);
+        this.updateRuleButton = this.createButton("Save Rule", ACCENT_COLOR);
+        this.validateRuleButton.addActionListener(event -> this.validateCurrentRule());
+        this.updateRuleButton.addActionListener(event -> this.updateCurrentRule());
 
-        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        btnRow.setOpaque(false);
-        btnRow.add(validateRuleBtn);
-        btnRow.add(updateRuleBtn);
+        JPanel buttonRowPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        buttonRowPanel.setOpaque(false);
+        buttonRowPanel.add(this.validateRuleButton);
+        buttonRowPanel.add(this.updateRuleButton);
 
-        panel.add(nameRow,  BorderLayout.NORTH);
-        panel.add(content,  BorderLayout.CENTER);
-        panel.add(btnRow,   BorderLayout.SOUTH);
+        editorPanel.add(nameRowPanel, BorderLayout.NORTH);
+        editorPanel.add(contentSplitPane, BorderLayout.CENTER);
+        editorPanel.add(buttonRowPanel, BorderLayout.SOUTH);
 
-        // Wire dirty tracking
-        DocumentListener dl = new DocumentListener() {
-            public void insertUpdate(DocumentEvent e)  { markDirty(); }
-            public void removeUpdate(DocumentEvent e)  { markDirty(); }
-            public void changedUpdate(DocumentEvent e) { markDirty(); }
+        DocumentListener documentListener = new DocumentListener() {
+            public void insertUpdate(DocumentEvent event) { CustomRuleEditor.this.markDirty(); }
+            public void removeUpdate(DocumentEvent event) { CustomRuleEditor.this.markDirty(); }
+            public void changedUpdate(DocumentEvent event) { CustomRuleEditor.this.markDirty(); }
         };
-        ruleNameField   .getDocument().addDocumentListener(dl);
-        antecedentsArea .getDocument().addDocumentListener(dl);
-        conclusionArea  .getDocument().addDocumentListener(dl);
+        this.ruleNameField.getDocument().addDocumentListener(documentListener);
+        this.antecedentsTextArea.getDocument().addDocumentListener(documentListener);
+        this.conclusionTextArea.getDocument().addDocumentListener(documentListener);
 
-        showEmptyState();
-        return panel;
+        this.showEmptyState();
+        return editorPanel;
     }
 
-    // ── Status bar ────────────────────────────────────────────────────────────
     private JPanel buildStatusBar() {
-        JPanel bar = new JPanel(new BorderLayout());
-        bar.setBackground(BG_DEEP);
-        bar.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 0, 0, 0, BORDER),
+        JPanel statusBarPanel = new JPanel(new BorderLayout());
+        statusBarPanel.setBackground(BACKGROUND_DEEP);
+        statusBarPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, BORDER_COLOR),
                 BorderFactory.createEmptyBorder(6, 18, 6, 18)));
 
-        statusLabel = new JLabel("Ready  —  create or open a package to begin.");
-        statusLabel.setFont(FONT_SMALL);
-        statusLabel.setForeground(TEXT_DIM);
-        bar.add(statusLabel, BorderLayout.WEST);
+        this.statusLabel = new JLabel("Ready: Create or open a package to begin.");
+        this.statusLabel.setFont(SMALL_FONT);
+        this.statusLabel.setForeground(TEXT_DIM_COLOR);
+        statusBarPanel.add(this.statusLabel, BorderLayout.WEST);
 
-        JLabel hint = new JLabel("Validate before saving  ·  .atpf format");
-        hint.setFont(FONT_SMALL);
-        hint.setForeground(TEXT_DIM);
-        bar.add(hint, BorderLayout.EAST);
-        return bar;
+        JLabel hintLabel = new JLabel("Validate before saving  ·  .atpf format");
+        hintLabel.setFont(SMALL_FONT);
+        hintLabel.setForeground(TEXT_DIM_COLOR);
+        statusBarPanel.add(hintLabel, BorderLayout.EAST);
+        return statusBarPanel;
     }
 
-    // =========================================================================
-    // Business logic
-    // =========================================================================
-
-    private void newPackage() {
-        if (dirty && !confirmDiscard("create a new package")) return;
-        if (!rules.isEmpty()) {
-            int c = JOptionPane.showConfirmDialog(frame,
-                    "Discard the current package and start fresh?",
-                    "New Package", JOptionPane.YES_NO_OPTION);
-            if (c != JOptionPane.YES_OPTION) return;
+    private void createNewPackage() {
+        if (this.isDirty && !this.confirmDiscard("create a new package")) {
+            return;
         }
-        String name = JOptionPane.showInputDialog(frame,
-                "Package name:", "new_package");
-        if (name == null || name.isBlank()) return;
+        if (!this.rulesList.isEmpty()) {
+            int choice = JOptionPane.showConfirmDialog(this.mainFrame, "Discard the current package and start fresh?", "New Package", JOptionPane.YES_NO_OPTION);
+            if (choice != JOptionPane.YES_OPTION) {
+                return;
+            }
+        }
+        String packageName = JOptionPane.showInputDialog(this.mainFrame, "Package name:", "new_package");
+        if (packageName == null || packageName.isBlank()) {
+            return;
+        }
 
-        rules.clear();
-        ruleModel.clear();
-        currentRule = null;
-        currentPackageName = name.trim().replace(' ', '_');
-        isEditingPackage   = false;
-        currentPackageDirectory = null;
-        frame.setTitle("Custom Rule Editor  —  " + currentPackageName);
-        showEmptyState();
-        setStatus("New package: " + currentPackageName, TEXT_SEC);
+        this.rulesList.clear();
+        this.ruleListModel.clear();
+        this.currentRule = null;
+        this.currentPackageName = packageName.trim().replace(' ', '_');
+        this.isEditingPackage = false;
+        this.currentPackageDirectory = null;
+        this.mainFrame.setTitle("Custom Rule Editor: " + this.currentPackageName);
+        this.showEmptyState();
+        this.setStatus("New package: " + this.currentPackageName, TEXT_SECONDARY_COLOR);
     }
 
     private void createNewRule() {
-        if (dirty && !confirmDiscard("create a new rule")) return;
-        RuleDefinition r = new RuleDefinition("new_rule", new ArrayList<>(), null);
-        rules.add(r);
-        ruleModel.addElement(r);
-        ruleList.setSelectedValue(r, true);
-        loadRuleIntoEditor(r);
-        ruleNameField.requestFocusInWindow();
-        ruleNameField.selectAll();
-        setStatus("New rule created — fill in the details and save.", TEXT_SEC);
+        if (this.isDirty && !this.confirmDiscard("create a new rule")) {
+            return;
+        }
+        RuleDefinition newRule = new RuleDefinition("NewRule", new ArrayList<>(), null);
+        this.rulesList.add(newRule);
+        this.ruleListModel.addElement(newRule);
+        this.ruleList.setSelectedValue(newRule, true);
+        this.loadRuleIntoEditor(newRule);
+        this.ruleNameField.requestFocusInWindow();
+        this.ruleNameField.selectAll();
+        this.setStatus("New rule created: Fill in the details and save.", TEXT_SECONDARY_COLOR);
     }
 
     private void loadRuleIntoEditor(RuleDefinition rule) {
-        currentRule = rule;
-        dirty = false;
+        this.currentRule = rule;
+        this.isDirty = false;
 
-        ruleNameField.setText(rule.name);
+        this.ruleNameField.setText(rule.name);
 
-        StringBuilder sb = new StringBuilder();
-        for (AST a : rule.antecedents) sb.append(a.toString()).append('\n');
-        antecedentsArea.setText(sb.toString().stripTrailing());
+        StringBuilder stringBuilder = new StringBuilder();
+        for (AST ast : rule.antecedents) {
+            stringBuilder.append(ast.toString()).append('\n');
+        }
+        this.antecedentsTextArea.setText(stringBuilder.toString().stripTrailing());
 
-        conclusionArea.setText(rule.conclusion != null ? rule.conclusion.toString() : "");
+        this.conclusionTextArea.setText(rule.conclusion != null ? rule.conclusion.toString() : "");
 
-        refreshValidationBadge(rule);
-        updateRuleBtn.setEnabled(true);
-        validateRuleBtn.setEnabled(true);
+        this.refreshValidationBadge(rule);
+        this.updateRuleButton.setEnabled(true);
+        this.validateRuleButton.setEnabled(true);
     }
 
     private void showEmptyState() {
-        currentRule = null;
-        dirty = false;
-        ruleNameField.setText("");
-        antecedentsArea.setText("");
-        conclusionArea.setText("");
-        validationBadge .setText("");
-        validationDetail.setText("No rule selected");
-        validationDetail.setForeground(TEXT_DIM);
-        updateRuleBtn.setEnabled(false);
-        validateRuleBtn.setEnabled(false);
+        this.currentRule = null;
+        this.isDirty = false;
+        this.ruleNameField.setText("");
+        this.antecedentsTextArea.setText("");
+        this.conclusionTextArea.setText("");
+        this.validationBadgeLabel.setText("");
+        this.validationDetailLabel.setText("No rule selected");
+        this.validationDetailLabel.setForeground(TEXT_DIM_COLOR);
+        this.updateRuleButton.setEnabled(false);
+        this.validateRuleButton.setEnabled(false);
     }
 
     private void markDirty() {
-        if (!dirty) {
-            dirty = true;
-            if (currentRule != null) {
-                validationBadge .setText("●");
-                validationBadge .setForeground(WARN);
-                validationDetail.setText("Unsaved changes");
-                validationDetail.setForeground(WARN);
+        if (!this.isDirty) {
+            this.isDirty = true;
+            if (this.currentRule != null) {
+                this.validationBadgeLabel.setForeground(WARNING_COLOR);
+                this.validationDetailLabel.setText("Unsaved changes");
+                this.validationDetailLabel.setForeground(WARNING_COLOR);
             }
         }
     }
 
     private void updateCurrentRule() {
-        if (currentRule == null) { setStatus("No rule selected.", DANGER); return; }
+        if (this.currentRule == null) {
+            this.setStatus("No rule selected.", DANGER_COLOR);
+            return;
+        }
 
-        String name = ruleNameField.getText().trim();
-        if (name.isBlank()) { setStatus("Rule name cannot be empty.", DANGER); return; }
+        String ruleName = this.ruleNameField.getText().trim();
+        if (ruleName.isBlank()) {
+            this.setStatus("Rule name cannot be empty.", DANGER_COLOR);
+            return;
+        }
 
-        // BUG FIX #5: identity-safe duplicate check (works after list model updates)
-        for (RuleDefinition r : rules) {
-            if (r != currentRule && r.name.equals(name)) {
-                setStatus("A rule named '" + name + "' already exists.", DANGER); return;
+        for (RuleDefinition rule : this.rulesList) {
+            if (rule != this.currentRule && rule.name.equals(ruleName)) {
+                this.setStatus("A rule named '" + ruleName + "' already exists.", DANGER_COLOR);
+                return;
             }
         }
 
         List<AST> antecedents = new ArrayList<>();
-        for (String line : antecedentsArea.getText().split("\n")) {
-            String t = line.trim();
-            if (t.isEmpty()) continue;
-            PropositionalAST ast = new PropositionalAST(t, true);
-            if (!ast.isValid()) { setStatus("Invalid antecedent: " + t, DANGER); return; }
+        for (String line : this.antecedentsTextArea.getText().split("\n")) {
+            String trimmedLine = line.trim();
+            if (trimmedLine.isEmpty()) {
+                continue;
+            }
+            PropositionalAST ast = new PropositionalAST(trimmedLine, true);
+            if (!ast.isValid()) {
+                this.setStatus("Invalid antecedent: " + trimmedLine, DANGER_COLOR);
+                return;
+            }
             antecedents.add(ast);
         }
-        if (antecedents.isEmpty()) { setStatus("At least one antecedent is required.", DANGER); return; }
+        if (antecedents.isEmpty()) {
+            this.setStatus("At least one antecedent is required.", DANGER_COLOR);
+            return;
+        }
 
-        String concText = conclusionArea.getText().trim();
-        if (concText.isBlank()) { setStatus("Conclusion cannot be empty.", DANGER); return; }
-        PropositionalAST conclusion = new PropositionalAST(concText, true);
-        if (!conclusion.isValid()) { setStatus("Invalid conclusion: " + concText, DANGER); return; }
+        String conclusionText = this.conclusionTextArea.getText().trim();
+        if (conclusionText.isBlank()) {
+            this.setStatus("Conclusion cannot be empty.", DANGER_COLOR);
+            return;
+        }
+        PropositionalAST conclusion = new PropositionalAST(conclusionText, true);
+        if (!conclusion.isValid()) {
+            this.setStatus("Invalid conclusion: " + conclusionText, DANGER_COLOR);
+            return;
+        }
 
-        currentRule.name        = name;
-        currentRule.antecedents = antecedents;
-        currentRule.conclusion  = conclusion;
-        currentRule.isValidated = false;
-        currentRule.validationError = null;
-        dirty = false;
+        this.currentRule.name = ruleName;
+        this.currentRule.antecedents = antecedents;
+        this.currentRule.conclusion = conclusion;
+        this.currentRule.isValidated = false;
+        this.currentRule.validationError = null;
+        this.isDirty = false;
 
-        // Refresh list display
-        int idx = ruleModel.indexOf(currentRule);
-        ruleModel.set(idx, currentRule);
-        ruleList.setSelectedIndex(idx);
+        int index = this.ruleListModel.indexOf(this.currentRule);
+        this.ruleListModel.set(index, this.currentRule);
+        this.ruleList.setSelectedIndex(index);
 
-        refreshValidationBadge(currentRule);
-        setStatus("Rule saved: " + name + " — validate it to confirm correctness.", SUCCESS);
+        this.refreshValidationBadge(this.currentRule);
+        this.setStatus("Rule saved: " + ruleName + ": validate it to confirm correctness.", SUCCESS_COLOR);
     }
 
     private void validateCurrentRule() {
-        if (currentRule == null) { setStatus("No rule selected.", DANGER); return; }
-        if (currentRule.antecedents.isEmpty() || currentRule.conclusion == null) {
-            setStatus("Save the rule first before validating.", DANGER); return;
+        if (this.currentRule == null) {
+            this.setStatus("No rule selected.", DANGER_COLOR);
+            return;
+        }
+        if (this.currentRule.antecedents.isEmpty() || this.currentRule.conclusion == null) {
+            this.setStatus("Save the rule first before validating.", DANGER_COLOR);
+            return;
         }
 
-        // Cancel any in-flight validation
-        if (pendingValidation != null && !pendingValidation.isDone())
-            pendingValidation.cancel(true);
+        if (this.pendingValidationTask != null && !this.pendingValidationTask.isDone()) {
+            this.pendingValidationTask.cancel(true);
+        }
+        if (this.pendingProofFuture != null && !this.pendingProofFuture.isDone()) {
+            this.pendingProofFuture.cancel(true);
+        }
 
-        currentRule.isValidating    = true;
-        currentRule.isValidated     = false;
-        currentRule.validationError = null;
-        refreshValidationBadge(currentRule);
-        setStatus("Validating '" + currentRule.name + "' ...", WARN);
+        this.currentRule.isValidating = true;
+        this.currentRule.isValidated = false;
+        this.currentRule.validationError = null;
+        this.refreshValidationBadge(this.currentRule);
+        this.setStatus("Validating '" + this.currentRule.name + "'...", WARNING_COLOR);
 
-        final RuleDefinition target = currentRule;
+        final RuleDefinition targetRule = this.currentRule;
+        final long currentRunId = this.validationRunId++;
 
-        // BUG FIX #2: submit to the shared executor
-        pendingValidation = validatorExecutor.submit(() -> {
-            boolean ok   = false;
-            String  err  = null;
+        this.pendingValidationTask = this.validationExecutor.submit(() -> {
+            boolean isValid = false;
+            String errorMessage = null;
             try {
-                ok = runProofWithTimeout(target);
-            } catch (Exception ex) {
-                err = ex.getMessage();
+                isValid = this.runProofWithTimeout(targetRule);
             }
-            final boolean finalOk  = ok;
-            final String  finalErr = err;
+            catch (Exception exception) {
+                errorMessage = exception.getMessage();
+            }
+
+            final boolean finalIsValid = isValid;
+            final String finalErrorMessage = errorMessage;
+
             SwingUtilities.invokeLater(() -> {
-                target.isValidating    = false;
-                target.isValidated     = finalOk;
-                target.validationError = finalErr;
-                int idx = ruleModel.indexOf(target);
-                if (idx >= 0) ruleModel.set(idx, target);
-                if (target == currentRule) refreshValidationBadge(target);
-                if (finalOk)
-                    setStatus("\u2713 '" + target.name + "' is valid.", SUCCESS);
-                else
-                    setStatus("\u2717 '" + target.name + "' could not be proven: " + (finalErr != null ? finalErr : "proof failed"), DANGER);
+                if (currentRunId != CustomRuleEditor.this.validationRunId) {
+                    return;
+                }
+                targetRule.isValidating = false;
+                targetRule.isValidated = finalIsValid;
+                targetRule.validationError = finalErrorMessage;
+
+                int index = CustomRuleEditor.this.ruleListModel.indexOf(targetRule);
+                if (index >= 0) {
+                    CustomRuleEditor.this.ruleListModel.set(index, targetRule);
+                }
+                if (targetRule == CustomRuleEditor.this.currentRule) {
+                    CustomRuleEditor.this.refreshValidationBadge(targetRule);
+                }
+                if (finalIsValid) {
+                    CustomRuleEditor.this.setStatus("\u2713 '" + targetRule.name + "' is valid.", SUCCESS_COLOR);
+                }
+                else {
+                    CustomRuleEditor.this.setStatus("\u2717 '" + targetRule.name + "' could not be proven: " + (finalErrorMessage != null ? finalErrorMessage : "proof failed"), DANGER_COLOR);
+                }
             });
         });
     }
 
-    /** Builds the implication and attempts a proof with a 1-second timeout. */
     private boolean runProofWithTimeout(RuleDefinition rule) throws Exception {
-        AST implication = PropositionalLogicHelper.buildImplication(
-                rule.antecedents, rule.conclusion);
-
         Signature signature = SignatureFactory.createSignature(UniverseOfDiscourse.PROPOSITIONS);
-        PropositionalProof proof = new PropositionalProof(
-                signature, new ArrayList<>(), List.of(implication));
 
-        // BUG FIX #2: submit inline future — no extra ExecutorService created
-        Future<Boolean> future = validatorExecutor.submit(proof::proveWithoutPrinting);
+        PropositionalProof proof = new PropositionalProof(
+                signature,
+                new ArrayList<>(rule.antecedents),
+                List.of(rule.conclusion));
+
+        Future<Boolean> future = this.proofExecutor.submit(proof::prove);
+        this.pendingProofFuture = future;
+
         try {
-            return future.get(1, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
+            Boolean result = future.get(1, TimeUnit.SECONDS);
+            return result != null && result;
+        }
+        catch (TimeoutException exception) {
             future.cancel(true);
-            throw new Exception("Timed out after 1 s — rule may be too complex to verify automatically");
-        } catch (ExecutionException e) {
-            throw new Exception(e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+            throw new Exception("Timed out after 1s: Rule may be too complex");
+        }
+        catch (ExecutionException exception) {
+            throw new Exception("Proof execution error: " + exception.getCause().getMessage());
+        }
+        catch (InterruptedException exception) {
+            future.cancel(true);
+            Thread.currentThread().interrupt();
+            throw new Exception("Proof execution interrupted");
         }
     }
 
     private void deleteSelectedRule() {
-        RuleDefinition sel = ruleList.getSelectedValue();
-        if (sel == null) { setStatus("No rule selected.", DANGER); return; }
-        int c = JOptionPane.showConfirmDialog(frame,
-                "Delete rule '" + sel.name + "'? This cannot be undone.",
-                "Delete Rule", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-        if (c != JOptionPane.YES_OPTION) return;
-        rules.remove(sel);
-        ruleModel.removeElement(sel);
-        showEmptyState();
-        setStatus("Deleted rule: " + sel.name, DANGER);
+        RuleDefinition selectedRule = this.ruleList.getSelectedValue();
+        if (selectedRule == null) {
+            this.setStatus("No rule selected.", DANGER_COLOR);
+            return;
+        }
+        int choice = JOptionPane.showConfirmDialog(
+                this.mainFrame,
+                "Delete rule '" + selectedRule.name + "'? This cannot be undone.",
+                "Delete Rule",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        if (choice != JOptionPane.YES_OPTION) {
+            return;
+        }
+        this.rulesList.remove(selectedRule);
+        this.ruleListModel.removeElement(selectedRule);
+        this.showEmptyState();
+        this.setStatus("Deleted rule: " + selectedRule.name, DANGER_COLOR);
     }
 
     private void savePackage() {
-        if (rules.isEmpty()) { setStatus("No rules to save.", DANGER); return; }
+        if (this.rulesList.isEmpty()) {
+            this.setStatus("No rules to save.", DANGER_COLOR);
+            return;
+        }
 
-        boolean hasUnvalidated = rules.stream().anyMatch(r -> !r.isValidated);
+        boolean hasUnvalidated = this.rulesList.stream().anyMatch(rule -> !rule.isValidated);
         if (hasUnvalidated) {
-            int c = JOptionPane.showConfirmDialog(frame,
+            int choice = JOptionPane.showConfirmDialog(
+                    this.mainFrame,
                     "Some rules have not been validated. Save anyway?",
-                    "Unvalidated Rules", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-            if (c != JOptionPane.YES_OPTION) return;
+                    "Unvalidated Rules",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+            if (choice != JOptionPane.YES_OPTION) {
+                return;
+            }
         }
 
-        File dir = resolvePackageDir(currentPackageName);
-        if (!dir.exists()) dir.mkdirs();
-
-        File ruleFile = new File(dir, currentPackageName + ".atpf");
-        try (PrintWriter w = new PrintWriter(new FileWriter(ruleFile))) {
-            writeRulesToWriter(w);
-        } catch (IOException e) {
-            setStatus("Save failed: " + e.getMessage(), DANGER); return;
+        File packageDirectory = this.resolvePackageDirectory(this.currentPackageName);
+        if (!packageDirectory.exists()) {
+            packageDirectory.mkdirs();
         }
 
-        writeMetaFile(dir, null);
-        currentPackageDirectory = dir;
-        dirty = false;
-        setStatus("Saved " + rules.size() + " rule(s) to '" + currentPackageName + "'", SUCCESS);
+        File ruleFile = new File(packageDirectory, this.currentPackageName + ".atpf");
+        try (PrintWriter writer = new PrintWriter(new FileWriter(ruleFile))) {
+            this.writeRulesToWriter(writer);
+        }
+        catch (IOException exception) {
+            this.setStatus("Save failed: " + exception.getMessage(), DANGER_COLOR);
+            return;
+        }
+
+        this.writeMetaFile(packageDirectory, null);
+        this.currentPackageDirectory = packageDirectory;
+        this.isDirty = false;
+        this.setStatus("Saved " + this.rulesList.size() + " rule(s) to '" + this.currentPackageName + "'", SUCCESS_COLOR);
     }
 
     private void importRules() {
-        JFileChooser fc = new JFileChooser();
-        fc.setDialogTitle("Import .atpf Rule File");
-        fc.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
-                "Custom Rule Files (*.atpf)", "atpf"));
-        if (fc.showOpenDialog(frame) != JFileChooser.APPROVE_OPTION) return;
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Import .atpf Rule File");
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Custom Rule Files (*.atpf)", "atpf"));
+        if (fileChooser.showOpenDialog(this.mainFrame) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
 
-        File src = fc.getSelectedFile();
-        int imported = loadRulesFromFile(src);
-        setStatus("Imported " + imported + " rule(s) from " + src.getName(), SUCCESS);
+        File sourceFile = fileChooser.getSelectedFile();
+        int importedCount = this.loadRulesFromFile(sourceFile);
+        this.setStatus("Imported " + importedCount + " rule(s) from " + sourceFile.getName(), SUCCESS_COLOR);
     }
 
     private void exportPackage() {
-        if (rules.isEmpty()) { setStatus("No rules to export.", DANGER); return; }
-
-        JFileChooser fc = new JFileChooser();
-        fc.setDialogTitle("Choose Export Directory");
-        fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        if (fc.showSaveDialog(frame) != JFileChooser.APPROVE_OPTION) return;
-
-        File exportRoot = new File(fc.getSelectedFile(), currentPackageName);
-        if (!exportRoot.exists()) exportRoot.mkdirs();
-
-        File ruleFile = new File(exportRoot, currentPackageName + ".atpf");
-        try (PrintWriter w = new PrintWriter(new FileWriter(ruleFile))) {
-            writeRulesToWriter(w);
-        } catch (IOException e) {
-            setStatus("Export failed: " + e.getMessage(), DANGER); return;
+        if (this.rulesList.isEmpty()) {
+            this.setStatus("No rules to export.", DANGER_COLOR);
+            return;
         }
 
-        // BUG FIX #4: write template meta first, then overwrite with existing if present
-        writeMetaFile(exportRoot, currentPackageDirectory);
-        setStatus("Exported package to " + exportRoot.getAbsolutePath(), SUCCESS);
-    }
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Choose Export Directory");
+        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        if (fileChooser.showSaveDialog(this.mainFrame) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
 
-    // =========================================================================
-    // Package I/O helpers
-    // =========================================================================
+        File exportRoot = new File(fileChooser.getSelectedFile(), this.currentPackageName);
+        if (!exportRoot.exists()) {
+            exportRoot.mkdirs();
+        }
+
+        File ruleFile = new File(exportRoot, this.currentPackageName + ".atpf");
+        try (PrintWriter writer = new PrintWriter(new FileWriter(ruleFile))) {
+            this.writeRulesToWriter(writer);
+        }
+        catch (IOException exception) {
+            this.setStatus("Export failed: " + exception.getMessage(), DANGER_COLOR);
+            return;
+        }
+
+        this.writeMetaFile(exportRoot, this.currentPackageDirectory);
+        this.setStatus("Exported package to " + exportRoot.getAbsolutePath(), SUCCESS_COLOR);
+    }
 
     private void loadPackage(String packageName) {
-        File dir = resolvePackageDir(packageName);
-        currentPackageDirectory = dir;
+        File packageDirectory = this.resolvePackageDirectory(packageName);
+        this.currentPackageDirectory = packageDirectory;
 
-        if (!dir.isDirectory()) { setStatus("Package not found: " + packageName, DANGER); return; }
+        if (!packageDirectory.isDirectory()) {
+            this.setStatus("Package not found: " + packageName, DANGER_COLOR);
+            return;
+        }
 
-        File ruleFile = new File(dir, packageName + ".atpf");
-        if (!ruleFile.exists()) { setStatus("Rule file not found: " + packageName + ".atpf", DANGER); return; }
+        File ruleFile = new File(packageDirectory, packageName + ".atpf");
+        if (!ruleFile.exists()) {
+            this.setStatus("Rule file not found: " + packageName + ".atpf", DANGER_COLOR);
+            return;
+        }
 
-        rules.clear();
-        ruleModel.clear();
-        int loaded = loadRulesFromFile(ruleFile);
-        // Mark loaded rules as validated (they were saved by this tool previously)
-        rules.forEach(r -> r.isValidated = true);
-        ruleModel.clear();
-        rules.forEach(ruleModel::addElement);
+        this.rulesList.clear();
+        this.ruleListModel.clear();
+        int loadedCount = this.loadRulesFromFile(ruleFile);
+        this.rulesList.forEach(rule -> rule.isValidated = true);
+        this.ruleListModel.clear();
+        this.rulesList.forEach(this.ruleListModel::addElement);
 
-        if (loaded > 0) ruleList.setSelectedIndex(0);
-        frame.setTitle("Custom Rule Editor  —  " + packageName);
-        setStatus("Loaded " + loaded + " rule(s) from '" + packageName + "'", SUCCESS);
+        if (loadedCount > 0) {
+            this.ruleList.setSelectedIndex(0);
+        }
+        this.mainFrame.setTitle("Custom Rule Editor:  " + packageName);
+        this.setStatus("Loaded " + loadedCount + " rule(s) from '" + packageName + "'", SUCCESS_COLOR);
     }
 
-    /**
-     * Parses rules from a .atpf file and appends them to the rule list.
-     * Returns the number of rules imported.
-     *
-     * BUG FIX #3: the original outer loop did `index++` unconditionally at the end,
-     * which skipped the line immediately after every "end" token.  Fixed by only
-     * advancing past "end" inside the inner loop.
-     */
     private int loadRulesFromFile(File file) {
         List<String> lines;
         try {
-            lines = loader.getLines(file.getPath());
-        } catch (Exception e) {
-            setStatus("Cannot read file: " + e.getMessage(), DANGER);
+            lines = this.logicLoader.getLines(file.getPath());
+        }
+        catch (Exception exception) {
+            this.setStatus("Cannot read file: " + exception.getMessage(), DANGER_COLOR);
             return 0;
         }
-        if (lines == null || lines.isEmpty()) return 0;
+        if (lines == null || lines.isEmpty()) {
+            return 0;
+        }
 
-        int imported = 0;
-        int i = 0;
-        while (i < lines.size()) {
-            String line = lines.get(i).trim();
+        int importedCount = 0;
+        int index = 0;
+        while (index < lines.size()) {
+            String line = lines.get(index).trim();
             if (line.startsWith("rule=")) {
                 String ruleName = line.substring(5).trim();
-                List<String> block = new ArrayList<>();
-                block.add(line);
-                i++;                              // move past "rule=..." line
-                while (i < lines.size()) {
-                    String cur = lines.get(i).trim();
-                    block.add(cur);
-                    i++;                          // consume this line
-                    if (cur.equals("end")) break; // stop after "end"
-                }
-                // i now points at the line after "end" — correct, no extra advance
-                try {
-                    CustomPropositionalInferenceRule cr =
-                            loader.loadCustomRule(block, ruleName);
-                    if (cr != null && cr.conclusion() != null) {
-                        RuleDefinition rd = new RuleDefinition(
-                                cr.name(), cr.antecedents(), cr.conclusion());
-                        rules.add(rd);
-                        ruleModel.addElement(rd);
-                        imported++;
+                List<String> ruleBlock = new ArrayList<>();
+                ruleBlock.add(line);
+                index++;
+                while (index < lines.size()) {
+                    String currentLine = lines.get(index).trim();
+                    ruleBlock.add(currentLine);
+                    index++;
+                    if (currentLine.equals("end")) {
+                        break;
                     }
-                } catch (Exception ex) {
-                    System.err.println("Skipping malformed rule '" + ruleName + "': " + ex.getMessage());
                 }
-            } else {
-                i++; // blank line or unrecognised — skip
-            }
-        }
-        return imported;
-    }
-
-    private void writeRulesToWriter(PrintWriter w) {
-        for (RuleDefinition r : rules) {
-            w.println("rule=" + r.name);
-            for (AST a : r.antecedents) w.println("a: " + a.toString());
-            w.println("c: " + r.conclusion.toString());
-            w.println("end");
-            w.println();
-        }
-    }
-
-    /**
-     * Writes a meta file to targetDir.
-     * BUG FIX #4: always writes the blank template first, then copies the existing
-     * meta from sourceDir if one exists (previously the order was reversed, meaning
-     * the template could silently overwrite a real existing meta file).
-     */
-    private void writeMetaFile(File targetDir, File sourceDir) {
-        File metaFile = new File(targetDir, "meta");
-        // Step 1: write the blank template
-        try (PrintWriter w = new PrintWriter(new FileWriter(metaFile))) {
-            w.println("Checked:");
-            w.println("Sound:");
-            w.println("Consistent:");
-            w.println("Refutation Complete:");
-            w.println("Correct:");
-        } catch (IOException e) {
-            System.err.println("Warning: could not write meta file: " + e.getMessage());
-        }
-        // Step 2: overwrite with real existing meta if present
-        if (sourceDir != null) {
-            File sourceMeta = new File(sourceDir, "meta");
-            if (sourceMeta.exists() && !sourceMeta.getAbsolutePath()
-                    .equals(metaFile.getAbsolutePath())) {
                 try {
-                    Files.copy(sourceMeta.toPath(), metaFile.toPath(),
-                            StandardCopyOption.REPLACE_EXISTING);
-                } catch (IOException e) {
-                    System.err.println("Warning: could not copy meta file: " + e.getMessage());
+                    CustomPropositionalInferenceRule customRule = this.logicLoader.loadCustomRule(ruleBlock, ruleName);
+                    if (customRule != null && customRule.conclusion() != null) {
+                        RuleDefinition ruleDefinition = new RuleDefinition(
+                                customRule.name(),
+                                customRule.antecedents(),
+                                customRule.conclusion());
+                        this.rulesList.add(ruleDefinition);
+                        this.ruleListModel.addElement(ruleDefinition);
+                        importedCount++;
+                    }
+                }
+                catch (Exception exception) {
+                    System.err.println("Skipping malformed rule '" + ruleName + "': " + exception.getMessage());
+                }
+            }
+            else {
+                index++;
+            }
+        }
+        return importedCount;
+    }
+
+    private void writeRulesToWriter(PrintWriter writer) {
+        for (RuleDefinition rule : this.rulesList) {
+            writer.println("rule=" + rule.name);
+            for (AST antecedent : rule.antecedents) {
+                writer.println("a: " + antecedent.toString());
+            }
+            writer.println("c: " + rule.conclusion.toString());
+            writer.println("end");
+            writer.println();
+        }
+    }
+
+    private void writeMetaFile(File targetDirectory, File sourceDirectory) {
+        File metaFile = new File(targetDirectory, "meta");
+        try (PrintWriter writer = new PrintWriter(new FileWriter(metaFile))) {
+            writer.println("Checked:");
+            writer.println("Sound:");
+            writer.println("Consistent:");
+            writer.println("Refutation Complete:");
+            writer.println("Correct:");
+        }
+        catch (IOException exception) {
+            System.err.println("Warning: could not write meta file: " + exception.getMessage());
+        }
+        if (sourceDirectory != null) {
+            File sourceMetaFile = new File(sourceDirectory, "meta");
+            if (sourceMetaFile.exists() && !sourceMetaFile.getAbsolutePath().equals(metaFile.getAbsolutePath())) {
+                try {
+                    Files.copy(sourceMetaFile.toPath(), metaFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                }
+                catch (IOException exception) {
+                    System.err.println("Warning: could not copy meta file: " + exception.getMessage());
                 }
             }
         }
     }
 
-    private File resolvePackageDir(String packageName) {
+    private File resolvePackageDirectory(String packageName) {
         return new File("files/customRules/" + packageName);
     }
 
-    // =========================================================================
-    // UI helpers
-    // =========================================================================
-
     private boolean confirmDiscard(String action) {
-        if (!dirty) return true;
-        int c = JOptionPane.showConfirmDialog(frame,
+        if (!this.isDirty) {
+            return true;
+        }
+        int choice = JOptionPane.showConfirmDialog(
+                this.mainFrame,
                 "You have unsaved changes. Discard them and " + action + "?",
-                "Unsaved Changes", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-        return c == JOptionPane.YES_OPTION;
+                "Unsaved Changes",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        return choice == JOptionPane.YES_OPTION;
     }
 
-    private void refreshValidationBadge(RuleDefinition r) {
-        if (r.isValidating) {
-            validationBadge .setText("⏳");
-            validationBadge .setForeground(WARN);
-            validationDetail.setText("Validating…");
-            validationDetail.setForeground(WARN);
-        } else if (r.isValidated) {
-            validationBadge .setText("✓");
-            validationBadge .setForeground(SUCCESS);
-            validationDetail.setText("Valid");
-            validationDetail.setForeground(SUCCESS);
-        } else if (r.validationError != null) {
-            validationBadge .setText("✗");
-            validationBadge .setForeground(DANGER);
-            validationDetail.setText(r.validationError);
-            validationDetail.setForeground(DANGER);
-        } else {
-            validationBadge .setText("○");
-            validationBadge .setForeground(TEXT_DIM);
-            validationDetail.setText("Not validated");
-            validationDetail.setForeground(TEXT_DIM);
+    private void refreshValidationBadge(RuleDefinition rule) {
+        if (rule.isValidating) {
+            this.validationBadgeLabel.setForeground(WARNING_COLOR);
+            this.validationDetailLabel.setText("Validating…");
+            this.validationDetailLabel.setForeground(WARNING_COLOR);
+        }
+        else if (rule.isValidated) {
+            this.validationBadgeLabel.setForeground(SUCCESS_COLOR);
+            this.validationDetailLabel.setText("Valid");
+            this.validationDetailLabel.setForeground(SUCCESS_COLOR);
+        }
+        else if (rule.validationError != null) {
+            this.validationBadgeLabel.setForeground(DANGER_COLOR);
+            this.validationDetailLabel.setText(rule.validationError);
+            this.validationDetailLabel.setForeground(DANGER_COLOR);
+        }
+        else {
+            this.validationBadgeLabel.setForeground(TEXT_DIM_COLOR);
+            this.validationDetailLabel.setText("Not validated");
+            this.validationDetailLabel.setForeground(TEXT_DIM_COLOR);
         }
     }
 
-    // BUG FIX #1: stored field — setStatus never does fragile getComponent() lookups
-    private void setStatus(String msg, Color color) {
-        statusLabel.setText(msg);
-        statusLabel.setForeground(color);
+    private void setStatus(String message, Color color) {
+        this.statusLabel.setText(message);
+        this.statusLabel.setForeground(color);
     }
 
-    // ── Widget factories ──────────────────────────────────────────────────────
-    private JButton mkBtn(String text, Color bg) {
-        JButton btn = new JButton(text) {
-            private boolean hover = false;
+    private JButton createButton(String text, Color backgroundColor) {
+        JButton button = new JButton(text) {
+            private boolean isHovering = false;
             {
-                addMouseListener(new MouseAdapter() {
-                    public void mouseEntered(MouseEvent e) { hover = true;  repaint(); }
-                    public void mouseExited (MouseEvent e) { hover = false; repaint(); }
+                this.addMouseListener(new MouseAdapter() {
+                    public void mouseEntered(MouseEvent event) {
+                        isHovering = true;
+                        repaint();
+                    }
+                    public void mouseExited(MouseEvent event) {
+                        isHovering = false;
+                        repaint();
+                    }
                 });
             }
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(hover ? bg.brighter() : bg);
-                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 8, 8));
-                g2.dispose();
-                super.paintComponent(g);
+            @Override
+            protected void paintComponent(Graphics graphics) {
+                Graphics2D graphics2D = (Graphics2D) graphics.create();
+                graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                graphics2D.setColor(isHovering ? backgroundColor.brighter() : backgroundColor);
+                graphics2D.fill(new RoundRectangle2D.Float(0, 0, this.getWidth(), this.getHeight(), 8, 8));
+                graphics2D.dispose();
+                super.paintComponent(graphics);
             }
         };
-        btn.setFont(FONT_BTN);
-        btn.setForeground(TEXT_PRI);
-        btn.setContentAreaFilled(false);
-        btn.setBorderPainted(false);
-        btn.setFocusPainted(false);
-        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btn.setBorder(BorderFactory.createEmptyBorder(6, 14, 6, 14));
-        return btn;
+        button.setFont(BUTTON_FONT);
+        button.setForeground(TEXT_PRIMARY_COLOR);
+        button.setContentAreaFilled(false);
+        button.setBorderPainted(false);
+        button.setFocusPainted(false);
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        button.setBorder(BorderFactory.createEmptyBorder(6, 14, 6, 14));
+        return button;
     }
 
-    private JTextField styledField() {
-        JTextField f = new JTextField();
-        f.setBackground(BG_RAISED);
-        f.setForeground(TEXT_PRI);
-        f.setCaretColor(ACCENT);
-        f.setFont(FONT_LABEL);
-        f.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER),
+    private JTextField createStyledTextField() {
+        JTextField textField = new JTextField();
+        textField.setBackground(BACKGROUND_RAISED);
+        textField.setForeground(TEXT_PRIMARY_COLOR);
+        textField.setCaretColor(ACCENT_COLOR);
+        textField.setFont(LABEL_FONT);
+        textField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
                 BorderFactory.createEmptyBorder(4, 8, 4, 8)));
-        f.setSelectionColor(ACCENT_SOFT);
-        return f;
+        textField.setSelectionColor(ACCENT_SOFT_COLOR);
+        return textField;
     }
 
-    private JTextArea styledArea() {
-        JTextArea a = new JTextArea();
-        a.setBackground(BG_DEEP);
-        a.setForeground(TEXT_PRI);
-        a.setCaretColor(ACCENT);
-        a.setFont(FONT_MONO);
-        a.setLineWrap(false);
-        a.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
-        a.setSelectionColor(ACCENT_SOFT);
-        return a;
+    private JTextArea createStyledTextArea() {
+        JTextArea textArea = new JTextArea();
+        textArea.setBackground(BACKGROUND_DEEP);
+        textArea.setForeground(TEXT_PRIMARY_COLOR);
+        textArea.setCaretColor(ACCENT_COLOR);
+        textArea.setFont(MONOSPACED_FONT);
+        textArea.setLineWrap(false);
+        textArea.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
+        textArea.setSelectionColor(ACCENT_SOFT_COLOR);
+        return textArea;
     }
 
-    private JScrollPane styledScroll(JComponent c) {
-        JScrollPane sp = new JScrollPane(c);
-        sp.setBorder(BorderFactory.createLineBorder(BORDER));
-        sp.setBackground(BG_DEEP);
-        sp.getViewport().setBackground(BG_DEEP);
-        sp.getVerticalScrollBar().setPreferredSize(new Dimension(6, 0));
-        return sp;
+    private JScrollPane createStyledScrollPane(JComponent component) {
+        JScrollPane scrollPane = new JScrollPane(component);
+        scrollPane.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
+        scrollPane.setBackground(BACKGROUND_DEEP);
+        scrollPane.getViewport().setBackground(BACKGROUND_DEEP);
+        scrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(6, 0));
+        return scrollPane;
     }
 
-    private JPanel sectionLabel(String title, String hint) {
-        JPanel p = new JPanel(new BorderLayout(10, 0));
-        p.setBackground(BG_SURFACE);
-        p.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
-        JLabel t = new JLabel(title);
-        t.setFont(FONT_LABEL_B);
-        t.setForeground(TEXT_PRI);
-        JLabel h = new JLabel(hint);
-        h.setFont(FONT_SMALL);
-        h.setForeground(TEXT_DIM);
-        p.add(t, BorderLayout.WEST);
-        p.add(h, BorderLayout.EAST);
-        return p;
+    private JPanel createSectionLabel(String title, String hint) {
+        JPanel panel = new JPanel(new BorderLayout(10, 0));
+        panel.setBackground(BACKGROUND_SURFACE);
+        panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(LABEL_BOLD_FONT);
+        titleLabel.setForeground(TEXT_PRIMARY_COLOR);
+        JLabel hintLabel = new JLabel(hint);
+        hintLabel.setFont(SMALL_FONT);
+        hintLabel.setForeground(TEXT_DIM_COLOR);
+        panel.add(titleLabel, BorderLayout.WEST);
+        panel.add(hintLabel, BorderLayout.EAST);
+        return panel;
     }
 
-    // =========================================================================
-    // Cell renderer  (BUG FIX #4 — no misused system icons)
-    // =========================================================================
-    private class RuleCellRenderer extends DefaultListCellRenderer {
+    private static class RuleCellRenderer extends DefaultListCellRenderer {
         @Override
         public Component getListCellRendererComponent(
-                JList<?> list, Object value, int index,
-                boolean isSelected, boolean hasFocus) {
+                JList<?> list,
+                Object value,
+                int index,
+                boolean isSelected,
+                boolean hasFocus) {
 
-            RuleDefinition r = (RuleDefinition) value;
+            RuleDefinition rule = (RuleDefinition) value;
 
-            JPanel row = new JPanel(new BorderLayout(8, 0));
-            row.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
-            row.setBackground(isSelected ? ACCENT_SOFT
-                    : (index % 2 == 0 ? BG_RAISED : BG_SURFACE));
+            JPanel rowPanel = new JPanel(new BorderLayout(8, 0));
+            rowPanel.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
+            rowPanel.setBackground(isSelected ? ACCENT_SOFT_COLOR : (index % 2 == 0 ? BACKGROUND_RAISED : BACKGROUND_SURFACE));
 
-            JLabel name = new JLabel(r.name);
-            name.setFont(FONT_LABEL_B);
-            name.setForeground(isSelected ? TEXT_PRI : TEXT_PRI);
+            JLabel nameLabel = new JLabel(rule.name);
+            nameLabel.setFont(LABEL_BOLD_FONT);
+            nameLabel.setForeground(TEXT_PRIMARY_COLOR);
 
-            JLabel badge = new JLabel();
-            badge.setFont(FONT_SMALL);
-            if (r.isValidating) {
-                badge.setText("⏳");
-                badge.setForeground(WARN);
-            } else if (r.isValidated) {
-                badge.setText("✓ valid");
-                badge.setForeground(SUCCESS);
-            } else if (r.validationError != null) {
-                badge.setText("✗ failed");
-                badge.setForeground(DANGER);
-            } else {
-                badge.setText("○ unvalidated");
-                badge.setForeground(TEXT_DIM);
+            JLabel badgeLabel = this.createBadgeLabel(rule);
+
+            rowPanel.add(nameLabel, BorderLayout.CENTER);
+            rowPanel.add(badgeLabel, BorderLayout.EAST);
+            return rowPanel;
+        }
+
+        private JLabel createBadgeLabel(RuleDefinition rule) {
+            JLabel badgeLabel = new JLabel();
+            badgeLabel.setFont(SMALL_FONT);
+            if (rule.isValidating) {
+                badgeLabel.setText("⏳");
+                badgeLabel.setForeground(WARNING_COLOR);
             }
-
-            row.add(name,  BorderLayout.CENTER);
-            row.add(badge, BorderLayout.EAST);
-            return row;
+            else if (rule.isValidated) {
+                badgeLabel.setText("✓ valid");
+                badgeLabel.setForeground(SUCCESS_COLOR);
+            }
+            else if (rule.validationError != null) {
+                badgeLabel.setText("✗ failed");
+                badgeLabel.setForeground(DANGER_COLOR);
+            }
+            else {
+                badgeLabel.setText("○ unvalidated");
+                badgeLabel.setForeground(TEXT_DIM_COLOR);
+            }
+            return badgeLabel;
         }
     }
 
-    // =========================================================================
-    // Rule data class
-    // =========================================================================
     private static class RuleDefinition {
-        String      name;
-        List<AST>   antecedents;
-        AST         conclusion;
-        boolean     isValidated    = false;
-        boolean     isValidating   = false;
-        String      validationError = null;
+        String name;
+        List<AST> antecedents;
+        AST conclusion;
+        boolean isValidated = false;
+        boolean isValidating = false;
+        String validationError = null;
 
         RuleDefinition(String name, List<AST> antecedents, AST conclusion) {
-            this.name        = name;
+            this.name = name;
             this.antecedents = antecedents != null ? new ArrayList<>(antecedents) : new ArrayList<>();
-            this.conclusion  = conclusion;
+            this.conclusion = conclusion;
         }
 
-        @Override public String toString() { return name; }
+        @Override
+        public String toString() {
+            return this.name;
+        }
     }
 
-    // =========================================================================
-    // Entry point
-    // =========================================================================
-    public static void main(String[] args) {
+    public static void main(String[] arguments) {
         SwingUtilities.invokeLater(CustomRuleEditor::new);
     }
 }

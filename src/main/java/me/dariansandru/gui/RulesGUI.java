@@ -1,6 +1,7 @@
 package me.dariansandru.gui;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,399 +9,396 @@ import java.util.stream.Collectors;
 
 public class RulesGUI {
 
-    private static final Color BG_DEEP = new Color(0x0A0C10);
-    private static final Color BG_SURFACE = new Color(0x14161C);
-    private static final Color BG_RAISED = new Color(0x1E2230);
-    private static final Color ACCENT = new Color(0x7C6FFF);
-    private static final Color ACCENT_LIGHT = new Color(0x9B8FFF);
-    private static final Color TEXT_PRI = new Color(0xE8EDF5);
-    private static final Color TEXT_SEC = new Color(0x8A8FA8);
-    private static final Color BORDER = new Color(0x2A2F42);
+    private static final Color BACKGROUND_DEEP = new Color(0x0A0C10);
+    private static final Color BACKGROUND_SURFACE = new Color(0x14161C);
+    private static final Color BACKGROUND_RAISED = new Color(0x1E2230);
+    private static final Color ACCENT_COLOR = new Color(0x7C6FFF);
+    private static final Color ACCENT_LIGHT_COLOR = new Color(0x9B8FFF);
+    private static final Color TEXT_PRIMARY_COLOR = new Color(0xE8EDF5);
+    private static final Color TEXT_SECONDARY_COLOR = new Color(0x8A8FA8);
+    private static final Color BORDER_COLOR = new Color(0x2A2F42);
 
-    private final JFrame frame;
-    private final DefaultListModel<RuleInfo> model = new DefaultListModel<>();
-    private final JList<RuleInfo> list = new JList<>(model);
-    private final JTextArea detailArea = new JTextArea();
+    private final JFrame mainFrame;
+    private final DefaultListModel<RuleInfo> ruleListModel = new DefaultListModel<>();
+    private final JList<RuleInfo> ruleList = new JList<>(this.ruleListModel);
+    private final JTextArea detailTextArea = new JTextArea();
     private final JLabel ruleCountLabel = new JLabel();
     private final List<RuleInfo> allRules = new ArrayList<>();
 
     public RulesGUI() {
-        frame = new JFrame("Rules Reference");
-        frame.setSize(1100, 750);
-        frame.setLocationRelativeTo(null);
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.setMinimumSize(new Dimension(800, 500));
+        this.mainFrame = new JFrame("Rules Reference");
+        this.mainFrame.setSize(1100, 750);
+        this.mainFrame.setLocationRelativeTo(null);
+        this.mainFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        this.mainFrame.setMinimumSize(new Dimension(800, 500));
 
-        initRules();
-        initUI();
+        this.initializeRules();
+        this.initializeUI();
     }
 
     public void show() {
-        frame.setVisible(true);
+        this.mainFrame.setVisible(true);
     }
 
-    private void initUI() {
-        frame.setLayout(new BorderLayout(0, 0));
-        frame.getContentPane().setBackground(BG_DEEP);
+    private void initializeUI() {
+        this.mainFrame.setLayout(new BorderLayout(0, 0));
+        this.mainFrame.getContentPane().setBackground(BACKGROUND_DEEP);
 
-        frame.add(buildTopBar(), BorderLayout.NORTH);
-        frame.add(buildMain(), BorderLayout.CENTER);
-        frame.add(buildStatusBar(), BorderLayout.SOUTH);
+        this.mainFrame.add(this.buildTopBar(), BorderLayout.NORTH);
+        this.mainFrame.add(this.buildMainArea(), BorderLayout.CENTER);
+        this.mainFrame.add(this.buildStatusBar(), BorderLayout.SOUTH);
 
-        load(allRules);
-        updateRuleCount();
+        this.loadRules(this.allRules);
+        this.updateRuleCount();
 
-        if (!allRules.isEmpty()) {
-            list.setSelectedIndex(0);
-            show(allRules.getFirst());
+        if (!this.allRules.isEmpty()) {
+            this.ruleList.setSelectedIndex(0);
+            this.showRule(this.allRules.getFirst());
         }
     }
 
     private JPanel buildTopBar() {
-        JPanel p = new JPanel(new BorderLayout(12, 0));
-        p.setBackground(BG_SURFACE);
-        p.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER),
+        JPanel topBarPanel = new JPanel(new BorderLayout(12, 0));
+        topBarPanel.setBackground(BACKGROUND_SURFACE);
+        topBarPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COLOR),
                 BorderFactory.createEmptyBorder(12, 16, 12, 16)
         ));
 
-        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        left.setOpaque(false);
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        leftPanel.setOpaque(false);
 
-        JButton back = createStyledButton("Back", ACCENT, Color.WHITE);
-        back.addActionListener(e -> frame.dispose());
+        JButton backButton = this.createStyledButton("Back", ACCENT_COLOR, Color.WHITE);
+        backButton.addActionListener(event -> this.mainFrame.dispose());
 
-        JLabel title = new JLabel("Rule Book");
-        title.setForeground(TEXT_PRI);
-        title.setFont(new Font("SansSerif", Font.BOLD, 20));
+        JLabel titleLabel = new JLabel("Rule Book");
+        titleLabel.setForeground(TEXT_PRIMARY_COLOR);
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 20));
 
-        left.add(back);
-        left.add(title);
+        leftPanel.add(backButton);
+        leftPanel.add(titleLabel);
 
-        JPanel right = new JPanel(new BorderLayout(8, 0));
-        right.setOpaque(false);
+        JPanel rightPanel = new JPanel(new BorderLayout(8, 0));
+        rightPanel.setOpaque(false);
 
-        JTextField search = new JTextField();
-        search.setPreferredSize(new Dimension(280, 34));
-        search.setBackground(BG_RAISED);
-        search.setForeground(TEXT_PRI);
-        search.setCaretColor(ACCENT);
-        search.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        search.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER),
+        JTextField searchField = new JTextField();
+        searchField.setPreferredSize(new Dimension(280, 34));
+        searchField.setBackground(BACKGROUND_RAISED);
+        searchField.setForeground(TEXT_PRIMARY_COLOR);
+        searchField.setCaretColor(ACCENT_COLOR);
+        searchField.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        searchField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
                 BorderFactory.createEmptyBorder(6, 12, 6, 12)
         ));
 
-        search.getDocument().addDocumentListener((SimpleDocListener) e ->
-                filter(search.getText())
+        searchField.getDocument().addDocumentListener((SimpleDocumentListener) event ->
+                this.filterRules(searchField.getText())
         );
 
-        right.add(search, BorderLayout.CENTER);
+        rightPanel.add(searchField, BorderLayout.CENTER);
 
-        p.add(left, BorderLayout.WEST);
-        p.add(right, BorderLayout.EAST);
+        topBarPanel.add(leftPanel, BorderLayout.WEST);
+        topBarPanel.add(rightPanel, BorderLayout.EAST);
 
-        return p;
+        return topBarPanel;
     }
 
-    private JSplitPane buildMain() {
-        list.setBackground(BG_SURFACE);
-        list.setForeground(TEXT_PRI);
-        list.setSelectionBackground(ACCENT);
-        list.setSelectionForeground(Color.WHITE);
-        list.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        list.setFixedCellHeight(42);
-        list.setBorder(BorderFactory.createEmptyBorder(4, 0, 4, 0));
+    private JSplitPane buildMainArea() {
+        this.ruleList.setBackground(BACKGROUND_SURFACE);
+        this.ruleList.setForeground(TEXT_PRIMARY_COLOR);
+        this.ruleList.setSelectionBackground(ACCENT_COLOR);
+        this.ruleList.setSelectionForeground(Color.WHITE);
+        this.ruleList.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        this.ruleList.setFixedCellHeight(42);
+        this.ruleList.setBorder(BorderFactory.createEmptyBorder(4, 0, 4, 0));
 
-        list.setCellRenderer((l, v, i, sel, foc) -> {
+        this.ruleList.setCellRenderer((list, value, index, isSelected, hasFocus) -> {
+            RuleInfo rule = (RuleInfo) value;
             JPanel panel = new JPanel(new BorderLayout(8, 0));
             panel.setOpaque(true);
             panel.setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
 
-            JLabel nameLabel = new JLabel(v.name());
+            JLabel nameLabel = new JLabel(rule.name());
             nameLabel.setFont(new Font("SansSerif", Font.BOLD, 13));
-            nameLabel.setForeground(sel ? Color.WHITE : TEXT_PRI);
+            nameLabel.setForeground(isSelected ? Color.WHITE : TEXT_PRIMARY_COLOR);
 
-            String arityDisplay = v.arity() == -1 ? "n" : String.valueOf(v.arity());
+            String arityDisplay = rule.arity() == -1 ? "n" : String.valueOf(rule.arity());
             JLabel arityLabel = new JLabel(" /" + arityDisplay);
             arityLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
-            arityLabel.setForeground(sel ? Color.WHITE : TEXT_SEC);
+            arityLabel.setForeground(isSelected ? Color.WHITE : TEXT_SECONDARY_COLOR);
 
             panel.add(nameLabel, BorderLayout.WEST);
             panel.add(arityLabel, BorderLayout.EAST);
 
-            if (sel) {
-                panel.setBackground(ACCENT);
+            if (isSelected) {
+                panel.setBackground(ACCENT_COLOR);
                 panel.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createMatteBorder(0, 3, 0, 0, ACCENT_LIGHT),
+                        BorderFactory.createMatteBorder(0, 3, 0, 0, ACCENT_LIGHT_COLOR),
                         BorderFactory.createEmptyBorder(10, 11, 10, 14)
                 ));
-            } else {
-                panel.setBackground(i % 2 == 0 ? BG_SURFACE : BG_RAISED);
+            }
+            else {
+                panel.setBackground(index % 2 == 0 ? BACKGROUND_SURFACE : BACKGROUND_RAISED);
             }
 
             return panel;
         });
 
-        list.addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                show(list.getSelectedValue());
+        this.ruleList.addListSelectionListener(event -> {
+            if (!event.getValueIsAdjusting()) {
+                this.showRule(this.ruleList.getSelectedValue());
             }
         });
 
-        JScrollPane leftScroll = new JScrollPane(list);
-        leftScroll.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, BORDER));
-        leftScroll.getVerticalScrollBar().setUnitIncrement(16);
-        leftScroll.setBackground(BG_SURFACE);
+        JScrollPane leftScrollPane = new JScrollPane(this.ruleList);
+        leftScrollPane.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, BORDER_COLOR));
+        leftScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        leftScrollPane.setBackground(BACKGROUND_SURFACE);
 
-        detailArea.setEditable(false);
-        detailArea.setBackground(BG_DEEP);
-        detailArea.setForeground(TEXT_PRI);
-        detailArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
-        detailArea.setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
-        detailArea.setLineWrap(true);
-        detailArea.setWrapStyleWord(true);
+        this.detailTextArea.setEditable(false);
+        this.detailTextArea.setBackground(BACKGROUND_DEEP);
+        this.detailTextArea.setForeground(TEXT_PRIMARY_COLOR);
+        this.detailTextArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        this.detailTextArea.setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
+        this.detailTextArea.setLineWrap(true);
+        this.detailTextArea.setWrapStyleWord(true);
 
-        JScrollPane rightScroll = new JScrollPane(detailArea);
-        rightScroll.setBorder(BorderFactory.createEmptyBorder());
-        rightScroll.getVerticalScrollBar().setUnitIncrement(16);
-        rightScroll.setBackground(BG_DEEP);
+        JScrollPane rightScrollPane = new JScrollPane(this.detailTextArea);
+        rightScrollPane.setBorder(BorderFactory.createEmptyBorder());
+        rightScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        rightScrollPane.setBackground(BACKGROUND_DEEP);
 
-        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftScroll, rightScroll);
-        split.setDividerLocation(350);
-        split.setDividerSize(2);
-        split.setBackground(BG_DEEP);
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftScrollPane, rightScrollPane);
+        splitPane.setDividerLocation(350);
+        splitPane.setDividerSize(2);
+        splitPane.setBackground(BACKGROUND_DEEP);
 
-        return split;
+        return splitPane;
     }
 
     private JPanel buildStatusBar() {
-        JPanel p = new JPanel(new BorderLayout());
-        p.setBackground(BG_SURFACE);
-        p.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 0, 0, 0, BORDER),
+        JPanel statusBarPanel = new JPanel(new BorderLayout());
+        statusBarPanel.setBackground(BACKGROUND_SURFACE);
+        statusBarPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, BORDER_COLOR),
                 BorderFactory.createEmptyBorder(6, 16, 6, 16)
         ));
 
-        ruleCountLabel.setForeground(TEXT_SEC);
-        ruleCountLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        this.ruleCountLabel.setForeground(TEXT_SECONDARY_COLOR);
+        this.ruleCountLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
 
-        p.add(ruleCountLabel, BorderLayout.WEST);
+        statusBarPanel.add(this.ruleCountLabel, BorderLayout.WEST);
 
-        return p;
+        return statusBarPanel;
     }
 
     private void updateRuleCount() {
-        int total = allRules.size();
-        int shown = model.size();
+        int total = this.allRules.size();
+        int shown = this.ruleListModel.size();
         if (total == shown) {
-            ruleCountLabel.setText(String.format("%d rules available", total));
-        } else {
-            ruleCountLabel.setText(String.format("Showing %d of %d rules", shown, total));
+            this.ruleCountLabel.setText(String.format("%d rules available", total));
+        }
+        else {
+            this.ruleCountLabel.setText(String.format("Showing %d of %d rules", shown, total));
         }
     }
 
-    private void show(RuleInfo r) {
-        if (r == null) {
-            detailArea.setText("Select a rule to view details");
+    private void showRule(RuleInfo rule) {
+        if (rule == null) {
+            this.detailTextArea.setText("Select a rule to view details");
             return;
         }
 
-        StringBuilder sb = new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder();
 
-        sb.append("Rule: ").append(r.name()).append("\n");
-        if (r.arity() == -1) sb.append("Arity: n").append("\n");
-        else sb.append("Arity: ").append(r.arity()).append("\n");
-        sb.append("\n");
-        sb.append("Derivation:\n");
-        sb.append(formatDerivation(r.example()));
+        stringBuilder.append("Rule: ").append(rule.name()).append("\n");
+        if (rule.arity() == -1) {
+            stringBuilder.append("Arity: n").append("\n");
+        }
+        else {
+            stringBuilder.append("Arity: ").append(rule.arity()).append("\n");
+        }
+        stringBuilder.append("\n");
+        stringBuilder.append("Derivation:\n");
+        stringBuilder.append(this.formatDerivation(rule.example()));
 
-        detailArea.setText(sb.toString());
-        detailArea.setCaretPosition(0);
+        this.detailTextArea.setText(stringBuilder.toString());
+        this.detailTextArea.setCaretPosition(0);
     }
 
     private String formatDerivation(String raw) {
         String[] lines = raw.split("\n");
-        StringBuilder sb = new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder();
 
         for (String line : lines) {
-            if (line.trim().isEmpty()) continue;
+            if (line.trim().isEmpty()) {
+                continue;
+            }
 
             if (line.contains("─") || line.contains("----") || line.matches("^[─\\-]+$")) {
-                sb.append("  ").append("─".repeat(Math.min(line.length(), 40))).append("\n");
-            } else {
-                sb.append("  ").append(line).append("\n");
+                stringBuilder.append("  ").append("─".repeat(Math.min(line.length(), 40))).append("\n");
+            }
+            else {
+                stringBuilder.append("  ").append(line).append("\n");
             }
         }
-        return sb.toString();
+        return stringBuilder.toString();
     }
 
-    private void filter(String text) {
-        String q = text.toLowerCase().trim();
+    private void filterRules(String text) {
+        String query = text.toLowerCase().trim();
 
-        if (q.isEmpty()) {
-            load(allRules);
-        } else {
-            List<RuleInfo> filtered = allRules.stream()
-                    .filter(r ->
-                            r.name().toLowerCase().contains(q) ||
-                                    String.valueOf(r.arity()).contains(q))
+        if (query.isEmpty()) {
+            this.loadRules(this.allRules);
+        }
+        else {
+            List<RuleInfo> filteredRules = this.allRules.stream()
+                    .filter(rule ->
+                            rule.name().toLowerCase().contains(query) ||
+                                    String.valueOf(rule.arity()).contains(query))
                     .collect(Collectors.toList());
-            load(filtered);
+            this.loadRules(filteredRules);
         }
-        updateRuleCount();
+        this.updateRuleCount();
     }
 
-    private void load(List<RuleInfo> rules) {
-        model.clear();
-        rules.forEach(model::addElement);
+    private void loadRules(List<RuleInfo> rules) {
+        this.ruleListModel.clear();
+        rules.forEach(this.ruleListModel::addElement);
     }
 
-    private JButton createStyledButton(String text, Color bg, Color fg) {
-        JButton b = new JButton(text);
-        b.setBackground(bg);
-        b.setForeground(fg);
-        b.setFocusPainted(false);
-        b.setBorderPainted(false);
-        b.setFont(new Font("SansSerif", Font.BOLD, 13));
-        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        b.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
+    private JButton createStyledButton(String text, Color backgroundColor, Color foregroundColor) {
+        JButton button = new JButton(text);
+        button.setBackground(backgroundColor);
+        button.setForeground(foregroundColor);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setFont(new Font("SansSerif", Font.BOLD, 13));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
 
-        b.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                b.setBackground(ACCENT_LIGHT);
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent event) {
+                button.setBackground(ACCENT_LIGHT_COLOR);
             }
 
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                b.setBackground(bg);
+            public void mouseExited(java.awt.event.MouseEvent event) {
+                button.setBackground(backgroundColor);
             }
         });
 
-        return b;
+        return button;
     }
 
-    private void initRules() {
-        addRule("Implication Strategy", 1,
+    private void initializeRules() {
+        this.addRule("Implication Strategy", 1,
                 "Goal: P -> Q\nAssume P\nDerive Q\n----\nP -> Q");
 
-        addRule("Equivalence Strategy", 1,
+        this.addRule("Equivalence Strategy", 1,
                 "Goal: P <-> Q\nProve P -> Q\nProve Q -> P\n----\nP <-> Q");
 
-        addRule("Conjunction Strategy", 1,
+        this.addRule("Conjunction Strategy", 1,
                 "Goal: P AND Q\nProve P\nProve Q\n----\nP AND Q");
 
-        addRule("Disjunction Strategy", 1,
+        this.addRule("Disjunction Strategy", 1,
                 "Goal: P OR Q\nProve P (or Q)\n----\nP OR Q");
 
-        addRule("Negation Strategy", 1,
+        this.addRule("Negation Strategy", 1,
                 "Goal: !P\nAssume P\nDerive contradiction\n----\n!P");
 
-        addRule("Contrapositive Strategy", 1,
+        this.addRule("Contrapositive Strategy", 1,
                 "Goal: P -> Q\nProve !Q -> !P\n----\nP -> Q");
 
-        addRule("Absorption", 1,
+        this.addRule("Absorption", 1,
                 "P AND (P OR Q)\n----\nP");
 
-        addRule("Conjunction Introduction", -1,
+        this.addRule("Conjunction Introduction", -1,
                 "P\nQ\n----\nP AND Q");
 
-        addRule("Conjunction Elimination", 1,
+        this.addRule("Conjunction Elimination", 1,
                 "P AND Q\n----\nP");
 
-        addRule("Constructive Dilemma", 3,
+        this.addRule("Constructive Dilemma", 3,
                 "P -> Q\nR -> S\nP OR R\n----\nQ OR S");
 
-        addRule("Destructive Dilemma", 3,
+        this.addRule("Destructive Dilemma", 3,
                 "P -> Q\nR -> S\n!Q OR !S\n----\n!P OR !R");
 
-        addRule("Disjunction Introduction", -1,
+        this.addRule("Disjunction Introduction", -1,
                 "P\n----\nP OR Q");
 
-        addRule("Disjunction Elimination", 1,
+        this.addRule("Disjunction Elimination", 1,
                 "P OR Q\nP -> R\nQ -> R\n----\nR");
 
-        addRule("Disjunctive Syllogism", 2,
+        this.addRule("Disjunctive Syllogism", 2,
                 "P OR Q\n!P\n----\nQ");
 
-        addRule("Equivalence Introduction", 2,
+        this.addRule("Equivalence Introduction", 2,
                 "P <-> Q\nP\n----\nQ");
 
-        addRule("Equivalence Elimination", 1,
+        this.addRule("Equivalence Elimination", 1,
                 "P <-> Q\n----\nP -> Q");
 
-        addRule("Hypothetical Syllogism", 2,
+        this.addRule("Hypothetical Syllogism", 2,
                 "P -> Q\nQ -> R\n----\nP -> R");
 
-        addRule("Implication Introduction", 2,
+        this.addRule("Implication Introduction", 2,
                 "P -> Q\nP\n----\nQ");
 
-        addRule("Implication Elimination", 1,
+        this.addRule("Implication Elimination", 1,
                 "P -> Q\n----\n!Q -> !P");
 
-        addRule("Modus Ponens", 2,
+        this.addRule("Modus Ponens", 2,
                 "P -> Q\nP\n----\nQ");
 
-        addRule("Modus Tollens", 2,
+        this.addRule("Modus Tollens", 2,
                 "P -> Q\n!Q\n----\n!P");
 
-        addRule("Proof by Cases", 1,
+        this.addRule("Proof by Cases", 1,
                 "P OR Q\nP -> R\nQ -> R\n----\nR");
 
-        addRule("Disjunction Simplification", 1,
+        this.addRule("Disjunction Simplification", 1,
                 "P OR Q\n----\nP");
 
-        addRule("Material Equivalence", 1,
+        this.addRule("Material Equivalence", 1,
                 "P <-> Q\n----\n(P -> Q) AND (Q -> P)");
 
-        addRule("Material Implication", 1,
+        this.addRule("Material Implication", 1,
                 "P -> Q\n----\n!P OR Q");
 
-        addRule("De Morgan", 1,
+        this.addRule("De Morgan", 1,
                 "!(P AND Q)\n----\n!P OR !Q");
 
-        addRule("Transposition", 1,
+        this.addRule("Transposition", 1,
                 "P -> Q\n----\n!Q -> !P");
 
-        addRule("Contradiction", 2,
+        this.addRule("Contradiction", 2,
                 "P\n!P\n----\n⊥");
     }
 
     private void addRule(String name, int arity, String example) {
-        allRules.add(new RuleInfo(name, arity, example));
+        this.allRules.add(new RuleInfo(name, arity, example));
     }
 
     private record RuleInfo(String name, int arity, String example) {}
 
-    private interface SimpleDocListener extends javax.swing.event.DocumentListener {
-        void update(javax.swing.event.DocumentEvent e);
+    private interface SimpleDocumentListener extends javax.swing.event.DocumentListener {
+        void update(javax.swing.event.DocumentEvent event);
 
         @Override
-        default void insertUpdate(javax.swing.event.DocumentEvent e) {
-            update(e);
+        default void insertUpdate(javax.swing.event.DocumentEvent event) {
+            this.update(event);
         }
 
         @Override
-        default void removeUpdate(javax.swing.event.DocumentEvent e) {
-            update(e);
+        default void removeUpdate(javax.swing.event.DocumentEvent event) {
+            this.update(event);
         }
 
         @Override
-        default void changedUpdate(javax.swing.event.DocumentEvent e) {
-            update(e);
+        default void changedUpdate(javax.swing.event.DocumentEvent event) {
+            this.update(event);
         }
     }
 }
-
-/*
-private static class CommandInfo {
-        final String  command;
-        final int     arity;
-        final boolean fixedArity;
-
-        CommandInfo(String command, int arity, boolean fixedArity) {
-            this.command    = command;
-            this.arity      = arity;
-            this.fixedArity = fixedArity;
-        }
-    }
- */

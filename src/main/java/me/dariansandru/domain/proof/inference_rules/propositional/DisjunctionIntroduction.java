@@ -50,7 +50,6 @@ public class DisjunctionIntroduction implements InferenceRule {
                 }
             }
         }
-
         return shouldInference;
     }
 

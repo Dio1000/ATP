@@ -72,14 +72,13 @@ public class EquivalenceIntroduction implements InferenceRule {
         AST left = goal.getSubtree(0);
         AST right = goal.getSubtree(1);
 
-        PropositionalAST implication1 = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getImplicationString() + " " + right, true);
-        PropositionalAST implication2 = new PropositionalAST(right + " " + LogicalOperatorFlyweight.getImplicationString() + " " + left, true);
+        PropositionalAST implication1 = PropositionalLogicHelper.buildFormula((PropositionalAST) left, (PropositionalAST) right, LogicalOperatorFlyweight.getImplicationString());
+        PropositionalAST implication2 = PropositionalLogicHelper.buildFormula((PropositionalAST) right, (PropositionalAST) left, LogicalOperatorFlyweight.getImplicationString());
 
         KnowledgeBaseRegistry.addEntry(goal.toString(), "From " + implication1 + " and " + implication2 + ", by " + name() + ", we derive " + goal, List.of(implication1.toString(), implication2.toString()));
 
         subGoals.add(new SubGoal(implication1, PropositionalInferenceRule.EQUIVALENCE_INTRODUCTION, goal));
         subGoals.add(new SubGoal(implication2, PropositionalInferenceRule.EQUIVALENCE_INTRODUCTION, goal));
-
         return subGoals;
     }
 
@@ -96,9 +95,7 @@ public class EquivalenceIntroduction implements InferenceRule {
 
     public boolean inDerived(AST ast) {
         for (AST derivedAST : derived) {
-            if (ast.isEquivalentTo(derivedAST)) {
-                return true;
-            }
+            if (ast.isEquivalentTo(derivedAST)) return true;
         }
         return false;
     }

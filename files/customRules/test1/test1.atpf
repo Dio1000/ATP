@@ -1,7 +1,0 @@
-rule=TestRule
-a: A
-a: B
-a: C
-c: A AND B AND C
-end
-

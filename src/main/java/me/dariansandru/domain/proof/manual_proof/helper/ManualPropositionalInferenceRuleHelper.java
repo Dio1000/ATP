@@ -4,32 +4,24 @@ import me.dariansandru.domain.language.LogicalOperator;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.language.UniverseOfDiscourse;
-import me.dariansandru.domain.language.signature.PropositionalSignature;
 import me.dariansandru.domain.language.signature.Signature;
 import me.dariansandru.domain.language.signature.SignatureFactory;
-import me.dariansandru.domain.proof.Strategy;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
-import me.dariansandru.parser.Parser;
 import me.dariansandru.parser.command.Command;
 import me.dariansandru.utils.factory.InferenceRulesFactory;
 import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
 import me.dariansandru.utils.helper.ErrorHelper;
 import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
-import me.dariansandru.utils.manual.Manual;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ManualPropositionalInferenceRuleHelper {
 
-    private List<AST> knowledgeBase = new ArrayList<>();
+    private final List<AST> knowledgeBase;
 
     public ManualPropositionalInferenceRuleHelper(List<AST> knowledgeBase) {
-        this.knowledgeBase = knowledgeBase;
-    }
-
-    public void loadData(List<AST> knowledgeBase) {
         this.knowledgeBase = knowledgeBase;
     }
 
@@ -39,7 +31,8 @@ public class ManualPropositionalInferenceRuleHelper {
 
         if (PropositionalLogicHelper.getOutermostOperation(ast1) == LogicalOperator.IMPLICATION) {
             if (canApplyModusPonens(ast1, ast2)) return true;
-        } else if (PropositionalLogicHelper.getOutermostOperation(ast2) == LogicalOperator.IMPLICATION) {
+        }
+        else if (PropositionalLogicHelper.getOutermostOperation(ast2) == LogicalOperator.IMPLICATION) {
             if (canApplyModusPonens(ast2, ast1)) return true;
         }
 
@@ -66,7 +59,8 @@ public class ManualPropositionalInferenceRuleHelper {
 
         if (PropositionalLogicHelper.getOutermostOperation(ast1) == LogicalOperator.IMPLICATION) {
             if (canApplyModusTollens(ast1, ast2)) return true;
-        } else if (PropositionalLogicHelper.getOutermostOperation(ast2) == LogicalOperator.IMPLICATION) {
+        }
+        else if (PropositionalLogicHelper.getOutermostOperation(ast2) == LogicalOperator.IMPLICATION) {
             if (canApplyModusTollens(ast2, ast1)) return true;
         }
 
@@ -105,15 +99,16 @@ public class ManualPropositionalInferenceRuleHelper {
         AST conclusion2 = ast2.getSubtree(1);
 
         if (conclusion1.isEquivalentTo(antecedent2)) {
-            AST newAST = new PropositionalAST(
-                    antecedent1 + " " + LogicalOperatorFlyweight.getImplicationString() + " " + conclusion2, true);
+            AST newAST = new PropositionalAST(antecedent1 + " " + LogicalOperatorFlyweight.getImplicationString() + " " + conclusion2, true);
             KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast1.toString(), ast2.toString()), "Hypothetical Syllogism");
+
             if (!containsEntry(newAST)) knowledgeBase.add(newAST);
             return true;
-        } else if (conclusion2.isEquivalentTo(antecedent1)) {
-            AST newAST = new PropositionalAST(
-                    antecedent2 + " " + LogicalOperatorFlyweight.getImplicationString() + " " + conclusion1, true);
+        }
+        else if (conclusion2.isEquivalentTo(antecedent1)) {
+            AST newAST = new PropositionalAST(antecedent2 + " " + LogicalOperatorFlyweight.getImplicationString() + " " + conclusion1, true);
             KnowledgeBaseRegistry.addObtainedFrom(newAST.toString(), List.of(ast1.toString(), ast2.toString()), "Hypothetical Syllogism");
+
             if (!containsEntry(newAST)) knowledgeBase.add(newAST);
             return true;
         }
@@ -594,7 +589,6 @@ public class ManualPropositionalInferenceRuleHelper {
         for (InferenceRule inferenceRule : inferenceRules) {
             if (inferenceRule.canInference(asts, null)) usableInferenceRules.add(inferenceRule);
         }
-
         return usableInferenceRules;
     }
 }

@@ -25,12 +25,22 @@ public class ContradictionRule implements InferenceRule {
 
     @Override
     public boolean canInference(List<AST> asts, AST goal) {
+        for (int i = 0 ; i < asts.size() ; i++) {
+            for (int j = i + 1 ; j < asts.size() ; j++) {
+                if (isNegationOf(asts.get(i), asts.get(j))) {
+                    derived.add(new PropositionalAST(true));
+                    return true;
+                }
+            }
+        }
         return PropositionalLogicHelper.buildConjunction(asts).isContradiction();
     }
 
     @Override
     public List<AST> inference(List<AST> asts, AST goal) {
-        return derived;
+        derived.clear();
+        if (canInference(asts, goal)) return derived;
+        return new ArrayList<>();
     }
 
     @Override
@@ -39,17 +49,13 @@ public class ContradictionRule implements InferenceRule {
         List<SubGoal> subGoals = new ArrayList<>();
 
         subGoals.addAll(directContradiction(knowledgeBase));
-        subGoals.addAll(implicationContradiction(knowledgeBase));
         subGoals.addAll(conjunctionContradiction(knowledgeBase));
-
         return subGoals;
     }
 
     @Override
     public String getText(SubGoal subGoal) {
-        if (subGoal.getGoal().isEquivalentTo(subGoal.getFormula())) {
-            return "From " + subGoal.getGoal() + " we derive a contradiction";
-        }
+        if (subGoal.getGoal().isEquivalentTo(subGoal.getFormula())) return "From " + subGoal.getGoal() + " we derive a contradiction";
         return "From " + subGoal.getGoal() + " and " + subGoal.getFormula() + ", we derive a contradiction";
     }
 
@@ -60,22 +66,13 @@ public class ContradictionRule implements InferenceRule {
             AST goal = new PropositionalAST(String.valueOf(ast), true);
             goal.negate();
 
-            // FIX: Track the dependency in the Registry
-            KnowledgeBaseRegistry.addEntry(
-                    goal.toString(),
-                    "To derive a contradiction, we attempt to prove " + goal + " since we already have " + ast,
-                    List.of(ast.toString())
-            );
+            KnowledgeBaseRegistry.addEntry(goal.toString(), "To derive a contradiction, we attempt to prove " + goal + " since we already have " + ast,
+                    List.of(ast.toString()));
 
             SubGoal subGoal = new SubGoal(goal, PropositionalInferenceRule.CONTRADICTION, ast);
             subGoals.add(subGoal);
             subGoal.addChild(subGoal);
         }
-        return subGoals;
-    }
-
-    public List<SubGoal> implicationContradiction(List<AST> knowledgeBase) {
-        List<SubGoal> subGoals = new ArrayList<>();
         return subGoals;
     }
 
@@ -91,29 +88,19 @@ public class ContradictionRule implements InferenceRule {
             PropositionalAST left = (PropositionalAST) ast.getSubtree(0);
             PropositionalAST right = (PropositionalAST) ast.getSubtree(1);
 
-            // FIX: Track the dependency in the Registry
-            KnowledgeBaseRegistry.addEntry(
-                    left.toString(),
-                    "To derive a contradiction from " + ast + ", we target " + left,
-                    List.of(ast.toString())
-            );
+            KnowledgeBaseRegistry.addEntry(left.toString(), "To derive a contradiction from " + ast + ", we target " + left,
+                    List.of(ast.toString()));
 
             SubGoal subGoal = new SubGoal(left, PropositionalInferenceRule.CONTRADICTION, ast, List.of(right));
             subGoals.add(subGoal);
         }
 
         for (String atom : atoms) {
-            AST negatedAtom = new PropositionalAST(atom, true);
+            PropositionalAST negatedAtom = new PropositionalAST(atom, true);
             negatedAtom.negate();
 
-            PropositionalAST newSubGoal = new PropositionalAST(atom + " " + LogicalOperatorFlyweight.getConjunctionString() + " " + negatedAtom, true);
-
-            // FIX: Track the dependency in the Registry
-            KnowledgeBaseRegistry.addEntry(
-                    newSubGoal.toString(),
-                    "A direct contradiction requires proving " + newSubGoal,
-                    List.of()
-            );
+            PropositionalAST newSubGoal = PropositionalLogicHelper.buildFormula(new PropositionalAST(atom, true), negatedAtom,  LogicalOperatorFlyweight.getConjunctionString());
+            KnowledgeBaseRegistry.addEntry(newSubGoal.toString(), "A direct contradiction requires proving " + newSubGoal, List.of());
 
             SubGoal subGoal = new SubGoal(newSubGoal, PropositionalInferenceRule.CONTRADICTION, newSubGoal);
             subGoals.add(subGoal);
@@ -121,11 +108,27 @@ public class ContradictionRule implements InferenceRule {
         return subGoals;
     }
 
-    private static PropositionalAST getConjunctionAST(PropositionalAST left, PropositionalAST right) {
-        PropositionalAST implicationLeft = new PropositionalAST(left + " " + LogicalOperatorFlyweight.getImplicationString() + " " + right, true);
-        PropositionalAST implicationRight = new PropositionalAST(right + " " + LogicalOperatorFlyweight.getImplicationString() + " " + left, true);
+    public boolean inDerived(AST ast) {
+        for (AST derivedAST : derived) {
+            if (ast.isEquivalentTo(derivedAST)) return true;
+        }
+        return false;
+    }
 
-        String formula = "(" + implicationLeft + ") " + LogicalOperatorFlyweight.getConjunctionString() + " (" + implicationRight + ")";
-        return new PropositionalAST(formula, true);
+    private boolean isNegationOf(AST first, AST second) {
+        if (first == null || second == null) return false;
+
+        try {
+            PropositionalAST negatedFirst = new PropositionalAST(first.toString(), true);
+            negatedFirst.negate();
+
+            PropositionalAST negatedSecond = new PropositionalAST(second.toString(), true);
+            negatedSecond.negate();
+
+            return first.isEquivalentTo(negatedSecond) || second.isEquivalentTo(negatedFirst);
+        }
+        catch (Exception e) {
+            return false;
+        }
     }
 }

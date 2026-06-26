@@ -13,6 +13,7 @@ import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.data_structures.ast.PropositionalASTNode;
 import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
+import me.dariansandru.utils.global.GlobalTimer;
 import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.Logger;
 import me.dariansandru.utils.helper.ProofTextHelper;
@@ -32,6 +33,7 @@ public class PropositionalProof implements Proof {
     private final List<String> conclusions = new ArrayList<>();
 
     private final List<PropositionalProofState> roots = new ArrayList<>();
+    private PropositionalProofState newRoot;
     private final List<Strategy> strategies;
     private int currentlyUsedStrategy = 0;
     private final PropositionalProofState originalState;
@@ -61,43 +63,58 @@ public class PropositionalProof implements Proof {
     }
 
     public boolean prove() {
-        long startTime = System.nanoTime();
+        GlobalTimer.setStartTime();
 
-        for (int i = 0 ; i < strategies.size() ; i++) roots.add(originalState);
-        for (PropositionalProofState root : roots) {
-            if (isProven) {
-                System.out.println();
+        for (int i = 0; i < strategies.size(); i++) {
+            roots.add(originalState);
+        }
 
-                long endTime = System.nanoTime();
-                long duration = endTime - startTime;
-                double durationMs = duration / 1_000_000.0;
-
-                ProofTextHelper.printWithSymbol("Proof completed in " + durationMs + " ms", "-");
-                isProven = false;
-                root.setUnproven();
-                break;
-            }
-            buildTree(root, 0, strategies.get(currentlyUsedStrategy));
+        for (int i = 0; i < strategies.size(); i++) {
+            PropositionalProofState root = roots.get(i);
+            buildTree(root, 0, strategies.get(i));
             ProofThread proofThread = new ProofThread();
             proofThread.setProofState(root);
             proofThreads.add(proofThread);
-
-            currentlyUsedStrategy++;
         }
-        for (ProofThread proofThread : proofThreads) proofThread.run();
+
+        for (ProofThread proofThread : proofThreads) {
+            proofThread.start();
+        }
+
+        boolean anyProven = false;
+        for (ProofThread proofThread : proofThreads) {
+            try {
+                proofThread.join();
+                if (proofThread.isProven()) {
+                    anyProven = true;
+                }
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        this.isProven = anyProven;
+        GlobalTimer.setEndTime();
+
+        if (this.isProven) {
+            ProofTextHelper.printWithSymbol("Proof completed in " + GlobalTimer.getExecutionTime() + " ms", "-");
+        } else {
+            ProofTextHelper.printWithSymbol("No proof found in " + GlobalTimer.getExecutionTime() + " ms", "-");
+        }
+
         currentlyUsedStrategy = 0;
         proofThreads.clear();
-
         return isProven;
     }
 
     public boolean proveWithoutPrinting() {
         for (int i = 0 ; i < strategies.size() ; i++) roots.add(originalState);
         for (PropositionalProofState root : roots) {
+            newRoot = root;
             if (isProven) continue;
             buildTree(root, 0, strategies.get(currentlyUsedStrategy));
             ProofThread proofThread = new ProofThread();
-            proofThread.setProofState(root);
+            proofThread.setProofState(newRoot);
             proofThreads.add(proofThread);
 
             currentlyUsedStrategy++;
@@ -113,6 +130,16 @@ public class PropositionalProof implements Proof {
         proofThreads.clear();
 
         return isProven;
+    }
+
+    private void resentAndPrint(long startTime, PropositionalProofState state) {
+        long endTime = System.nanoTime();
+        long duration = endTime - startTime;
+        double durationMs = duration / 1_000_000.0;
+
+        ProofTextHelper.printWithSymbol("Proof completed in " + durationMs + " ms", "-");
+        isProven = false;
+        state.setUnproven();
     }
 
     public void buildTree(ProofState state, int indent, Strategy strategy) {
@@ -317,6 +344,7 @@ public class PropositionalProof implements Proof {
         setCurrentStateIndex(newState);
 
         state.addChild(newState);
+        newRoot = newState;
     }
 
     private void NegationStrategy(ProofState state) {
@@ -338,6 +366,7 @@ public class PropositionalProof implements Proof {
         setCurrentStateIndex(newState);
 
         state.addChild(newState);
+        newRoot = newState;
     }
 
     private void ConjunctionStrategy(ProofState state) {
@@ -413,5 +442,13 @@ public class PropositionalProof implements Proof {
     @Override
     public boolean isProven() {
         return isProven;
+    }
+
+    public String getIndentedString() {
+        return this.roots.getFirst().getIndentedProofString();
+    }
+
+    public String getFormalString() {
+        return this.roots.getFirst().getFormalProofString();
     }
 }

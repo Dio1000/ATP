@@ -1,6 +1,0 @@
-name: Contradiction
-commandName: contr
-aliases: Contradiction, Contr, contradiction
-arity: 1
-description: Checks that the arguments provided constitute a contradiction.
-inference:

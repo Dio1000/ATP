@@ -6,10 +6,6 @@ import me.dariansandru.domain.language.predicate.Predicate;
 
 public class Disjunction implements Predicate{
 
-    public Disjunction() {
-
-    }
-
     @Override
     public UniverseOfDiscourse getUniverseOfDiscourse() {
         return UniverseOfDiscourse.PROPOSITIONS;

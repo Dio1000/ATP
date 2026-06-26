@@ -62,17 +62,17 @@ public class LogicController {
         }
         OutputDevice.writeToConsole("Syntax validated!");
 
-        // TRIGGER WARNING! VOODOO
-//        List<AST> voodooKnowledgeBaseAST = new ArrayList<>();
-//        List<AST> voodooGoalAST = new ArrayList<>();
+        // Trivial proof for JVM to start its optimisation, resulting in less 
+        // execution time for further proofs
+//        List<AST> trivialKnowledgeBaseAST = new ArrayList<>();
+//        List<AST> trivialGoalAST = new ArrayList<>();
 //
-//        voodooKnowledgeBaseAST.add(new PropositionalAST("A", true));
-//        voodooGoalAST.add(new PropositionalAST("A", true));
+//        trivialKnowledgeBaseAST.add(new PropositionalAST("A", true));
+//        trivialGoalAST.add(new PropositionalAST("A", true));
 //        GlobalAtomID.addAtomId("A");
 //
-//        PropositionalProof voodooProof = new PropositionalProof(signature, voodooKnowledgeBaseAST, voodooGoalAST);
-//        voodooProof.proveWithoutPrinting();
-        // VOODOO ENDED
+//        PropositionalProof trivialProof = new PropositionalProof(signature, trivialKnowledgeBaseAST, trivialGoalAST);
+//        trivialProof.proveWithoutPrinting();
     }
 
     public void automatedRun() {
@@ -80,9 +80,7 @@ public class LogicController {
         ProofTextHelper.clear();
         OutputDevice.writeToConsole("Starting proof processing...");
 
-        // TODO Logic Controller should be generic
         PropositionalProof proof = new PropositionalProof(signature, knowledgeBaseAST, goalsAST);
-        proof.proveWithoutPrinting();
         proof.prove();
         GlobalAtomID.reset();
     }
@@ -92,13 +90,13 @@ public class LogicController {
         ProofTextHelper.clear();
         OutputDevice.writeToConsole("Starting proof processing...");
 
-        // TODO Logic Controller should be generic
         ManualPropositionalProof proof = new ManualPropositionalProof(knowledgeBaseAST, goalsAST, null, 1);
         ManualPropositionalProofStates.addState(proof, 1);
         proof.prove();
         GlobalAtomID.reset();
     }
 
+    // Design Choice: Keep for future updates, but it is not used to prevent silent or unreadable proofs.
     private boolean cannotBeProven() {
         PropositionalAST ast = (PropositionalAST) PropositionalLogicHelper.buildImplication(knowledgeBaseAST, goalsAST.getFirst());
         ast.buildBDD();

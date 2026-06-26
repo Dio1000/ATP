@@ -57,17 +57,11 @@ public abstract class CommandParser {
             }
             else if (token.type() == Type.IDENTIFIER) {
                 index = parseIdentifier(tokens, index);
-                if (index != tokenSize - 1) {
-                    ErrorHelper.add("Command must end with a ')' separator!");
-                }
+                if (index != tokenSize - 1) ErrorHelper.add("Command must end with a ')' separator!");
             }
-            else {
-                ErrorHelper.add(token.position() + ": Unexpected token at this position!");
-            }
-
+            else ErrorHelper.add(token.position() + ": Unexpected token at this position!");
             index++;
         }
-
         return !ErrorHelper.notEmpty();
     }
     
@@ -107,9 +101,7 @@ public abstract class CommandParser {
                     ErrorHelper.add(token.position() + ": Expected argument before ')'!");
                 }
             }
-            else {
-                ErrorHelper.add(token.position() + ": Unexpected token at this position!");
-            }
+            else ErrorHelper.add(token.position() + ": Unexpected token at this position!");
             index++;
         }
 

@@ -25,13 +25,11 @@ public class ModusTollens implements InferenceRule {
         derived.clear();
 
         for (AST candidate : asts) {
-            if (!(candidate instanceof PropositionalAST pCandidate)) continue;
+            if (!(candidate instanceof PropositionalAST propositionalCandidate)) continue;
+            if (PropositionalLogicHelper.getOutermostOperation(propositionalCandidate) != LogicalOperator.IMPLICATION) continue;
 
-            if (PropositionalLogicHelper.getOutermostOperation(pCandidate) != LogicalOperator.IMPLICATION) continue;
-
-            AST antecedent = pCandidate.getSubtree(0);
-            AST consequent = pCandidate.getSubtree(1);
-
+            AST antecedent = propositionalCandidate.getSubtree(0);
+            AST consequent = propositionalCandidate.getSubtree(1);
             PropositionalAST negatedConsequent = new PropositionalAST(consequent.toString(), true);
             negatedConsequent.negate();
 
@@ -41,11 +39,8 @@ public class ModusTollens implements InferenceRule {
                     negatedAntecedent.negate();
                     if (inDerived(negatedAntecedent)) continue;
 
-                    KnowledgeBaseRegistry.addEntry(
-                            negatedAntecedent.toString(),
-                            "From " + candidate + " and " + other + ", by " + name() + ", we derive " + negatedAntecedent,
-                            List.of(candidate.toString(), other.toString())
-                    );
+                    KnowledgeBaseRegistry.addEntry(negatedAntecedent.toString(), "From " + candidate + " and " + other + ", by " + name() + ", we derive " + negatedAntecedent,
+                            List.of(candidate.toString(), other.toString()));
 
                     derived.add(negatedAntecedent);
                     break;
@@ -74,18 +69,14 @@ public class ModusTollens implements InferenceRule {
             if (PropositionalLogicHelper.getOutermostOperation(ast) == LogicalOperator.IMPLICATION) {
                 PropositionalAST antecedent = (PropositionalAST) ast.getSubtree(0);
                 PropositionalAST consequent = (PropositionalAST) ast.getSubtree(1);
-
                 PropositionalAST negatedConsequent = new PropositionalAST(consequent.toString(), true);
                 negatedConsequent.negate();
 
                 if (negatedConsequent.isEquivalentTo(asts[0])) {
                     PropositionalAST negatedAntecedent = new PropositionalAST(antecedent.toString(), true);
                     negatedAntecedent.negate();
-                    KnowledgeBaseRegistry.addEntry(
-                            negatedAntecedent.toString(),
-                            "From " + ast + " and " + negatedConsequent + ", by " + name() + ", we derive " + negatedAntecedent,
-                            List.of(ast.toString(), negatedConsequent.toString())
-                    );
+                    KnowledgeBaseRegistry.addEntry(negatedAntecedent.toString(), "From " + ast + " and " + negatedConsequent + ", by " + name() + ", we derive " + negatedAntecedent,
+                            List.of(ast.toString(), negatedConsequent.toString()));
 
                     SubGoal newSubGoal = new SubGoal(negatedAntecedent, PropositionalInferenceRule.MODUS_TOLLENS, ast);
                     subGoals.add(newSubGoal);

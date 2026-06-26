@@ -23,6 +23,7 @@ public class Main {
 
         GlobalFlags.getFlags(args);
         final String argument = args[0];
+        GlobalFlags.executionFlag = argument;
 
         switch (argument) {
             case guiString -> {

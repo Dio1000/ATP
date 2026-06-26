@@ -1,7 +1,8 @@
-package me.dariansandru.domain.data_structures;
+package me.dariansandru.domain.data_structures.other;
 
-import me.dariansandru.domain.data_structures.exceptions.BiMapException;
+import me.dariansandru.domain.data_structures.other.exceptions.BiMapException;
 
+import java.security.Key;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,6 +26,10 @@ public class BiMap {
         catch (IllegalStateException e) {
             throw new BiMapException("No such element in Bijective Map!", e);
         }
+    }
+
+    public Object getOrDefault(Object key, Object def) {
+        return map.getOrDefault(key, def);
     }
 
     public boolean has(Object key) {

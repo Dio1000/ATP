@@ -30,10 +30,7 @@ public class PropositionalLogicLoader implements Loader {
                 index++;
                 while (index < lines.size()) {
                     line = lines.get(index).trim();
-
-                    if (line.equals("end")) {
-                        break;
-                    }
+                    if (line.equals("end")) break;
 
                     if (line.startsWith("a:")) {
                         String[] parts = line.split(":", 2);

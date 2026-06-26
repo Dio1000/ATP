@@ -87,11 +87,8 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
             entry.sort(Comparator.comparingInt(AST::getLength));
         }
 
-        // Check all potential entries - no usedEntries tracking
         for (List<AST> entry : potentialEntries) {
-            if (isInferenceRuleApplicable(entry)) {
-                return true;
-            }
+            if (isInferenceRuleApplicable(entry)) return true;
         }
         return false;
     }
@@ -136,9 +133,7 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
         PropositionalASTNode node = (PropositionalASTNode) ast.getRoot();
         for (Direction direction : path.directions()) {
             if (node.getKey() instanceof Predicate predicate) {
-                if (PropositionalLogicHelper.getLogicalOperator(predicate) != direction.operator()) {
-                    return null;
-                }
+                if (PropositionalLogicHelper.getLogicalOperator(predicate) != direction.operator()) return null;
                 node = (PropositionalASTNode) node.getChildren().get(direction.child());
             }
         }
@@ -164,9 +159,7 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
                 if (!(node.getKey() instanceof Predicate predicate)) break;
 
                 LogicalOperator operator = PropositionalLogicHelper.getLogicalOperator(predicate);
-                if (operator != direction.operator()) {
-                    return null;
-                }
+                if (operator != direction.operator()) return null;
 
                 parent = node;
                 childIndex = direction.child();
@@ -177,11 +170,8 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
                 PropositionalAST replacementAST = new PropositionalAST(atomVariableMap.get(atom), true);
                 parent.getChildren().set(childIndex, (PropositionalASTNode) replacementAST.getRoot());
             }
-            else {
-                conclusionAST = new PropositionalAST(atomVariableMap.get(atom), true);
-            }
+            else conclusionAST = new PropositionalAST(atomVariableMap.get(atom), true);
         }
-
         return conclusionAST;
     }
 
@@ -284,10 +274,8 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
         return pathMap;
     }
 
-    private static void collectPathsToAtoms(PropositionalASTNode node,
-                                            List<Direction> currentPath,
-                                            Map<String, Path> pathMap,
-                                            Map<String, Integer> atomCount) {
+    private static void collectPathsToAtoms(PropositionalASTNode node, List<Direction> currentPath,
+                                            Map<String, Path> pathMap, Map<String, Integer> atomCount) {
         if (node == null) return;
 
         if (node.getChildren().isEmpty() && node.getKey() != null) {

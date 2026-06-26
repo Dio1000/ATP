@@ -9,7 +9,6 @@ import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.data_structures.ast.PropositionalASTNode;
 import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,7 +24,8 @@ public abstract class PropositionalLogicHelper {
         PropositionalASTNode node;
         try {
             node = (PropositionalASTNode) ast.getRoot();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             return LogicalOperator.NOT_A_LOGICAL_OPERATOR;
         }
 
@@ -59,12 +59,8 @@ public abstract class PropositionalLogicHelper {
 
     private static void collectAtoms(PropositionalASTNode node, Set<String> atoms) {
         if (node == null || node.getKey() == null) return;
-
         Predicate predicate = (Predicate) node.getKey();
-
-        if (predicate.getArity() == 0) {
-            atoms.add(predicate.getRepresentation());
-        }
+        if (predicate.getArity() == 0) atoms.add(predicate.getRepresentation());
 
         for (ASTNode child : node.getChildren()) {
             collectAtoms((PropositionalASTNode) child, atoms);
@@ -73,49 +69,6 @@ public abstract class PropositionalLogicHelper {
 
     public static int getNArityConstant() {
         return NArityConstant;
-    }
-
-    public static List<AST> getRedundantAntecedents(List<AST> antecedents, AST conclusion) {
-        List<AST> redundantAntecedents = new ArrayList<>();
-        List<List<AST>> antecedentSubsets = getAntecedentSubsets(antecedents);
-
-        for (List<AST> subset : antecedentSubsets) {
-            PropositionalAST ast = (PropositionalAST) buildImplication(subset, conclusion);
-            ast.buildBDD();
-
-            if (ast.getBuilder().isTautology()) {
-                for (AST antecedent : antecedents) {
-                    if (!subsetContains(subset, antecedent) && !redundantAntecedents.contains(antecedent)) {
-                        redundantAntecedents.add(antecedent);
-                    }
-                }
-                return redundantAntecedents;
-            }
-        }
-        return redundantAntecedents;
-    }
-
-    private static boolean subsetContains(List<AST> subset, AST ast) {
-        for (AST element : subset) {
-            if (element.isEquivalentTo(ast)) return true;
-        }
-        return false;
-    }
-
-    private static List<List<AST>> getAntecedentSubsets(List<AST> antecedents) {
-        List<List<AST>> subsets = new ArrayList<>();
-        int antecedentSize = antecedents.size();
-
-        for (int mask = 1; mask < (1 << antecedentSize); mask++) {
-            List<AST> subset = new ArrayList<>();
-            for (int i = 0; i < antecedentSize; i++) {
-                if ((mask & (1 << i)) != 0) {
-                    subset.add(antecedents.get(i));
-                }
-            }
-            subsets.add(subset);
-        }
-        return subsets;
     }
 
     public static AST buildImplication(List<AST> subset, AST conclusion) {
@@ -165,12 +118,9 @@ public abstract class PropositionalLogicHelper {
             if (operator != LogicalOperator.NOT_A_LOGICAL_OPERATOR && operator != LogicalOperator.NEGATION && operator != LogicalOperator.CONJUNCTION) {
                 currentString = "(" + currentString + ")";
             }
-
             builder.append(currentString);
 
-            if (i < asts.size() - 1) {
-                builder.append(" ").append(LogicalOperatorFlyweight.getConjunctionString()).append(" ");
-            }
+            if (i < asts.size() - 1) builder.append(" ").append(LogicalOperatorFlyweight.getConjunctionString()).append(" ");
         }
 
         String formulaString = builder.toString();
@@ -185,18 +135,12 @@ public abstract class PropositionalLogicHelper {
         String left = ast1.toString();
         String right = ast2.toString();
 
-        if (!ast1.isAtomic()
-                && PropositionalLogicHelper.getOutermostOperation(ast1) != LogicalOperator.NEGATION
-                && !(left.startsWith("(") && left.endsWith(")"))) {
+        if (!ast1.isAtomic() && PropositionalLogicHelper.getOutermostOperation(ast1) != LogicalOperator.NEGATION && !(left.startsWith("(") && left.endsWith(")"))) {
             left = "(" + left + ")";
         }
-
-        if (!ast2.isAtomic()
-                && PropositionalLogicHelper.getOutermostOperation(ast2) != LogicalOperator.NEGATION
-                && !(right.startsWith("(") && right.endsWith(")"))) {
+        if (!ast2.isAtomic() && PropositionalLogicHelper.getOutermostOperation(ast2) != LogicalOperator.NEGATION && !(right.startsWith("(") && right.endsWith(")"))) {
             right = "(" + right + ")";
         }
-
         return new PropositionalAST(left + " " + operatorString + " " + right, true);
     }
 }

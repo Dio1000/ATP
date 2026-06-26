@@ -15,6 +15,7 @@ import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.io.OutputDevice;
 import me.dariansandru.utils.global.GlobalFlags;
+import me.dariansandru.utils.global.GlobalTimer;
 import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.ProofTextHelper;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
@@ -69,30 +70,9 @@ public class PropositionalProofState implements ProofState {
     private void categoriseRules(List<InferenceRule> rules) {
         for (InferenceRule rule : rules) {
             String ruleName = rule.name();
-            if (isExpansionRule(ruleName)) {
-                expansionRules.add(rule);
-            } else {
-                derivationRules.add(rule);
-            }
+            if (isExpansionRule(ruleName)) expansionRules.add(rule);
+            else derivationRules.add(rule);
         }
-    }
-
-    private boolean isExpansionRule(String ruleName) {
-        return ruleName.equals("Conjunction Elimination") ||
-                ruleName.equals("Conjunction Introduction") ||
-                ruleName.equals("Disjunction Elimination") ||
-                ruleName.equals("Disjunction Introduction") ||
-                ruleName.equals("Material Implication") ||
-                ruleName.equals("Material Equivalence") ||
-                ruleName.equals("De Morgan") ||
-                ruleName.equals("Transposition") ||
-                ruleName.equals("Proof by Cases") ||
-                ruleName.equals("Disjunction Simplification") ||
-                ruleName.equals("Absorption") ||
-                ruleName.equals("Equivalence Introduction") ||
-                ruleName.equals("Equivalence Elimination") ||
-                ruleName.equals("Implication Introduction") ||
-                ruleName.equals("Implication Simplification");
     }
 
     @Override
@@ -105,8 +85,85 @@ public class PropositionalProofState implements ProofState {
         return goals;
     }
 
+    @Override
     public AST getGoal() {
         return goals.getFirst();
+    }
+
+    @Override
+    public List<InferenceRule> getInferenceRules() {
+        return inferenceRules;
+    }
+
+    @Override
+    public void prove() {
+        GlobalTimer.setStartTime();
+        proofSetup();
+
+        if (!children.isEmpty()) proveChildren();
+        if (isProven) return;
+
+        int expansionPass = 0;
+        int maxExpansionPasses = 4;
+
+        while (!isProven && expansionPass < maxExpansionPasses) {
+            currentConjunctionLevel = ConjunctionIntroduction.LEVEL_ATOMS;
+            levelCompleted = false;
+            boolean changed = applyExpansionRules();
+
+            if (changed) applyDerivationRules();
+            if (containsGoal()) {
+                printProof();
+                this.isProven = true;
+                GlobalTimer.setEndTime();
+                break;
+            }
+            if (goals.getFirst().isContradiction() && containsContradiction()) {
+                printProof();
+                this.isProven = true;
+                GlobalTimer.setEndTime();
+                break;
+            }
+            SubGoal root = new SubGoal(goals.getFirst(), PropositionalInferenceRule.HYPOTHESIS, goals.getFirst());
+            expandSubGoal(root);
+
+            expansionPass++;
+        }
+    }
+
+    private void printProof() {
+        if (!GlobalFlags.executionFlag.equals("automated")) {
+            ProofTextHelper.getProofText(goals.getFirst().toString());
+            ProofTextHelper.buildFormalProof(goals.getFirst().toString());
+            return;
+        }
+
+        OutputDevice.writeToConsole("");
+        if (GlobalFlags.indentedProofFlag) {
+            ProofTextHelper.getProofText(goals.getFirst().toString());
+            ProofTextHelper.print();
+            OutputDevice.writeToConsole("");
+        }
+        if (GlobalFlags.formalProofFlag) {
+            ProofTextHelper.buildFormalProof(goals.getFirst().toString());
+            ProofTextHelper.printFormalProof();
+            OutputDevice.writeToConsole("");
+        }
+        isProven = true;
+    }
+
+    public String getIndentedProofString() {
+        return ProofTextHelper.getProofString();
+    }
+
+    public String getFormalProofString() {
+        return ProofTextHelper.getFormalProofString();
+    }
+
+    @Override
+    public boolean simplify() {
+        if (!(goals.getFirst() instanceof PropositionalAST goal)) return false;
+        return goals.size() != 1 || !goal.isAtomic();
     }
 
     @Override
@@ -125,56 +182,39 @@ public class PropositionalProofState implements ProofState {
     }
 
     @Override
-    public List<InferenceRule> getInferenceRules() {
-        return inferenceRules;
+    public List<ProofState> getChildren() {
+        return children;
     }
 
     @Override
-    public void prove() {
-        proofSetup();
-
-        if (!children.isEmpty()) {
-            proveChildren();
-        }
-        if (isProven) return;
-
-        int expansionPass = 0;
-        int maxExpansionPasses = 4;
-
-        while (!isProven && expansionPass < maxExpansionPasses) {
-            currentConjunctionLevel = ConjunctionIntroduction.LEVEL_ATOMS;
-            levelCompleted = false;
-            boolean changed = applyExpansionRules();
-
-            if (changed) applyDerivationRules();
-            if (containsGoal()) {
-                printProof();
-                break;
-            }
-
-            if (goals.getFirst().isContradiction() && containsContradiction()) {
-                printProof();
-            }
-            SubGoal root = new SubGoal(goals.getFirst(), PropositionalInferenceRule.HYPOTHESIS, goals.getFirst());
-            expandSubGoal(root);
-
-            expansionPass++;
-        }
+    public void addChild(ProofState proofState) {
+        children.add(proofState);
+        proofState.addParent(this);
     }
 
-    private void printProof() {
-        OutputDevice.writeToConsole("");
-        if (GlobalFlags.indentedProofFlag) {
-            ProofTextHelper.getProofText(goals.getFirst().toString());
-            ProofTextHelper.print();
-            OutputDevice.writeToConsole("");
-        }
-        if (GlobalFlags.formalProofFlag) {
-            ProofTextHelper.buildFormalProof(goals.getFirst().toString());
-            ProofTextHelper.printFormalProof();
-            OutputDevice.writeToConsole("");
-        }
-        isProven = true;
+    @Override
+    public ProofState getParent() {
+        return parent;
+    }
+
+    @Override
+    public void addParent(ProofState proofState) {
+        this.parent = proofState;
+    }
+
+    @Override
+    public void setStateIndex(int index) {
+        this.stateIndex = index;
+    }
+
+    @Override
+    public void setProven() {
+        this.isProven = true;
+    }
+
+    @Override
+    public int getStateIndex() {
+        return this.stateIndex;
     }
 
     private boolean applyExpansionRules() {
@@ -287,23 +327,12 @@ public class PropositionalProofState implements ProofState {
     private boolean isAtom(AST ast) {
         if (ast == null) return false;
         String str = ast.toString();
-        return str.matches("^[A-Z][0-9]*$") ||
-                str.equals("Contradiction") ||
-                str.equals("Tautology");
+        return str.matches("^[A-Z][0-9]*$") || str.equals("Contradiction") || str.equals("Tautology");
     }
 
     private boolean isSimpleConjunction(AST ast) {
-        if (!(ast instanceof PropositionalAST pAst)) return false;
-
-        LogicalOperator op = PropositionalLogicHelper.getOutermostOperation(pAst);
-        if (op != LogicalOperator.CONJUNCTION) return false;
-
-        PropositionalASTNode root = (PropositionalASTNode) pAst.getRoot();
-        for (ASTNode child : root.getChildren()) {
-            PropositionalAST childAst = new PropositionalAST((PropositionalASTNode) child);
-            if (!isAtom(childAst)) return false;
-        }
-        return true;
+        ConjunctionIntroduction conjunctionIntroduction = new ConjunctionIntroduction();
+        return conjunctionIntroduction.isSimpleConjunction(ast);
     }
 
     private void applyDerivationRules() {
@@ -317,7 +346,6 @@ public class PropositionalProofState implements ProofState {
                 }
             }
         }
-
     }
 
     private void proofSetup() {
@@ -329,9 +357,11 @@ public class PropositionalProofState implements ProofState {
             }
         }
         for (AST ast : knowledgeBase) {
+            if (KnowledgeBaseRegistry.isStrategy(ast.toString())) continue;
             KnowledgeBaseRegistry.addObtainedFrom(ast.toString(), "Hypothesis");
         }
         for (AST ast : goals) {
+            if (KnowledgeBaseRegistry.isStrategy(ast.toString())) continue;
             KnowledgeBaseRegistry.addObtainedFrom(ast.toString(), "Hypothesis");
         }
     }
@@ -354,7 +384,6 @@ public class PropositionalProofState implements ProofState {
             ProofTextHelper.getProofText(subGoal);
             return;
         }
-        // processGoal(subGoal, subGoal.getGoal());
 
         AST ast = subGoal.getGoal();
         allSubGoals.add(ast);
@@ -421,52 +450,12 @@ public class PropositionalProofState implements ProofState {
         }
     }
 
-    @Override
-    public boolean simplify() {
-        if (!(goals.getFirst() instanceof PropositionalAST goal)) {
-            return false;
-        }
-        return goals.size() != 1 || !goal.isAtomic();
-    }
-
-    @Override
-    public List<ProofState> getChildren() {
-        return children;
-    }
-
-    @Override
-    public void addChild(ProofState proofState) {
-        children.add(proofState);
-        proofState.addParent(this);
-    }
-
-    @Override
-    public ProofState getParent() {
-        return parent;
-    }
-
-    @Override
-    public void addParent(ProofState proofState) {
-        this.parent = proofState;
-    }
-
-    @Override
-    public void setStateIndex(int index) {
-        this.stateIndex = index;
-    }
-
-    @Override
-    public int getStateIndex() {
-        return this.stateIndex;
-    }
-
     public List<Strategy> notifyProof() {
         List<Strategy> strategies = new ArrayList<>();
         if (isProven) return List.of(Strategy.NO_STRATEGY);
         if (expanded) return List.of(Strategy.NO_STRATEGY);
 
         expanded = true;
-
         if (PropositionalLogicHelper.getOutermostOperation(this.goals.getFirst()) == LogicalOperator.NEGATION) {
             this.childrenInConjunction = true;
             strategies.add(Strategy.NEGATION_STRATEGY);
@@ -635,6 +624,24 @@ public class PropositionalProofState implements ProofState {
             }
         }
         return containsConjunctionContradiction();
+    }
+
+    private boolean isExpansionRule(String ruleName) {
+        return ruleName.equals("Conjunction Elimination") ||
+                ruleName.equals("Conjunction Introduction") ||
+                ruleName.equals("Disjunction Elimination") ||
+                ruleName.equals("Disjunction Introduction") ||
+                ruleName.equals("Material Implication") ||
+                ruleName.equals("Material Equivalence") ||
+                ruleName.equals("De Morgan") ||
+                ruleName.equals("Transposition") ||
+                ruleName.equals("Proof by Cases") ||
+                ruleName.equals("Disjunction Simplification") ||
+                ruleName.equals("Absorption") ||
+                ruleName.equals("Equivalence Introduction") ||
+                ruleName.equals("Equivalence Elimination") ||
+                ruleName.equals("Implication Introduction") ||
+                ruleName.equals("Implication Simplification");
     }
 
     public void setUnproven() {

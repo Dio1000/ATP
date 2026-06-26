@@ -20,11 +20,8 @@ public class ManualPropositionalStrategyHelper {
     private final List<ManualPropositionalProof> stateGoals;
     private final List<ManualPropositionalProof> childStates;
 
-    public ManualPropositionalStrategyHelper(
-            List<ManualPropositionalProof> stateGoals,
-            List<ManualPropositionalProof> childStates,
-            List<AST> knowledgeBase,
-            List<AST> goals) {
+    public ManualPropositionalStrategyHelper(List<ManualPropositionalProof> stateGoals, List<ManualPropositionalProof> childStates,
+                                                List<AST> knowledgeBase, List<AST> goals) {
         this.knowledgeBase = knowledgeBase;
         this.goals = goals;
         this.stateGoals = stateGoals;

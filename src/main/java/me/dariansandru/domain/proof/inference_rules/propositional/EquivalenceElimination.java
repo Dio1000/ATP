@@ -87,7 +87,6 @@ public class EquivalenceElimination implements InferenceRule {
     public String getText(SubGoal subGoal) {
         PropositionalAST derivedLeft = (PropositionalAST) subGoal.getFormula().getSubtree(0);
         PropositionalAST derivedRight = (PropositionalAST) subGoal.getFormula().getSubtree(1);
-
         return "From " + subGoal.getFormula() + " and " + subGoal.getGoal() + " by " + name() + ", we conclude " + ((derivedLeft.isEquivalentTo(subGoal.getGoal())) ? derivedRight : derivedLeft);
     }
 

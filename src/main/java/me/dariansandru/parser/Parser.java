@@ -134,7 +134,8 @@ public abstract class Parser {
     public static boolean isValidPath(String path) {
         try {
             Paths.get(path);
-        } catch (InvalidPathException | NullPointerException ex) {
+        }
+        catch (InvalidPathException | NullPointerException ex) {
             return false;
         }
         return true;
@@ -143,9 +144,7 @@ public abstract class Parser {
     public static String getPackageName(List<String> lines) {
         int index = 0;
         while (index < lines.size()) {
-            if (lines.get(index).equals("Rules:")) {
-                return lines.get(index + 1);
-            }
+            if (lines.get(index).equals("Rules:")) return lines.get(index + 1);
             index++;
         }
         return "None";

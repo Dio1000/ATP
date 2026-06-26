@@ -1,7 +1,7 @@
 package me.dariansandru.utils.global;
 
 
-import me.dariansandru.domain.data_structures.BiMap;
+import me.dariansandru.domain.data_structures.other.BiMap;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -23,7 +23,7 @@ public abstract class GlobalAtomID {
         if (atom.equals("Tautology")) return 0;
         else if (atom.equals("Contradiction")) return 1;
 
-        return (Integer) atomIdMap.get(atom);
+        return (Integer) atomIdMap.getOrDefault(atom, -1);
     }
 
     public static void reset() {

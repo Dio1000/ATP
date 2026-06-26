@@ -37,9 +37,12 @@ public class ModusPonens implements InferenceRule {
                     if (inDerived(conclusion)) continue;
 
                     if (other.isSameFormula(antecedent)) {
-                        KnowledgeBaseRegistry.addEntry(conclusion.toString(), "From " + antecedent + " and " + candidate + ", by " + name() + ", we derive " + conclusion, List.of(candidate.toString(), antecedent.toString()));
-                    } else {
-                        KnowledgeBaseRegistry.addEntry(conclusion.toString(), "From " + other + " (which is equivalent to " + antecedent + ") and " + candidate + ", by " + name() + ", we derive " + conclusion, List.of(candidate.toString(), other.toString()));
+                        KnowledgeBaseRegistry.addEntry(conclusion.toString(), "From " + antecedent + " and " + candidate + ", by " + name() + ", we derive " + conclusion,
+                                List.of(candidate.toString(), antecedent.toString()));
+                    }
+                    else {
+                        KnowledgeBaseRegistry.addEntry(conclusion.toString(), "From " + other + " (which is equivalent to " + antecedent + ") and " + candidate + ", by " + name() + ", we derive " + conclusion,
+                                List.of(candidate.toString(), other.toString()));
                     }
 
                     derived.add(conclusion);
@@ -52,7 +55,6 @@ public class ModusPonens implements InferenceRule {
                 derived.add(conclusion);
             }
         }
-
         return !derived.isEmpty();
     }
 

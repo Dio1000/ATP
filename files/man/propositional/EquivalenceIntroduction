@@ -1,6 +1,0 @@
-name: Equivalence Introduction
-commandName: eqintro
-aliases: EquivalenceIntroduction
-arity: 2
-description: If P -> Q and Q -> P are true, then P <-> Q is also true.
-inference: P -> Q, Q -> P; P <-> Q

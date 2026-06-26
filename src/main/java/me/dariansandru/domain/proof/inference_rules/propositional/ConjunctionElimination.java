@@ -42,7 +42,6 @@ public class ConjunctionElimination implements InferenceRule {
                 if (inDerived(left)) continue;
 
                 KnowledgeBaseRegistry.addEntry(left.toString(), "From " + ast + ", by " + name() + ", we derive " + left, List.of(ast.toString()));
-
                 derived.add(left);
                 shouldInference = true;
             }
@@ -51,7 +50,6 @@ public class ConjunctionElimination implements InferenceRule {
                 if (inDerived(right)) continue;
 
                 KnowledgeBaseRegistry.addEntry(right.toString(), "From " + ast + ", by " + name() + ", we derive " + right, List.of(ast.toString()));
-
                 derived.add(right);
                 shouldInference = true;
             }

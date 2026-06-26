@@ -43,7 +43,6 @@ public class PropositionalBDDBuilder {
         atomStringList.addAll(atomList);
 
         this.root = new PropositionalBDDNode(new PropositionalAST(atomList.getFirst(), true, 0));
-
         nodeCount = 1;
         buildRecursive(root);
 
@@ -69,10 +68,9 @@ public class PropositionalBDDBuilder {
 
         truthValueListTrue.set(depth, 1);
         truthValueListFalse.set(depth, 0);
-        PropositionalPartialInterpretation partialInterpretationTrue =
-                new PropositionalPartialInterpretation(atomStringList, truthValueListTrue);
-        PropositionalPartialInterpretation partialInterpretationFalse =
-                new PropositionalPartialInterpretation(atomStringList, truthValueListFalse);
+
+        PropositionalPartialInterpretation partialInterpretationTrue = new PropositionalPartialInterpretation(atomStringList, truthValueListTrue);
+        PropositionalPartialInterpretation partialInterpretationFalse = new PropositionalPartialInterpretation(atomStringList, truthValueListFalse);
 
         PropositionalAST astLeft = ast.evaluatePartial(partialInterpretationTrue);
         PropositionalAST astRight = ast.evaluatePartial(partialInterpretationFalse);
@@ -129,7 +127,6 @@ public class PropositionalBDDBuilder {
 
         index++;
         uniqueArrayRepresentation[index] = node.getUniqueIntegerRepresentation();
-
         buildArrayRecursive(node.getLeft());
         buildArrayRecursive(node.getRight());
     }
@@ -151,13 +148,11 @@ public class PropositionalBDDBuilder {
     }
 
     public boolean isTautology() {
-        return this.getRoot().getRight().getValue().isTautology()
-                && this.getRoot().getLeft().getValue().isTautology();
+        return this.getRoot().getRight().getValue().isTautology() && this.getRoot().getLeft().getValue().isTautology();
     }
 
     public boolean isContradiction() {
-        return this.getRoot().getRight().getValue().isContradiction()
-                && this.getRoot().getLeft().getValue().isContradiction();
+        return this.getRoot().getRight().getValue().isContradiction() && this.getRoot().getLeft().getValue().isContradiction();
     }
 
     @Override
@@ -176,7 +171,6 @@ public class PropositionalBDDBuilder {
         for (int i = 0; i <= length1; i++) {
             if (array1[i] != array2[i]) return false;
         }
-
         return true;
     }
 

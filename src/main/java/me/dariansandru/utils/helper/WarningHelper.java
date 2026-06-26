@@ -1,5 +1,7 @@
 package me.dariansandru.utils.helper;
 
+import me.dariansandru.io.OutputDevice;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,18 +32,17 @@ public abstract class WarningHelper {
     public static void print() {
         if (size == 0) return;
 
-        System.out.println("Warnings detected: " + size);
+        OutputDevice.writeToConsole("Warnings detected: " + size);
         int index = 1;
 
         while (index <= size) {
-            System.out.println(index + ". " + warnings.get(index - 1));
+            OutputDevice.writeToConsole(index + ". " + warnings.get(index - 1));
             index++;
         }
     }
 
     public static void printAndReset() {
         print();
-
         warnings.clear();
         size = 0;
     }

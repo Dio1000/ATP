@@ -6,6 +6,10 @@ import me.dariansandru.domain.data_structures.ast.AST;
 
 import java.util.List;
 
+/*
+This rule is actually Modus Ponens, but it is not removed at the moment because
+of dependency reasons.
+ */
 public class ImplicationElimination implements InferenceRule {
 
     @Override

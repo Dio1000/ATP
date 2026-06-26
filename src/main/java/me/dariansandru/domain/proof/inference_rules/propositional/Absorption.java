@@ -41,9 +41,7 @@ public class Absorption implements InferenceRule {
                 if (astRight.isEquivalentTo(goalConjunctionLeft) || astRight.isEquivalentTo(goalConjunctionRight)) {
                     if (inDerived(goal)) continue;
 
-                    // FIX: Added proper KnowledgeBaseRegistry tracking
                     KnowledgeBaseRegistry.addEntry(goal.toString(), "From " + ast + ", by " + name() + ", we derive " + goal, List.of(ast.toString()));
-
                     derived.add(goal);
                     shouldInference = true;
                 }

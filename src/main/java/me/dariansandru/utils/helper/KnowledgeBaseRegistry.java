@@ -5,9 +5,9 @@ import java.util.*;
 public abstract class KnowledgeBaseRegistry {
 
     private static final Map<String, String> entryStringMap = new HashMap<>();
-    private static final Map<String, Boolean> entryIsUsedMap = new HashMap<>();
     private static final Map<String, List<String>> entryFromMap = new HashMap<>();
     private static final Map<String, String> entryChildMap = new HashMap<>();
+    private static final Map<String, Boolean> entryIsStrategy = new HashMap<>();
 
     private static final Map<String, List<String>> entryObtainedMap = new HashMap<>();
     private static final Map<String, String> entryRuleMap = new HashMap<>();
@@ -30,6 +30,7 @@ public abstract class KnowledgeBaseRegistry {
 
         if (origin.startsWith("Strategy:")) {
             addObtainedFrom(formula, from, origin);
+            entryIsStrategy.put(formula, true);
             return;
         }
 
@@ -103,17 +104,7 @@ public abstract class KnowledgeBaseRegistry {
         return entryStringMap.getOrDefault(formula, "");
     }
 
-    public static void setUsed(String formula) {
-        if (entryIsUsedMap.getOrDefault(formula, false)) return;
-        entryIsUsedMap.put(formula, true);
-    }
-
-    public static void setUnused(String formula) {
-        if (!entryIsUsedMap.getOrDefault(formula, true)) return;
-        entryIsUsedMap.put(formula, false);
-    }
-
-    public static boolean isUsed(String formula) {
-        return entryIsUsedMap.getOrDefault(formula, false);
+    public static boolean isStrategy(String formula) {
+        return entryIsStrategy.getOrDefault(formula, false);
     }
 }

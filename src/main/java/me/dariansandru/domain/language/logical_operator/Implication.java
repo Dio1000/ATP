@@ -6,10 +6,6 @@ import me.dariansandru.domain.language.predicate.Predicate;
 
 public class Implication implements Predicate {
 
-    public Implication() {
-
-    }
-
     @Override
     public UniverseOfDiscourse getUniverseOfDiscourse() {
         return UniverseOfDiscourse.PROPOSITIONS;

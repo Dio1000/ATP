@@ -6,10 +6,6 @@ import me.dariansandru.domain.language.predicate.Predicate;
 
 public class Negation implements Predicate {
 
-    public Negation() {
-
-    }
-
     @Override
     public UniverseOfDiscourse getUniverseOfDiscourse() {
         return UniverseOfDiscourse.PROPOSITIONS;

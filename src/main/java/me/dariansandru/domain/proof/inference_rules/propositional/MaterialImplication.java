@@ -34,14 +34,12 @@ public class MaterialImplication implements InferenceRule {
                 PropositionalAST newAST = PropositionalLogicHelper.buildFormula(left, right, LogicalOperatorFlyweight.getDisjunctionString());
                 if (inDerived(newAST)) continue;
 
-                // FIX: Standardized spacing
                 KnowledgeBaseRegistry.addEntry(newAST.toString(), "From " + ast + ", by " + name() + ", we derive " + newAST, List.of(ast.toString()));
 
                 derived.add(newAST);
                 shouldInference = true;
             }
         }
-
         return shouldInference;
     }
 

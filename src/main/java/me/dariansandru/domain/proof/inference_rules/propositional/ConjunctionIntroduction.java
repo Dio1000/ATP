@@ -18,6 +18,7 @@ public class ConjunctionIntroduction implements InferenceRule {
     private final List<AST> derived = new ArrayList<>();
     private final Set<String> usedCombinations = new HashSet<>();
     private final Set<String> derivedStrings = new HashSet<>();
+    private final Set<String> existingFormulas = new HashSet<>();
 
     public static final int LEVEL_ATOMS = 0;
     public static final int LEVEL_SIMPLE_CONJUNCTIONS = 1;
@@ -40,27 +41,25 @@ public class ConjunctionIntroduction implements InferenceRule {
         allAtoms.clear();
         atomFormulas.clear();
         simpleConjunctionFormulas.clear();
+        existingFormulas.clear();
 
         for (AST ast : asts) {
+            existingFormulas.add(ast.toString());
             allAtoms.addAll(PropositionalLogicHelper.getAtoms(ast));
         }
 
         for (AST ast : asts) {
-            if (isAtom(ast)) {
-                atomFormulas.add(ast);
-            }
-            else if (isSimpleConjunction(ast)) {
-                simpleConjunctionFormulas.add(ast);
-            }
+            if (isAtom(ast)) atomFormulas.add(ast);
+            else if (isSimpleConjunction(ast)) simpleConjunctionFormulas.add(ast);
         }
 
         Set<String> seenAtoms = new HashSet<>();
         List<AST> uniqueAtoms = new ArrayList<>();
         for (AST ast : atomFormulas) {
-            String str = ast.toString();
-            if (!seenAtoms.contains(str)) {
+            String string = ast.toString();
+            if (!seenAtoms.contains(string)) {
                 uniqueAtoms.add(ast);
-                seenAtoms.add(str);
+                seenAtoms.add(string);
             }
         }
         atomFormulas = uniqueAtoms;
@@ -68,48 +67,37 @@ public class ConjunctionIntroduction implements InferenceRule {
         Set<String> seenSimple = new HashSet<>();
         List<AST> uniqueSimple = new ArrayList<>();
         for (AST ast : simpleConjunctionFormulas) {
-            String str = ast.toString();
-            if (!seenSimple.contains(str)) {
+            String string = ast.toString();
+            if (!seenSimple.contains(string)) {
                 uniqueSimple.add(ast);
-                seenSimple.add(str);
+                seenSimple.add(string);
             }
         }
         simpleConjunctionFormulas = uniqueSimple;
 
-        Set<String> goalAtoms = goal != null ? PropositionalLogicHelper.getAtoms(goal) : new HashSet<>();
-
-        if (!atomFormulas.isEmpty()) {
-            combineFormulas(atomFormulas, goalAtoms);
-        }
-        if (!derived.isEmpty()) {
-            return true;
-        }
+        if (!atomFormulas.isEmpty()) combineFormulas(atomFormulas);
+        if (!derived.isEmpty()) return true;
 
         if (!simpleConjunctionFormulas.isEmpty()) {
             List<AST> combined = new ArrayList<>();
             combined.addAll(atomFormulas);
             combined.addAll(simpleConjunctionFormulas);
-            combineFormulas(combined, goalAtoms);
+            combineFormulas(combined);
         }
+        if (!derived.isEmpty()) return true;
 
-        if (!derived.isEmpty()) {
-            return true;
-        }
-        combineFormulas(asts, goalAtoms);
-
+        combineFormulas(asts);
         return !derived.isEmpty();
     }
 
     private boolean isAtom(AST ast) {
         if (ast == null) return false;
-        String str = ast.toString();
-        return str.matches("^[A-Z][0-9]*$") ||
-                str.equals("Contradiction") ||
-                str.equals("Tautology");
+        String string = ast.toString();
+        return string.matches("^[A-Z][0-9]*$") || string.equals("Contradiction") || string.equals("Tautology");
     }
 
-    private boolean isSimpleConjunction(AST ast) {
-        if (ast == null || !(ast instanceof PropositionalAST pAst)) return false;
+    public boolean isSimpleConjunction(AST ast) {
+        if (!(ast instanceof PropositionalAST pAst)) return false;
 
         LogicalOperator op = PropositionalLogicHelper.getOutermostOperation(pAst);
         if (op != LogicalOperator.CONJUNCTION) return false;
@@ -122,44 +110,28 @@ public class ConjunctionIntroduction implements InferenceRule {
         return true;
     }
 
-    private void combineFormulas(List<AST> formulas, Set<String> goalAtoms) {
+    private void combineFormulas(List<AST> formulas) {
         for (int i = 0; i < formulas.size(); i++) {
             for (int j = 0; j < formulas.size(); j++) {
                 if (i == j) continue;
 
                 AST first = formulas.get(i);
                 AST second = formulas.get(j);
-
                 if (isRedundantConjunction(first, second)) continue;
 
                 String combinationKey = generateCombinationKey(first, second);
                 if (usedCombinations.contains(combinationKey)) continue;
 
-                if (!goalAtoms.isEmpty()) {
-                    Set<String> firstAtoms = PropositionalLogicHelper.getAtoms(first);
-                    Set<String> secondAtoms = PropositionalLogicHelper.getAtoms(second);
-                    boolean firstRelevant = firstAtoms.stream().anyMatch(goalAtoms::contains);
-                    boolean secondRelevant = secondAtoms.stream().anyMatch(goalAtoms::contains);
-                    if (!firstRelevant && !secondRelevant) continue;
-                }
+                PropositionalAST conjunction = PropositionalLogicHelper.buildFormula((PropositionalAST) first, (PropositionalAST) second,
+                        LogicalOperatorFlyweight.getConjunctionString());
+                String conjunctionString = conjunction.toString();
 
-                PropositionalAST conjunction = PropositionalLogicHelper.buildFormula(
-                        (PropositionalAST) first,
-                        (PropositionalAST) second,
-                        LogicalOperatorFlyweight.getConjunctionString()
-                );
-
-                String conjStr = conjunction.toString();
-                if (derivedStrings.contains(conjStr)) continue;
-
-                KnowledgeBaseRegistry.addEntry(
-                        conjStr,
-                        "From " + first + " and " + second + ", by " + name() + ", we derive " + conjunction,
-                        List.of(first.toString(), second.toString())
-                );
+                if (existingFormulas.contains(conjunctionString) || derivedStrings.contains(conjunctionString)) continue;
+                KnowledgeBaseRegistry.addEntry(conjunctionString, "From " + first + " and " + second + ", by " + name() + ", we derive " + conjunction,
+                        List.of(first.toString(), second.toString()));
 
                 derived.add(conjunction);
-                derivedStrings.add(conjStr);
+                derivedStrings.add(conjunctionString);
                 usedCombinations.add(combinationKey);
             }
         }
@@ -198,20 +170,17 @@ public class ConjunctionIntroduction implements InferenceRule {
         if (asts.length != 1) return List.of();
 
         AST goal = asts[0];
-        if (!(goal instanceof PropositionalAST pGoal)) return List.of();
+        if (!(goal instanceof PropositionalAST propositionalGoal)) return List.of();
 
-        LogicalOperator outermostOp = PropositionalLogicHelper.getOutermostOperation(pGoal);
-        if (!Objects.equals(outermostOp.toString(), LogicalOperatorFlyweight.getConjunctionString())) {
-            return List.of();
-        }
+        LogicalOperator outermostOperation = PropositionalLogicHelper.getOutermostOperation(propositionalGoal);
+        if (!Objects.equals(outermostOperation.toString(), LogicalOperatorFlyweight.getConjunctionString())) return List.of();
 
         List<SubGoal> subGoals = new ArrayList<>();
-        AST left = pGoal.getSubtree(0);
-        AST right = pGoal.getSubtree(1);
+        AST left = propositionalGoal.getSubtree(0);
+        AST right = propositionalGoal.getSubtree(1);
 
         subGoals.add(new SubGoal(left, PropositionalInferenceRule.CONJUNCTION_INTRODUCTION, goal));
         subGoals.add(new SubGoal(right, PropositionalInferenceRule.CONJUNCTION_INTRODUCTION, goal));
-
         return subGoals;
     }
 
@@ -221,13 +190,6 @@ public class ConjunctionIntroduction implements InferenceRule {
     }
 
     private String generateCombinationKey(AST first, AST second) {
-        String s1 = first.toString();
-        String s2 = second.toString();
-        if (s1.compareTo(s2) <= 0) {
-            return s1 + "|" + s2;
-        }
-        else {
-            return s2 + "|" + s1;
-        }
+        return first.toString() + "|" + second.toString();
     }
 }

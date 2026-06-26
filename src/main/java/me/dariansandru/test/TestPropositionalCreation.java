@@ -160,16 +160,14 @@ public abstract class TestPropositionalCreation {
             }
         }
 
-        if (failed.isEmpty()) {
-            OutputDevice.writeToConsole("All tests passed!");
-        }
+        if (failed.isEmpty()) OutputDevice.writeToConsole("All tests passed!");
         else {
             OutputDevice.writeToConsole(passed + " out of " + totalTests + " passed!");
             OutputDevice.writeToConsole("");
 
             OutputDevice.writeToConsole("FAILED TESTS:");
-            for (String f : failed) {
-                OutputDevice.writeToConsole(f);
+            for (String fail : failed) {
+                OutputDevice.writeToConsole(fail);
             }
         }
     }

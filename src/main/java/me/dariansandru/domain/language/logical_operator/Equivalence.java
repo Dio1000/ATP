@@ -6,10 +6,6 @@ import me.dariansandru.domain.language.predicate.Predicate;
 
 public class Equivalence implements Predicate {
 
-    public Equivalence() {
-
-    }
-
     @Override
     public UniverseOfDiscourse getUniverseOfDiscourse() {
         return UniverseOfDiscourse.PROPOSITIONS;
