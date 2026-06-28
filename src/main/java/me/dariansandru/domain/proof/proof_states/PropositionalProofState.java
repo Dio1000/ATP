@@ -477,9 +477,22 @@ public class PropositionalProofState implements ProofState {
 
         boolean isAutomated = "automated".equals(GlobalFlags.executionFlag) || "automate".equals(GlobalFlags.executionFlag);
 
+        ProofTextHelper.getProofText(goals.getFirst().toString());
+        ProofTextHelper.buildFormalProof(goals.getFirst().toString());
+
+        if (!ProofTextHelper.hasAssumptions()) {
+            ProofTextHelper.addAssumptionStep("To prove " + goals.getFirst().toString() + ", we apply automated derivation:", 0);
+        }
+        if (!ProofTextHelper.hasConclusions()) {
+            ProofTextHelper.addConclusionStep(ProofTextHelper.getConclusion(goals.getFirst().toString()), 0);
+        }
+
+        boolean wasConsoleEnabled = GlobalFlags.outputToConsole;
+        GlobalFlags.outputToConsole = false;
+        ProofTextHelper.print(); 
+        GlobalFlags.outputToConsole = wasConsoleEnabled;
+
         if (!isAutomated) {
-            ProofTextHelper.getProofText(goals.getFirst().toString());
-            ProofTextHelper.buildFormalProof(goals.getFirst().toString());
             GlobalTimer.setProofEndTime();
             return;
         }
@@ -488,8 +501,7 @@ public class PropositionalProofState implements ProofState {
         StringBuilder fileOutput = new StringBuilder();
 
         if (GlobalFlags.indentedProofFlag) {
-            ProofTextHelper.getProofText(goals.getFirst().toString());
-            ProofTextHelper.print();
+            if (GlobalFlags.outputToConsole) OutputDevice.writeToConsole(ProofTextHelper.getProofString());
             if (GlobalFlags.outputToConsole) OutputDevice.writeToConsole("");
 
             fileOutput.append("--- INDENTED PROOF ---\n\n");
@@ -497,8 +509,7 @@ public class PropositionalProofState implements ProofState {
         }
 
         if (GlobalFlags.formalProofFlag) {
-            ProofTextHelper.buildFormalProof(goals.getFirst().toString());
-            ProofTextHelper.printFormalProof();
+            if (GlobalFlags.outputToConsole) ProofTextHelper.printFormalProof();
             if (GlobalFlags.outputToConsole) OutputDevice.writeToConsole("");
 
             fileOutput.append("--- FORMAL PROOF ---\n\n");

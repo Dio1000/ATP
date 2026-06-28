@@ -21,27 +21,34 @@ public abstract class ProofTextHelper {
     private static final List<ProofStep> assumptionSteps = new ArrayList<>();
     private static final List<ProofStep> conclusionSteps = new ArrayList<>();
     private static final List<List<ProofStep>> proofSteps = new ArrayList<>();
-    private static int rightMostIndent = 0;
 
     private static final List<String> formalProofSteps = new ArrayList<>();
     private static final Map<String, Integer> formalStepMap = new HashMap<>();
 
+    private static final Map<String, Integer> formulaDepths = new HashMap<>();
+
+    public static boolean hasAssumptions() {
+        return !assumptionSteps.isEmpty();
+    }
+
+    public static boolean hasConclusions() {
+        return !conclusionSteps.isEmpty();
+    }
+
     public static void addAssumptionStep(String step, int indent) {
-        ProofStep newStep = new ProofStep(step, indent);
+        ProofStep newStep = new ProofStep(step, 0);
         assumptionSteps.add(newStep);
-        if (indent >= rightMostIndent) rightMostIndent = indent + 1;
     }
 
     public static void addConclusionStep(String step, int indent) {
-        ProofStep newStep = new ProofStep(step, indent);
+        ProofStep newStep = new ProofStep(step, -1);
         conclusionSteps.add(newStep);
-        if (indent >= rightMostIndent) rightMostIndent = indent + 1;
     }
 
     public static void getProofText(String formula) {
         List<ProofStep> proofText = new ArrayList<>();
         Set<String> visited = new HashSet<>();
-        addDerivationSteps(formula, rightMostIndent, proofText, visited);
+        addDerivationSteps(formula, proofText, visited);
         addPRoofStep(proofText);
         buildFormalProof(formula);
     }
@@ -49,7 +56,7 @@ public abstract class ProofTextHelper {
     public static void getProofText(SubGoal subGoal) {
         List<ProofStep> proofText = new ArrayList<>();
         Set<String> visited = new HashSet<>();
-        addDerivationSteps(subGoal.getGoal().toString(), rightMostIndent, proofText, visited);
+        addDerivationSteps(subGoal.getGoal().toString(), proofText, visited);
         addPRoofStep(proofText);
         buildFormalProof(subGoal.getGoal().toString());
     }
@@ -69,7 +76,7 @@ public abstract class ProofTextHelper {
         List<ProofStep> proofText = new ArrayList<>();
         Set<String> visited = new HashSet<>();
 
-        addDerivationSteps("Contradiction", rightMostIndent, proofText, visited);
+        addDerivationSteps("Contradiction", proofText, visited);
         addPRoofStep(proofText);
 
         buildFormalProof("Contradiction");
@@ -88,57 +95,59 @@ public abstract class ProofTextHelper {
     }
 
     public static void print() {
-        int minIndent = Integer.MAX_VALUE;
-        int maxIndent = Integer.MIN_VALUE;
-
         List<ProofStep> allProofSteps = new ArrayList<>();
         for (List<ProofStep> proof : proofSteps) {
             allProofSteps.addAll(proof);
         }
 
-        for (ProofStep step : allProofSteps) {
-            minIndent = Math.min(minIndent, step.indent());
-            maxIndent = Math.max(maxIndent, step.indent());
-        }
         fullProof.clear();
 
         for (ProofStep step : assumptionSteps) {
-            if (GlobalFlags.outputToConsole) OutputDevice.writeIndentedToConsole(step.text(), step.indent());
-            fullProof.add(step);
+            if (GlobalFlags.outputToConsole) OutputDevice.writeIndentedToConsole(step.text(), 0);
+            fullProof.add(new ProofStep(step.text(), 0));
         }
-
         for (ProofStep step : allProofSteps) {
-            int transformedIndent = (maxIndent - step.indent()) + minIndent;
+            int transformedIndent = step.indent() + 1;
+
             if (GlobalFlags.outputToConsole) OutputDevice.writeIndentedToConsole(step.text(), transformedIndent);
             fullProof.add(new ProofStep(step.text(), transformedIndent));
         }
         for (ProofStep step : conclusionSteps) {
-            if (GlobalFlags.outputToConsole) OutputDevice.writeIndentedToConsole(step.text(), step.indent());
-            fullProof.add(step);
+            if (GlobalFlags.outputToConsole) OutputDevice.writeIndentedToConsole(step.text(), 0);
+            fullProof.add(new ProofStep(step.text(), 0));
         }
     }
 
-    private static void addDerivationSteps(String formula, int indent, List<ProofStep> proofText, Set<String> visited) {
-        if (visited.contains(formula)) return;
+    private static int addDerivationSteps(String formula, List<ProofStep> proofText, Set<String> visited) {
+        if (visited.contains(formula)) {
+            return formulaDepths.getOrDefault(formula, 0);
+        }
         visited.add(formula);
 
-        String ruleText = KnowledgeBaseRegistry.getString(formula);
+        int maxParentDepth = -1;
         List<String> parents = KnowledgeBaseRegistry.from(formula);
 
         if (parents != null && !parents.isEmpty()) {
             for (String parent : parents) {
-                addDerivationSteps(parent, indent + 1, proofText, visited);
+                int pDepth = addDerivationSteps(parent, proofText, visited);
+                maxParentDepth = Math.max(maxParentDepth, pDepth);
             }
         }
 
+        int myDepth = maxParentDepth + 1;
+        formulaDepths.put(formula, myDepth);
+
+        String ruleText = KnowledgeBaseRegistry.getString(formula);
+
         if (ruleText != null && !ruleText.isEmpty() && !ruleText.equals("Hypothesis")) {
-            proofText.add(new ProofStep(ruleText, indent));
+            proofText.add(new ProofStep(ruleText, myDepth));
         }
         else if (parents == null || parents.isEmpty()) {
             if (!formula.equals("Contradiction") && !formula.contains("->") && !formula.contains("<->") && !formula.contains("AND") && !formula.contains("OR")) {
-                proofText.add(new ProofStep("We derive " + formula + " from the Knowledge Base", indent));
+                proofText.add(new ProofStep("We derive " + formula + " from the Knowledge Base", myDepth));
             }
         }
+        return myDepth;
     }
 
     public static String getConclusion(String conclusion) {
@@ -230,9 +239,9 @@ public abstract class ProofTextHelper {
         assumptionSteps.clear();
         conclusionSteps.clear();
         proofSteps.clear();
-        rightMostIndent = 0;
         formalProofSteps.clear();
         formalStepMap.clear();
+        formulaDepths.clear();
     }
 
     private static void getFormalStepsChronological(String formula, List<String> chronological, Set<String> visited) {

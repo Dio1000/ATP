@@ -1004,10 +1004,11 @@ public class GUIControllerActions {
                     currentGoals
             );
 
-            boolean result = automatedProof.proveWithoutPrinting();
+            boolean result = automatedProof.prove();
 
             if (result) {
                 this.controller.setCachedFormalProof(automatedProof.getFormalString());
+                System.out.println(automatedProof.getIndentedString());
                 this.controller.setCachedIndentedProof(automatedProof.getIndentedString());
                 this.controller.setShowingFormal(true);
 
