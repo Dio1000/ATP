@@ -32,6 +32,34 @@ process.
 -   JDK 17 or newer
 -   Apache Maven 3.8+
 
+### Installing Java (JDK)
+
+**Ubuntu / Debian:**
+
+```bash
+sudo apt update
+sudo apt install openjdk-17-jdk
+```
+**macOS (Homebrew):**
+
+```bash
+brew install openjdk@17
+```
+
+### Installing Maven
+
+**Ubuntu / Debian:**
+
+```bash
+sudo apt update
+sudo apt install maven
+```
+**macOS (Homebrew):**
+
+```bash
+brew install maven
+```
+
 Verify:
 
 ``` bash
