@@ -130,9 +130,22 @@ After packaging, Maven creates the `target/` directory automatically.
 
 ### GUI
 
-``` bash
+This is the recommended way to use the theorem prover, as it provides the full interactive experience with real-time feedback and visual proof state tracking.
+
+```bash
 java -jar target/theorem-prover.jar gui
 ```
+**Main Interface:**
+
+The main workbench provides access to the Knowledge Base, Goals, applicable inference rules, proof state, and automated proof output.
+
+![Main Interface](images/Main.png)
+
+**Rule Editor:**
+
+The Custom Rule Editor allows you to create, validate, and manage your own inference rules without modifying the source code.
+
+![Rule Editor](images/Rule.png)
 
 ### Automated CLI
 
