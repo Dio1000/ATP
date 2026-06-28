@@ -5,6 +5,8 @@ purposes in the field of Propositional Logic. It bridges the gap between
 manual, step-by-step proof construction and fully automated proof
 search.
 
+![Main Interface](images/Main.png)
+
 ## Features
 
 -   **Hybrid Reasoning:** Supports both manual, guided proof
@@ -135,17 +137,6 @@ This is the recommended way to use the theorem prover, as it provides the full i
 ```bash
 java -jar target/theorem-prover.jar gui
 ```
-**Main Interface:**
-
-The main workbench provides access to the Knowledge Base, Goals, applicable inference rules, proof state, and automated proof output.
-
-![Main Interface](images/Main.png)
-
-**Rule Editor:**
-
-The Custom Rule Editor allows you to create, validate, and manage your own inference rules without modifying the source code.
-
-![Rule Editor](images/Rule.png)
 
 ### Automated CLI
 
