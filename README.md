@@ -46,6 +46,23 @@ sudo apt install openjdk-17-jdk
 brew install openjdk@17
 ```
 
+**Windows**
+
+1. Go to [https://adoptium.net/temurin/releases](https://adoptium.net/temurin/releases)
+2. Select:
+   - **Operating System:** Windows
+   - **Architecture:** x64
+   - **Version:** 17 (LTS)
+   - **Package Type:** JDK
+3. Download the `.msi` installer.
+4. Run the installer and follow the on-screen instructions.
+
+**During installation, ensure the following options are selected:**
+
+- **Add the installation to the PATH environment variable**
+- **Associate .jar files with Java applications** 
+- **Updating the JAVA_HOME environment variable**
+
 ### Installing Maven
 
 **Ubuntu / Debian:**
@@ -59,6 +76,18 @@ sudo apt install maven
 ```bash
 brew install maven
 ```
+
+**Windows**
+
+Follow the official installation guide: [https://maven.apache.org/install.html](https://maven.apache.org/install.html)
+
+**Quick Steps:**
+
+1. Download the **Binary zip archive** from the link above.
+2. Extract the archive to a directory (e.g., `C:\apache-maven`).
+3. Add the `bin` folder (e.g., `C:\apache-maven\bin`) to your system `PATH` environment variable.
+
+**Note:** For alternative installation methods on Windows, you can also use package managers like Chocolatey (`choco install maven`) or Scoop (`scoop install main/maven`).
 
 Verify:
 
