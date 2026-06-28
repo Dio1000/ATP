@@ -1,3 +1,5 @@
+--- INDENTED PROOF ---
+
                     We derive E from the Knowledge Base
                From E -> (!I AND !M), by Material Implication, we derive !E OR (!I AND !M)
 We derive !P from the Knowledge Base
@@ -6,7 +8,20 @@ We derive !P from the Knowledge Base
                From !A -> I, !W -> M and !A OR !W, by Constructive Dilemma, we derive I OR M
                     From !E OR (!I AND !M) and I OR M, by Disjunctive Syllogism, we derive !E
                          We derive a contradiction from E and !E
-----------------------------
-Proof completed in 117.45 ms
-Peak memory usage: 94.031 MB
-----------------------------
+
+
+--- FORMAL PROOF ---
+
+1. E (Premise)
+2. E -> (!I AND !M) (Premise)
+3. !A -> I (Premise)
+4. !W -> M (Premise)
+5. (A AND W) -> P (Premise)
+6. !P (Premise)
+7. !E OR (!I AND !M) (Material Implication: 2)
+8. !(A AND W) (Modus Tollens: 5, 6)
+9. !A OR !W (De Morgan: 8)
+10. I OR M (Constructive Dilemma: 3, 4, 9)
+11. !E (Disjunctive Syllogism: 7, 10)
+12. Contradiction (Derived: 1, 11)
+

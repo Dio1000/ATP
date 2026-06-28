@@ -4,6 +4,16 @@ import me.dariansandru.domain.language.Notation;
 import me.dariansandru.domain.language.UniverseOfDiscourse;
 import me.dariansandru.domain.language.predicate.Predicate;
 
+/**
+ * Conjunction operator object. It follows this truth table:
+ * A | B | A AND B
+ * T | T |    T
+ * T | F |    F
+ * F | T |    F
+ * F | F |    F
+ * Thus, it can be said, that the conjunction of two formulas is True
+ * only when both of them are True.
+ */
 public class Conjunction implements Predicate {
 
     @Override

@@ -4,6 +4,16 @@ import me.dariansandru.domain.language.Notation;
 import me.dariansandru.domain.language.UniverseOfDiscourse;
 import me.dariansandru.domain.language.predicate.Predicate;
 
+/**
+ * Disjunction operator object. It follows this truth table:
+ * A | B | A OR B
+ * T | T |    T
+ * T | F |    T
+ * F | T |    T
+ * F | F |    F
+ * Thus, it can be said, that the disjunction of two formulas is True
+ * only when either one of them is True.
+ */
 public class Disjunction implements Predicate{
 
     @Override

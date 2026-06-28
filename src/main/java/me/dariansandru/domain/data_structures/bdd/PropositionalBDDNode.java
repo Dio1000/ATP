@@ -7,6 +7,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Propositional Binary Decision Diagram (BDD) Node provides the node
+ * representation for the BDD. In its internal representation there are
+ * multiple members tha allow for recursive traversal (parent, left, right),
+ * and the value that is holds (the propositional atom).
+ */
 public class PropositionalBDDNode {
 
     private final int id;

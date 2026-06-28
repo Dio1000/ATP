@@ -4,7 +4,7 @@ import me.dariansandru.domain.data_structures.ast.AST;
 
 import java.util.List;
 
-/*
+/**
 Implementing this interface allows the user to extend the system with a new type
 of Proof State. This is useful when creating a new Universe of Discourse, which requires
 different proving methods, with different rules of inference and termination requirements.

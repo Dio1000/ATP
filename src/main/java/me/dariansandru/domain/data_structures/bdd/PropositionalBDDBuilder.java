@@ -6,6 +6,15 @@ import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.*;
 
+/**
+ * Propositional Binary Decision Diagram (BDD) Builder provides the necessary
+ * functionality to create a BDD for an Abstract Syntax Tree (AST). It is used
+ * for fast and efficient semantic equivalence checking between different formulas.
+ * The BDD is represented internally by an integer array, besides
+ * the tree representation, that is the nodes of the actual BDD tree structure.
+ * The nodes, in the integer array, are represented by the corresponding
+ * propositional atom Global Atom ID.
+ */
 public class PropositionalBDDBuilder {
 
     private PropositionalBDDNode root;
@@ -25,6 +34,8 @@ public class PropositionalBDDBuilder {
         this.root = null;
     }
 
+    // Method that recursively builds the actual unique array representation
+    // for the AST that was received through the constructor.
     public void buildBDD() {
         if (ast == null || ast.isEmpty()) return;
 
@@ -38,6 +49,8 @@ public class PropositionalBDDBuilder {
             return;
         }
 
+        // Sort the atoms. This is crucial for BDD creation, because if there was no order
+        // to the atoms, the algorithm would not work, or be significantly slower.
         Set<String> atoms = PropositionalLogicHelper.getAtoms(ast);
         atomList = atoms.stream().sorted().distinct().toList();
         atomStringList.addAll(atomList);
@@ -156,6 +169,9 @@ public class PropositionalBDDBuilder {
     }
 
     @Override
+    // Method to check that two ASTs of the same type are equivalent.
+    // It does this by checking that their array representations are the same.
+    // The java compiler optimises the array checking using SIMD (on compatible hardware)
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;

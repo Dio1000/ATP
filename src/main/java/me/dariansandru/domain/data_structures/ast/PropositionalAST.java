@@ -23,6 +23,16 @@ import me.dariansandru.utils.helper.WarningHelper;
 
 import java.util.*;
 
+/**
+ * Propositional Abstract Syntax Tree (AST) is a data structure used to transform
+ * a formula string into a machine-readable format. It implements the AST interface
+ * providing behaviour for its many methods. The most important ones include:
+ * validation, that allows the formula to be parsed and turned into an AST,
+ * negation, that allows a formula to be negated, and
+ * evaluate, that allows the formula to be evaluated under a given interpretation.
+ * This structure offers flexible manipulation by allowing subtrees to be checked,
+ * an operation heavily used when applying inference rules.
+ */
 public class PropositionalAST implements AST {
 
     private String formulaString;
@@ -254,6 +264,8 @@ public class PropositionalAST implements AST {
                 if (GlobalFlags.printTreeFlag) printTree(token);
                 position = token.position();
 
+                // If an open parenthesis is encountered, then a binary operator is needed, thus creating
+                // a new child
                 if (token.type() == Type.SEPARATOR) {
                     if ("(".equals(token.lexeme())) {
                         currentNode.addChild();
@@ -280,6 +292,8 @@ public class PropositionalAST implements AST {
 
                 int arity = predicate.getArity();
                 switch (arity) {
+                    // If the arity of the predicate is 0, then we have encountered a proposition.
+                    // This means we leave it on the node the pointer is currently on, then go up.
                     case 0 -> {
                         if (currentNode.isEmpty()) {
                             currentNode.setKey(predicate);
@@ -290,6 +304,8 @@ public class PropositionalAST implements AST {
                             ErrorHelper.add("Unexpected proposition " + token.lexeme() + " at this position", line, position);
                         }
                     }
+                    // If the arity of the predicate is 1, then we have encountered negation (in Propositional Logic).
+                    // Thus, we need to make a child for it, then point to that child.
                     case 1 -> {
                         if (currentNode.isEmpty()) {
                             currentNode.setKey(predicate);
@@ -301,6 +317,10 @@ public class PropositionalAST implements AST {
                             ErrorHelper.add(token.lexeme() + " is a unary operator used in an invalid position", line, position);
                         }
                     }
+                    // If the arity of the predicate is 2, we have encountered a strong binary logical operator.
+                    // In the current implementation of the system, no logical connective is binary only, they are all
+                    // n-ary, but this can be changed from their implementations. Therefore, we allow any operator
+                    // to have any number of children.
                     case 2 -> {
                         if (currentNode.isEmpty()) {
                             currentNode.setKey(predicate);
@@ -312,6 +332,9 @@ public class PropositionalAST implements AST {
                             ErrorHelper.add(token.lexeme() + " is a binary operator used in an invalid position", line, position);
                         }
                     }
+                    // If the arity of the predicate is -1, we have encountered an n-ary logical operator.
+                    // These kinds of operators can take any number of arguments, so they can have any number
+                    // of children nodes.
                     case -1 -> {
                         if (currentNode.isEmpty()) {
                             currentNode.setKey(predicate);
@@ -354,6 +377,9 @@ public class PropositionalAST implements AST {
                             }
                         }
                     }
+                    // Failure case. This should never be reached since, in Propositional Logic, all operators
+                    // have either arity 0 (propositions), arity 1 (negation), arity 2 (usually, implication and equivalence),
+                    // arity n (usually, conjunction and disjunction, but in our system all operators have arity n).
                     default -> {
                         invalid = true;
                         ErrorHelper.add("Unsupported arity: " + arity + " for token " + token.lexeme(), line, position);
@@ -661,11 +687,16 @@ public class PropositionalAST implements AST {
     }
 
     @Override
+    // This method ensures that two different ASTs have the same structure. By structure,
+    // we mean that the tree has the same logical connectives, but different formulas.
+    // For example, A -> B has the same structure with (A AND B) -> (B AND C), because,
+    // in their tree structure, the outermost operation is ->, and only the formulas A and B
+    // are different (A becomes A AND B, B becomes B AND C).
+    // This method is essential for checking custom inference rules.
     public boolean hasSameStructure(AST other) {
         if (isContradictionOrTautology(this) && isContradictionOrTautology((PropositionalAST) other)) {
             if (this.isTautology && ((PropositionalAST) other).isTautology) return true;
-            else if (this.isContradiction && ((PropositionalAST) other).isContradiction) return true;
-            else return false;
+            else return this.isContradiction && ((PropositionalAST) other).isContradiction;
         }
         else if (!isContradictionOrTautology(this) && isContradictionOrTautology((PropositionalAST) other)) return false;
         else if (isContradictionOrTautology(this) && !isContradictionOrTautology((PropositionalAST) other)) return false;
@@ -876,9 +907,7 @@ public class PropositionalAST implements AST {
         if (predicate.getRepresentation().equals(LogicalOperatorFlyweight.getNegationString())
                 && effectiveRoot.getChildren().size() == 1) {
             PropositionalASTNode child = (PropositionalASTNode) effectiveRoot.getChildren().getFirst();
-            if (child.getKey() instanceof Predicate childPredicate) {
-                return childPredicate.getArity() == 0;
-            }
+            if (child.getKey() instanceof Predicate childPredicate) return childPredicate.getArity() == 0;
         }
         return false;
     }

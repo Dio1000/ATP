@@ -19,6 +19,16 @@ import me.dariansandru.utils.helper.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Propositional Proof class that is used to instance new automated proofs.
+ * It handles the logic of building the proof tree (with all its states),
+ * checking which strategies can be applied (if multiple, they are ran
+ * on different threads) and simplifying the goals.
+ * It also holds the root of the Proof Tree, which is an object of type
+ * PropositionalProofState. It then delegates responsibility of proving
+ * to the root state, which starts the actual logic of inferring new rules
+ * and extracting sub-goals.
+ */
 public class PropositionalProof implements Proof {
 
     private final List<InferenceRule> inferenceRules;
@@ -145,6 +155,10 @@ public class PropositionalProof implements Proof {
         state.setUnproven();
     }
 
+    // Method to build the Proof Tree. It identifies which strategy it can use by
+    // receiving it from the PropositionalProofState as a notification. It then
+    // routes the logic to handle the correct strategy, creating a new proof state
+    // in the process. 
     public void buildTree(ProofState state, int indent, Strategy strategy) {
         if (strategies.isEmpty() || strategy == Strategy.NO_STRATEGY) return;
 
@@ -199,8 +213,8 @@ public class PropositionalProof implements Proof {
 
                 for (ProofState childState : state.getChildren()) {
                     PropositionalProofState child = (PropositionalProofState) childState;
-                    List<Strategy> childStrats = child.notifyProof();
-                    Strategy next = childStrats.isEmpty() ? Strategy.NO_STRATEGY : childStrats.getFirst();
+                    List<Strategy> childStrategies = child.notifyProof();
+                    Strategy next = childStrategies.isEmpty() ? Strategy.NO_STRATEGY : childStrategies.getFirst();
                     buildTree(child, indent + 1, next);
                 }
                 break;
@@ -226,8 +240,8 @@ public class PropositionalProof implements Proof {
         ImplicationStrategy(state);
 
         PropositionalProofState child = (PropositionalProofState) state.getChildren().getFirst();
-        List<Strategy> childStrats = child.notifyProof();
-        Strategy next = childStrats.isEmpty() ? Strategy.NO_STRATEGY : childStrats.getFirst();
+        List<Strategy> childStrategies = child.notifyProof();
+        Strategy next = childStrategies.isEmpty() ? Strategy.NO_STRATEGY : childStrategies.getFirst();
 
         buildTree(child, indent + 1, next);
     }
@@ -248,8 +262,8 @@ public class PropositionalProof implements Proof {
 
         for (ProofState childState : state.getChildren()) {
             PropositionalProofState child = (PropositionalProofState) childState;
-            List<Strategy> childStrats = child.notifyProof();
-            Strategy next = childStrats.isEmpty() ? Strategy.NO_STRATEGY : childStrats.getFirst();
+            List<Strategy> childStrategies = child.notifyProof();
+            Strategy next = childStrategies.isEmpty() ? Strategy.NO_STRATEGY : childStrategies.getFirst();
             buildTree(child, indent + 1, next);
         }
     }
@@ -267,8 +281,8 @@ public class PropositionalProof implements Proof {
 
         for (ProofState childState : state.getChildren()) {
             PropositionalProofState child = (PropositionalProofState) childState;
-            List<Strategy> childStrats = child.notifyProof();
-            Strategy next = childStrats.isEmpty() ? Strategy.NO_STRATEGY : childStrats.getFirst();
+            List<Strategy> childStrategies = child.notifyProof();
+            Strategy next = childStrategies.isEmpty() ? Strategy.NO_STRATEGY : childStrategies.getFirst();
             buildTree(child, indent + 1, next);
         }
     }
@@ -286,8 +300,8 @@ public class PropositionalProof implements Proof {
 
         for (ProofState childState : state.getChildren()) {
             PropositionalProofState child = (PropositionalProofState) childState;
-            List<Strategy> childStrats = child.notifyProof();
-            Strategy next = childStrats.isEmpty() ? Strategy.NO_STRATEGY : childStrats.getFirst();
+            List<Strategy> childStrategies = child.notifyProof();
+            Strategy next = childStrategies.isEmpty() ? Strategy.NO_STRATEGY : childStrategies.getFirst();
             buildTree(child, indent + 1, next);
         }
     }
@@ -302,8 +316,8 @@ public class PropositionalProof implements Proof {
 
         if (!state.getChildren().isEmpty()) {
             PropositionalProofState child = (PropositionalProofState) state.getChildren().getFirst();
-            List<Strategy> childStrats = child.notifyProof();
-            Strategy next = childStrats.isEmpty() ? Strategy.NO_STRATEGY : childStrats.getFirst();
+            List<Strategy> childStrategies = child.notifyProof();
+            Strategy next = childStrategies.isEmpty() ? Strategy.NO_STRATEGY : childStrategies.getFirst();
             buildTree(child, indent + 1, next);
         }
     }
@@ -381,8 +395,7 @@ public class PropositionalProof implements Proof {
                 List<AST> newKB = new ArrayList<>(state.getKnowledgeBase());
                 List<AST> newGoals = List.of(state.getGoals().get(i));
 
-                PropositionalProofState newState =
-                        new PropositionalProofState(newKB, newGoals, inferenceRules);
+                PropositionalProofState newState = new PropositionalProofState(newKB, newGoals, inferenceRules);
                 setCurrentStateIndex(newState);
 
                 state.addChild(newState);

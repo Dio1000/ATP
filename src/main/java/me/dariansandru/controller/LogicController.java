@@ -23,6 +23,11 @@ import me.dariansandru.utils.loader.LoaderPackageHelper;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Main orchestrator of the application. It parses the files, builds the Universe of Discourse,
+ * Signature, Knowledge Base and the Goals. Then, it delegates responsibility to the specialised
+ * provers for Propositional Logic, either in automated mode or manual, based on the arguments.
+ */
 public class LogicController {
 
     private final Signature signature;

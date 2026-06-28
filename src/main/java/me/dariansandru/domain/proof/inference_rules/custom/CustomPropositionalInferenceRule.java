@@ -12,6 +12,12 @@ import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
 import java.util.*;
 
+/**
+ * Generic Custom Propositional Inference Rule implementation. It has a name,
+ * a list of antecedents and a conclusion. From the antecedents, the conclusion
+ * is derived. It handles checking that from a list of antecedents, a conclusion
+ * can be derived.
+ */
 public class CustomPropositionalInferenceRule implements InferenceRule {
 
     private final String name;
@@ -98,6 +104,20 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
         return checkVariablesConsistent(kbSubset);
     }
 
+    // Method to check that a subset from Knowledge Base is consistent.
+    // This means that the subset matches the antecedents of the inference rule.
+    // For example:
+    // Custom inference rule with antecedents:
+    // A -> B
+    // B -> C
+    // and the conclusion: A -> C
+    // This method would check, for the given subset:
+    // (A AND B) -> C
+    // C -> (D OR E)
+    // That the formulas match (have the same structure) the antecedents
+    // In this example, (A AND B) is the formula A from the antecedents,
+    // C is the formula B from the antecedents, and (D OR E) is the formula
+    // C from the antecedents.
     private boolean checkVariablesConsistent(List<AST> kbSubset) {
         atomVariableMap.clear();
         for (String atom : atoms) {
@@ -140,6 +160,9 @@ public class CustomPropositionalInferenceRule implements InferenceRule {
         return new PropositionalAST(node);
     }
 
+    // This method is a continuation of checkVariablesConsistent,
+    // it is used to build a conclusion from the formulas identified.
+    // This is done based on the custom inference rule conclusion.
     public AST buildConclusion() {
         Map<String, Path> conclusionAtomPath = buildPathMap(conclusion);
 

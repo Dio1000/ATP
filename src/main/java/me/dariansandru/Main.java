@@ -48,5 +48,3 @@ public class Main {
         }
     }
 }
-
-// TODO: Add support for mentioning the input / output files

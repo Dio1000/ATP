@@ -4,7 +4,7 @@ import me.dariansandru.domain.data_structures.ast.AST;
 
 import java.util.List;
 
-/*
+/**
 Implementing this interface allows for the creation of a new type of Proof.
 This is useful when creating a new Universe of Discourse, each having their own
 Signature, thus requiring handling of different formulas, functions and predicates.

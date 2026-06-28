@@ -1,10 +1,9 @@
-package me.dariansandru.domain.proof.inference_rules.helper;
+package me.dariansandru.domain.proof.inference_rules.custom;
 
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.proof.automated_proof.PropositionalProof;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
-import me.dariansandru.domain.proof.inference_rules.custom.CustomPropositionalInferenceRule;
 import me.dariansandru.io.OutputDevice;
 import me.dariansandru.meta.MetaData;
 import me.dariansandru.reflexivity.PropositionalInferenceRules;

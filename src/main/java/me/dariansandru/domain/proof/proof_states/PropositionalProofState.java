@@ -1,9 +1,6 @@
 package me.dariansandru.domain.proof.proof_states;
 
-import me.dariansandru.domain.data_structures.ast.ASTNode;
-import me.dariansandru.domain.data_structures.ast.PropositionalASTNode;
 import me.dariansandru.domain.language.LogicalOperator;
-import me.dariansandru.domain.proof.ProofStep;
 import me.dariansandru.domain.proof.Strategy;
 import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
@@ -20,8 +17,19 @@ import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 import me.dariansandru.utils.helper.ProofTextHelper;
 import me.dariansandru.utils.helper.PropositionalLogicHelper;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 
+/**
+ * Propositional Proof State handles the main logic of inferring new formulas.
+ * It also has the responsibility of simplifying the goal through sub-goal
+ * expansion. It works through a main loop of expanding the knowledge base,
+ * then deriving new formulas and checking if the goal has now been proven.
+ * If it is not, then it tries to derive new sub-goals, such that the next
+ * entry in the loop is easier.
+ */
 public class PropositionalProofState implements ProofState {
 
     private final List<AST> knowledgeBase;
@@ -102,61 +110,42 @@ public class PropositionalProofState implements ProofState {
     public void prove() {
         GlobalTimer.setStartTime();
         proofSetup();
-
         if (!children.isEmpty()) proveChildren();
-        if (isProven) return;
 
-        int expansionPass = 0;
-        int maxSteps = 1000;
+        if (!isProven) {
+            int expansionPass = 0;
+            int maxSteps = 1000;
 
-        while (!isProven && expansionPass < maxSteps) {
-            currentConjunctionLevel = ConjunctionIntroduction.LEVEL_ATOMS;
-            levelCompleted = false;
+            while (expansionPass < maxSteps) {
+                currentConjunctionLevel = ConjunctionIntroduction.LEVEL_ATOMS;
+                levelCompleted = false;
 
-            applyExpansionRules();
-            applyDerivationRules();
+                applyExpansionRules();
+                applyDerivationRules();
 
-            if (containsGoal()) {
-                printProof();
-                this.isProven = true;
-                GlobalTimer.setEndTime();
-                break;
+                if (containsGoal()) {
+                    this.isProven = true;
+                    GlobalTimer.setEndTime();
+                    break;
+                }
+                if (goals.getFirst().isContradiction() && containsContradiction()) {
+                    this.isProven = true;
+                    GlobalTimer.setEndTime();
+                    break;
+                }
+                SubGoal root = new SubGoal(goals.getFirst(), PropositionalInferenceRule.HYPOTHESIS, goals.getFirst());
+                expandSubGoal(root);
+
+                if (isProven) {
+                    GlobalTimer.setEndTime();
+                    break;
+                }
+                expansionPass++;
             }
-            if (goals.getFirst().isContradiction() && containsContradiction()) {
-                printProof();
-                this.isProven = true;
-                GlobalTimer.setEndTime();
-                break;
-            }
-            SubGoal root = new SubGoal(goals.getFirst(), PropositionalInferenceRule.HYPOTHESIS, goals.getFirst());
-            expandSubGoal(root);
+        }
+        else GlobalTimer.setEndTime();
 
-            expansionPass++;
-        }
-    }
-
-    private void printProof() {
-        GlobalTimer.setProofTestStartTime();
-        if (!GlobalFlags.executionFlag.equals("automated")) {
-            ProofTextHelper.getProofText(goals.getFirst().toString());
-            ProofTextHelper.buildFormalProof(goals.getFirst().toString());
-            GlobalTimer.setProofEndTime();
-            return;
-        }
-
-        OutputDevice.writeToConsole("");
-        if (GlobalFlags.indentedProofFlag) {
-            ProofTextHelper.getProofText(goals.getFirst().toString());
-            ProofTextHelper.print();
-            OutputDevice.writeToConsole("");
-        }
-        if (GlobalFlags.formalProofFlag) {
-            ProofTextHelper.buildFormalProof(goals.getFirst().toString());
-            ProofTextHelper.printFormalProof();
-            OutputDevice.writeToConsole("");
-        }
-        isProven = true;
-        GlobalTimer.setProofEndTime();
+        if (this.parent == null && this.isProven) printProof();
     }
 
     public String getIndentedProofString() {
@@ -483,6 +472,55 @@ public class PropositionalProofState implements ProofState {
         }
     }
 
+    private void printProof() {
+        GlobalTimer.setProofTestStartTime();
+
+        boolean isAutomated = "automated".equals(GlobalFlags.executionFlag) || "automate".equals(GlobalFlags.executionFlag);
+
+        if (!isAutomated) {
+            ProofTextHelper.getProofText(goals.getFirst().toString());
+            ProofTextHelper.buildFormalProof(goals.getFirst().toString());
+            GlobalTimer.setProofEndTime();
+            return;
+        }
+
+        if (GlobalFlags.outputToConsole) OutputDevice.writeToConsole("");
+        StringBuilder fileOutput = new StringBuilder();
+
+        if (GlobalFlags.indentedProofFlag) {
+            ProofTextHelper.getProofText(goals.getFirst().toString());
+            ProofTextHelper.print();
+            if (GlobalFlags.outputToConsole) OutputDevice.writeToConsole("");
+
+            fileOutput.append("--- INDENTED PROOF ---\n\n");
+            fileOutput.append(ProofTextHelper.getProofString()).append("\n\n");
+        }
+
+        if (GlobalFlags.formalProofFlag) {
+            ProofTextHelper.buildFormalProof(goals.getFirst().toString());
+            ProofTextHelper.printFormalProof();
+            if (GlobalFlags.outputToConsole) OutputDevice.writeToConsole("");
+
+            fileOutput.append("--- FORMAL PROOF ---\n\n");
+            fileOutput.append(ProofTextHelper.getFormalProofString()).append("\n\n");
+        }
+
+        if (!GlobalFlags.outputToConsole && GlobalFlags.outputFilePath != null) {
+            try {
+                Files.writeString(
+                        Paths.get(GlobalFlags.outputFilePath),
+                        fileOutput.toString(),
+                        StandardOpenOption.CREATE,
+                        StandardOpenOption.TRUNCATE_EXISTING
+                );
+            } catch (Exception e) {
+                System.err.println("Failed to write to output file: " + e.getMessage());
+            }
+        }
+
+        GlobalTimer.setProofEndTime();
+    }
+
     public List<Strategy> notifyProof() {
         List<Strategy> strategies = new ArrayList<>();
         if (isProven) return List.of(Strategy.NO_STRATEGY);
@@ -571,6 +609,10 @@ public class PropositionalProofState implements ProofState {
     }
 
     private boolean isNegationOf(AST first, AST second) {
+        return negationOf(first, second);
+    }
+
+    public static boolean negationOf(AST first, AST second) {
         if (first == null || second == null) return false;
 
         try {

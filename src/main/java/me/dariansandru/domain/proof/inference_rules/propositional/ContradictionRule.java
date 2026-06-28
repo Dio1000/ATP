@@ -14,6 +14,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static me.dariansandru.domain.proof.proof_states.PropositionalProofState.negationOf;
+
 public class ContradictionRule implements InferenceRule {
 
     private final List<AST> derived = new ArrayList<>();
@@ -118,19 +120,6 @@ public class ContradictionRule implements InferenceRule {
     }
 
     private boolean isNegationOf(AST first, AST second) {
-        if (first == null || second == null) return false;
-
-        try {
-            PropositionalAST negatedFirst = new PropositionalAST(first.toString(), true);
-            negatedFirst.negate();
-
-            PropositionalAST negatedSecond = new PropositionalAST(second.toString(), true);
-            negatedSecond.negate();
-
-            return first.isEquivalentTo(negatedSecond) || second.isEquivalentTo(negatedFirst);
-        }
-        catch (Exception e) {
-            return false;
-        }
+        return negationOf(first, second);
     }
 }

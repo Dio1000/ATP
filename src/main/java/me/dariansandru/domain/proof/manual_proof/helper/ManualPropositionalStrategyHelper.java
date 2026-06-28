@@ -13,6 +13,11 @@ import me.dariansandru.utils.helper.PropositionalLogicHelper;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Helper Class with the responsibility of validating and applying
+ * the strategies that are passed to it from ManualPropositionalProof
+ * via different commands inputted by the user.
+ */
 public class ManualPropositionalStrategyHelper {
 
     private final List<AST> knowledgeBase;

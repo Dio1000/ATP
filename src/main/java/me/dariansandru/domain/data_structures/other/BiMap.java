@@ -6,6 +6,13 @@ import java.security.Key;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * The BiMap (Bijective Map) is a data structure that closely
+ * resembles a usual map but with the additional property that
+ * the key can also be retrieved from the value, not just the value
+ * form the key. Thus, the following property is true:
+ * map[key] = value AND map[value] = key.
+ */
 public class BiMap {
 
     public Map<Object, Object> map;

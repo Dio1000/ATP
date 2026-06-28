@@ -17,6 +17,14 @@ import me.dariansandru.utils.helper.WarningHelper;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Manual Propositional Proof class that handles Proof state manipulation
+ * through its instances. It does this by creating the Proof State tree,
+ * and receiving input from the user with the commands they would like
+ * to input. Then, it delegates its logic of the inference rule application
+ * to ManualPropositional Helpers. It has the main roles of maintaining the states
+ * and providing clear output to the user.
+ */
 public class ManualPropositionalProof {
 
     private final List<AST> knowledgeBase;

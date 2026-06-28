@@ -3,6 +3,10 @@ package me.dariansandru.domain.language.predicate;
 import me.dariansandru.domain.language.Notation;
 import me.dariansandru.domain.language.UniverseOfDiscourse;
 
+/**
+ * Propositional Atom is used to store the name and the truth value
+ * of an atom. It is used for building interpretations.
+ */
 public class PropositionalAtom implements Predicate {
     private final String name;
     private final boolean truthValue;

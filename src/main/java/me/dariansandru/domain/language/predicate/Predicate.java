@@ -3,7 +3,7 @@ package me.dariansandru.domain.language.predicate;
 import me.dariansandru.domain.language.Notation;
 import me.dariansandru.domain.language.UniverseOfDiscourse;
 
-/*
+/**
 Implementing this interface allows the user to create a new type of Predicate.
 This is useful when creating a new Signature, which requires their own list of predicates.
 The interface allows describing of a predicate, by providing the arity, representation,

@@ -6,6 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Interpretation for Propositional Formulas. It holds a map of the actual
+ * interpretation, mapping the string (propositional atom string representation)
+ * to a boolean (truth value of the atom)
+ */
 public class PropositionalInterpretation implements Interpretation {
 
     private final Map<String, Boolean> interpretation = new HashMap<>();

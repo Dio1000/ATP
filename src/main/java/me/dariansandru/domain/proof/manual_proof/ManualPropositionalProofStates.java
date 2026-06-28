@@ -2,6 +2,9 @@ package me.dariansandru.domain.proof.manual_proof;
 
 import me.dariansandru.domain.data_structures.other.BiMap;
 
+/**
+ *
+ */
 public abstract class ManualPropositionalProofStates {
 
     private static ManualPropositionalProof originalState;

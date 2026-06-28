@@ -5,6 +5,7 @@ import me.dariansandru.domain.proof.SubGoal;
 import me.dariansandru.io.OutputDevice;
 import me.dariansandru.domain.data_structures.ast.AST;
 import me.dariansandru.domain.data_structures.ast.PropositionalAST;
+import me.dariansandru.utils.global.GlobalFlags;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -99,20 +100,20 @@ public abstract class ProofTextHelper {
             minIndent = Math.min(minIndent, step.indent());
             maxIndent = Math.max(maxIndent, step.indent());
         }
+        fullProof.clear();
 
         for (ProofStep step : assumptionSteps) {
-            OutputDevice.writeIndentedToConsole(step.text(), step.indent());
+            if (GlobalFlags.outputToConsole) OutputDevice.writeIndentedToConsole(step.text(), step.indent());
             fullProof.add(step);
         }
 
         for (ProofStep step : allProofSteps) {
             int transformedIndent = (maxIndent - step.indent()) + minIndent;
-
-            OutputDevice.writeIndentedToConsole(step.text(), transformedIndent);
+            if (GlobalFlags.outputToConsole) OutputDevice.writeIndentedToConsole(step.text(), transformedIndent);
             fullProof.add(new ProofStep(step.text(), transformedIndent));
         }
         for (ProofStep step : conclusionSteps) {
-            OutputDevice.writeIndentedToConsole(step.text(), step.indent());
+            if (GlobalFlags.outputToConsole) OutputDevice.writeIndentedToConsole(step.text(), step.indent());
             fullProof.add(step);
         }
     }
@@ -138,18 +139,6 @@ public abstract class ProofTextHelper {
                 proofText.add(new ProofStep("We derive " + formula + " from the Knowledge Base", indent));
             }
         }
-    }
-
-    private static boolean getStepsAtIndent(int currentIndentation, List<ProofStep> assumptionSteps) {
-        List<ProofStep> stepsAtIndent = getAllByIndentation(assumptionSteps, currentIndentation);
-        if (stepsAtIndent.isEmpty()) return true;
-
-        for (ProofStep step : stepsAtIndent) {
-            OutputDevice.writeIndentedToConsole(step.text(), step.indent());
-            fullProof.add(step);
-        }
-        removeSteps(assumptionSteps, stepsAtIndent);
-        return false;
     }
 
     public static String getConclusion(String conclusion) {
@@ -289,7 +278,7 @@ public abstract class ProofTextHelper {
 
             List<String> parents = KnowledgeBaseRegistry.from(formula);
             String ruleName = KnowledgeBaseRegistry.getRule(formula);
-            if (ruleName.startsWith("Strategy:")) ruleName = ruleName.split(":")[1].strip();
+            if (ruleName != null && ruleName.startsWith("Strategy:")) ruleName = ruleName.split(":")[1].strip();
 
             getFormalSteps(formula, stepNum, parents, ruleName);
         }
@@ -320,7 +309,7 @@ public abstract class ProofTextHelper {
 
     public static void printFormalProof() {
         for (String step : formalProofSteps) {
-            OutputDevice.writeToConsole(step);
+            if (GlobalFlags.outputToConsole) OutputDevice.writeToConsole(step);
         }
     }
 

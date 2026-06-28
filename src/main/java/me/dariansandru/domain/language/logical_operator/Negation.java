@@ -4,6 +4,14 @@ import me.dariansandru.domain.language.Notation;
 import me.dariansandru.domain.language.UniverseOfDiscourse;
 import me.dariansandru.domain.language.predicate.Predicate;
 
+/**
+ * Negation operator object. It follows this truth table:
+ * A | !A
+ * T | F
+ * F | T
+ * Thus, it can be said that negation reverses the truth value
+ * of the formula.
+ */
 public class Negation implements Predicate {
 
     @Override
