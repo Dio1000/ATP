@@ -489,7 +489,7 @@ public class PropositionalProofState implements ProofState {
 
         boolean wasConsoleEnabled = GlobalFlags.outputToConsole;
         GlobalFlags.outputToConsole = false;
-        ProofTextHelper.print(); 
+        ProofTextHelper.print();
         GlobalFlags.outputToConsole = wasConsoleEnabled;
 
         if (!isAutomated) {
