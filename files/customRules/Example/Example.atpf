@@ -1,0 +1,6 @@
+rule=ModPonFake
+a: A
+a: A -> B
+c: B
+end
+

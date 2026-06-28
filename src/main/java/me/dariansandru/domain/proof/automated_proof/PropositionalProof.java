@@ -14,10 +14,7 @@ import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.data_structures.ast.PropositionalASTNode;
 import me.dariansandru.utils.flyweight.LogicalOperatorFlyweight;
 import me.dariansandru.utils.global.GlobalTimer;
-import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
-import me.dariansandru.utils.helper.Logger;
-import me.dariansandru.utils.helper.ProofTextHelper;
-import me.dariansandru.utils.helper.PropositionalLogicHelper;
+import me.dariansandru.utils.helper.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,8 +60,6 @@ public class PropositionalProof implements Proof {
     }
 
     public boolean prove() {
-        GlobalTimer.setStartTime();
-
         for (int i = 0; i < strategies.size(); i++) {
             roots.add(originalState);
         }
@@ -88,7 +83,8 @@ public class PropositionalProof implements Proof {
                 if (proofThread.isProven()) {
                     anyProven = true;
                 }
-            } catch (InterruptedException exception) {
+            }
+            catch (InterruptedException exception) {
                 Thread.currentThread().interrupt();
             }
         }
@@ -96,11 +92,18 @@ public class PropositionalProof implements Proof {
         this.isProven = anyProven;
         GlobalTimer.setEndTime();
 
+        double executionTime = GlobalTimer.getExecutionTime();
+        String timeString;
+        if (executionTime >= 1000.0) timeString = String.format("%.3f s", executionTime / 1000.0);
+        else timeString = String.format("%.2f ms", executionTime);
+        double peakMB = MemoryTracker.getPeakMemoryMB();
+
         if (this.isProven) {
-            ProofTextHelper.printWithSymbol("Proof completed in " + GlobalTimer.getExecutionTime() + " ms", "-");
-        } else {
-            ProofTextHelper.printWithSymbol("No proof found in " + GlobalTimer.getExecutionTime() + " ms", "-");
+            String message = "Proof completed in " + timeString + "\n" +
+                    "Peak memory usage: " + String.format("%.3f", peakMB) + " MB";
+            ProofTextHelper.printWithSymbol(message, "-");
         }
+        else ProofTextHelper.printWithSymbol("No proof found in " + timeString, "-");
 
         currentlyUsedStrategy = 0;
         proofThreads.clear();

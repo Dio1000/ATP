@@ -1,6 +1,7 @@
 package me.dariansandru.gui;
 
 import me.dariansandru.domain.data_structures.ast.AST;
+import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.domain.proof.inference_rules.InferenceRule;
 import me.dariansandru.domain.proof.manual_proof.ManualPropositionalProof;
 import me.dariansandru.utils.global.GlobalAtomID;
@@ -57,6 +58,7 @@ public class PropositionalProofGUIController {
         this.mainFrame = this.components.buildMainFrame();
         this.mainFrame.setVisible(true);
         this.refreshGoalCheckboxes();
+        warmup();
     }
 
     public JFrame getMainFrame() { return mainFrame; }
@@ -166,6 +168,13 @@ public class PropositionalProofGUIController {
                     GlobalAtomID.addAtomId(String.valueOf(character));
                 }
             }
+        }
+    }
+
+    private void warmup() {
+        for (int i = 0; i < 5000; i++) {
+            PropositionalAST dummy = new PropositionalAST("(A -> B) -> C", true);
+            dummy.buildBDD();
         }
     }
 }

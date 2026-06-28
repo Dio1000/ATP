@@ -28,6 +28,8 @@ public class ContradictionRule implements InferenceRule {
         for (int i = 0 ; i < asts.size() ; i++) {
             for (int j = i + 1 ; j < asts.size() ; j++) {
                 if (isNegationOf(asts.get(i), asts.get(j))) {
+                    KnowledgeBaseRegistry.addEntry("Contradiction", "We derive a contradiction from " + asts.get(i).toString() + " and " + asts.get(j).toString(),
+                            List.of(asts.get(i).toString(), asts.get(j).toString()));
                     derived.add(new PropositionalAST(true));
                     return true;
                 }

@@ -506,9 +506,6 @@ public class CustomRuleEditor {
             final String finalErrorMessage = errorMessage;
 
             SwingUtilities.invokeLater(() -> {
-                if (currentRunId != CustomRuleEditor.this.validationRunId) {
-                    return;
-                }
                 targetRule.isValidating = false;
                 targetRule.isValidated = finalIsValid;
                 targetRule.validationError = finalErrorMessage;
@@ -521,10 +518,10 @@ public class CustomRuleEditor {
                     CustomRuleEditor.this.refreshValidationBadge(targetRule);
                 }
                 if (finalIsValid) {
-                    CustomRuleEditor.this.setStatus("\u2713 '" + targetRule.name + "' is valid.", SUCCESS_COLOR);
+                    CustomRuleEditor.this.setStatus(targetRule.name + "' is valid.", SUCCESS_COLOR);
                 }
                 else {
-                    CustomRuleEditor.this.setStatus("\u2717 '" + targetRule.name + "' could not be proven: " + (finalErrorMessage != null ? finalErrorMessage : "proof failed"), DANGER_COLOR);
+                    CustomRuleEditor.this.setStatus(targetRule.name + "' could not be proven: " + (finalErrorMessage != null ? finalErrorMessage : "proof failed"), DANGER_COLOR);
                 }
             });
         });
@@ -941,19 +938,18 @@ public class CustomRuleEditor {
             JLabel badgeLabel = new JLabel();
             badgeLabel.setFont(SMALL_FONT);
             if (rule.isValidating) {
-                badgeLabel.setText("⏳");
                 badgeLabel.setForeground(WARNING_COLOR);
             }
             else if (rule.isValidated) {
-                badgeLabel.setText("✓ valid");
+                badgeLabel.setText("valid");
                 badgeLabel.setForeground(SUCCESS_COLOR);
             }
             else if (rule.validationError != null) {
-                badgeLabel.setText("✗ failed");
+                badgeLabel.setText("failed");
                 badgeLabel.setForeground(DANGER_COLOR);
             }
             else {
-                badgeLabel.setText("○ unvalidated");
+                badgeLabel.setText("unvalidated");
                 badgeLabel.setForeground(TEXT_DIM_COLOR);
             }
             return badgeLabel;

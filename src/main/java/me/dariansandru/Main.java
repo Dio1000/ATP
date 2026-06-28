@@ -15,7 +15,6 @@ public class Main {
     static final String automatedString = "automated";
     static final String manualString = "manual";
     static final String testString = "test";
-    static final String inputFile = "files/input.txt";
 
     public static void main(String[] args) {
 
@@ -37,15 +36,17 @@ public class Main {
                 SwingUtilities.invokeLater(PropositionalProofGUIController::new);
             }
             case automatedString -> {
-                LogicController logicController = new LogicController(inputFile);
+                LogicController logicController = new LogicController(GlobalFlags.inputFilePath);
                 logicController.automatedRun();
             }
             case manualString -> {
-                LogicController logicController = new LogicController(inputFile);
+                LogicController logicController = new LogicController(GlobalFlags.inputFilePath);
                 logicController.manualRun();
             }
             case testString -> TestPipeline.test();
-            case null, default -> throw new IllegalStateException("Argument: " + args[0] + " could not be found!");
+            case null, default -> throw new IllegalStateException("Argument: " + argument + " could not be found!");
         }
     }
 }
+
+// TODO: Add support for mentioning the input / output files

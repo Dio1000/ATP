@@ -1,7 +1,6 @@
 package me.dariansandru.gui;
 
 import me.dariansandru.domain.data_structures.ast.AST;
-import me.dariansandru.domain.data_structures.ast.PropositionalAST;
 import me.dariansandru.utils.helper.KnowledgeBaseRegistry;
 
 import javax.swing.*;
@@ -9,8 +8,6 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
-import java.util.ArrayList;
-import java.util.List;
 
 public class GUIComponents {
 
@@ -488,7 +485,7 @@ public class GUIComponents {
 
         if (isCheckable && isKnowledgeBase) {
             String source = KnowledgeBaseRegistry.getObtainedFrom(formulaAst.toString());
-            JLabel sourceLabel = new JLabel(source != null ? source : "-");
+            JLabel sourceLabel = new JLabel(source);
             sourceLabel.setFont(GUITheme.SMALL_FONT);
             sourceLabel.setForeground(GUITheme.INTENT_PRIMARY.brighter());
             textPanel.add(sourceLabel);

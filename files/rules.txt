@@ -1,0 +1,23 @@
+// Classical Propositional Inference Rules
+// If you wish to modify something, please only remove rules by commenting them,
+// do not add anything. Adding rules is done in the Custom Inference Rule
+// section of the application.
+
+ModusPonens
+ModusTollens
+ConjunctionElimination
+HypotheticalSyllogism
+ImplicationElimination
+ConjunctionIntroduction
+DisjunctionElimination
+DisjunctionIntroduction
+EquivalenceIntroduction
+EquivalenceElimination
+ImplicationIntroduction
+DeMorgan
+ContradictionRule
+MaterialImplication
+Absorption
+ConstructiveDilemma
+DestructiveDilemma
+DisjunctiveSyllogism

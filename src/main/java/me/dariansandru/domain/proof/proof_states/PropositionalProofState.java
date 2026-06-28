@@ -51,6 +51,9 @@ public class PropositionalProofState implements ProofState {
     private int currentChildIndex = 0;
     private int stateIndex = 0;
 
+    private int recursionDepth = 0;
+    private static final int MAX_RECURSION_DEPTH = 20;
+
     private final List<InferenceRule> expansionRules = new ArrayList<>();
     private final List<InferenceRule> derivationRules = new ArrayList<>();
 
@@ -104,14 +107,15 @@ public class PropositionalProofState implements ProofState {
         if (isProven) return;
 
         int expansionPass = 0;
-        int maxExpansionPasses = 4;
+        int maxSteps = 1000;
 
-        while (!isProven && expansionPass < maxExpansionPasses) {
+        while (!isProven && expansionPass < maxSteps) {
             currentConjunctionLevel = ConjunctionIntroduction.LEVEL_ATOMS;
             levelCompleted = false;
-            boolean changed = applyExpansionRules();
 
-            if (changed) applyDerivationRules();
+            applyExpansionRules();
+            applyDerivationRules();
+
             if (containsGoal()) {
                 printProof();
                 this.isProven = true;
@@ -132,9 +136,11 @@ public class PropositionalProofState implements ProofState {
     }
 
     private void printProof() {
+        GlobalTimer.setProofTestStartTime();
         if (!GlobalFlags.executionFlag.equals("automated")) {
             ProofTextHelper.getProofText(goals.getFirst().toString());
             ProofTextHelper.buildFormalProof(goals.getFirst().toString());
+            GlobalTimer.setProofEndTime();
             return;
         }
 
@@ -150,6 +156,7 @@ public class PropositionalProofState implements ProofState {
             OutputDevice.writeToConsole("");
         }
         isProven = true;
+        GlobalTimer.setProofEndTime();
     }
 
     public String getIndentedProofString() {
@@ -226,11 +233,7 @@ public class PropositionalProofState implements ProofState {
             if (ruleName.equals("Conjunction Introduction")) {
                 if (currentConjunctionLevel == ConjunctionIntroduction.LEVEL_ATOMS && !levelCompleted) {
                     List<AST> atoms = extractAtoms();
-                    if (!atoms.isEmpty()) {
-                        List<AST> derived = rule.inference(atoms, getGoal());
-                        changed = addDerived(derived);
-                        levelCompleted = true;
-                    }
+                    changed = isChanged(changed, rule, atoms);
                 }
 
                 if (currentConjunctionLevel == ConjunctionIntroduction.LEVEL_SIMPLE_CONJUNCTIONS && !levelCompleted) {
@@ -240,11 +243,7 @@ public class PropositionalProofState implements ProofState {
                     combined.addAll(atoms);
                     combined.addAll(simpleConjunctions);
 
-                    if (!combined.isEmpty()) {
-                        List<AST> derived = rule.inference(combined, getGoal());
-                        changed = addDerived(derived);
-                        levelCompleted = true;
-                    }
+                    changed = isChanged(changed, rule, combined);
                 }
 
                 if (currentConjunctionLevel == ConjunctionIntroduction.LEVEL_ALL && !levelCompleted) {
@@ -255,13 +254,15 @@ public class PropositionalProofState implements ProofState {
                             candidates.add(ast);
                         }
                     }
-
                     if (!candidates.isEmpty()) {
                         List<AST> derived = rule.inference(candidates, getGoal());
                         changed = addDerived(derived);
-                        for (AST ast : candidates) conjunctionInputs.add(ast.toString());
-                        levelCompleted = true;
+
+                        for (AST ast : candidates) {
+                            conjunctionInputs.add(ast.toString());
+                        }
                     }
+                    levelCompleted = true;
                 }
 
                 if (levelCompleted && currentConjunctionLevel < ConjunctionIntroduction.LEVEL_ALL) {
@@ -276,6 +277,17 @@ public class PropositionalProofState implements ProofState {
             }
             appliedExpansionRules.add(ruleName);
         }
+
+        return changed;
+    }
+
+    private boolean isChanged(boolean changed, InferenceRule rule, List<AST> atoms) {
+        if (!atoms.isEmpty()) {
+            List<AST> derived = rule.inference(atoms, getGoal());
+            changed = addDerived(derived);
+            if (!derived.isEmpty() || atoms.size() < 2) levelCompleted = true;
+        }
+        else levelCompleted = true;
         return changed;
     }
 
@@ -367,21 +379,38 @@ public class PropositionalProofState implements ProofState {
     }
 
     private void expandSubGoal(SubGoal subGoal) {
-        if (subGoal.getGoal().isContradiction()) return;
+        recursionDepth++;
+        if (recursionDepth > MAX_RECURSION_DEPTH) {
+            recursionDepth--;
+            return;
+        }
 
-        if (activeSubGoals.contains(subGoal.getGoal().toString())) return;
+        if (subGoal.getGoal().isContradiction()) {
+            recursionDepth--;
+            return;
+        }
+
+        if (activeSubGoals.contains(subGoal.getGoal().toString())) {
+            recursionDepth--;
+            return;
+        }
         activeSubGoals.add(subGoal.getGoal().toString());
 
         if (containsGoalDirectly(subGoal.getGoal())) {
             this.isProven = true;
             ProofTextHelper.getProofText(subGoal);
+            recursionDepth--;
             return;
         }
 
         if (containsSubGoal(subGoal)) {
             this.isProven = true;
-            if (addSubGoalToKnowledgeBase(subGoal)) return;
+            if (addSubGoalToKnowledgeBase(subGoal)) {
+                recursionDepth--;
+                return;
+            }
             ProofTextHelper.getProofText(subGoal);
+            recursionDepth--;
             return;
         }
 
@@ -391,8 +420,12 @@ public class PropositionalProofState implements ProofState {
             AST otherGoal = subGoal.getCurrentOtherGoal();
             processGoal(subGoal, otherGoal);
             subGoal.incrementOtherGoalIndex();
-            if (!isProven) return;
+            if (isProven) {
+                recursionDepth--;
+                return;
+            }
         }
+        recursionDepth--;
     }
 
     private boolean containsGoalDirectly(AST goal) {

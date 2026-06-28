@@ -452,7 +452,7 @@ public class GUIControllerActions {
     private void applyStrategy(Strategy strategy) {
         ManualPropositionalProof currentProof = this.controller.getCurrentProof();
         if (currentProof == null || !this.controller.isProofCreated()) {
-            this.setStatus("No active proof - create one first.", GUITheme.INTENT_DANGER);
+            this.setStatus("No active proof, create one first.", GUITheme.INTENT_DANGER);
             return;
         }
         if (this.controller.getSelectedGoals().isEmpty()) {
@@ -468,11 +468,29 @@ public class GUIControllerActions {
         }
 
         List<AST> liveGoals = currentProof.getGoals();
-        for (AST goal : this.controller.getSelectedGoals()) {
-            int index = (liveGoals != null) ? liveGoals.indexOf(goal) : -1;
+
+        if (liveGoals.size() == 1 && liveGoals.getFirst().isContradiction()) {
+            this.setStatus("Goal is already a contradiction.", GUITheme.TEXT_SECONDARY);
+            return;
+        }
+
+        List<AST> selectedGoalsCopy = new ArrayList<>(this.controller.getSelectedGoals());
+
+        for (AST goal : selectedGoalsCopy) {
+            int index = liveGoals.indexOf(goal);
             if (index < 0) {
-                this.setStatus("Goal not found in current proof state.", GUITheme.INTENT_DANGER);
-                continue;
+                boolean found = false;
+                for (int i = 0; i < liveGoals.size(); i++) {
+                    if (goal.isEquivalentTo(liveGoals.get(i))) {
+                        index = i;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    this.setStatus("Goal not found in current proof state.", GUITheme.INTENT_DANGER);
+                    continue;
+                }
             }
 
             String command = commandInfo.command + "(G" + (index + 1) + ")";
@@ -523,11 +541,13 @@ public class GUIControllerActions {
 
     public void addToGoal() {
         if (this.controller.isProofCreated()) {
-            this.setStatus("Proof already created: Reset to modify goals.", GUITheme.INTENT_DANGER);
+            this.setStatus("Proof already created, reset to modify goals.", GUITheme.INTENT_DANGER);
             return;
         }
         String text = this.controller.getGoalInputField().getText().trim();
-        if (text.isEmpty()) return;
+        if (text.isEmpty()) {
+            return;
+        }
 
         try {
             AST ast = new PropositionalAST(text, true);
@@ -627,6 +647,15 @@ public class GUIControllerActions {
         }
         try {
             for (AST ast : this.controller.getKnowledgeBaseEntries()) {
+                this.controller.registerAtoms(List.of(ast));
+            }
+            for (AST ast : this.controller.getGoalListData()) {
+                this.controller.registerAtoms(List.of(ast));
+            }
+
+            List<AST> kbCopy = new ArrayList<>(this.controller.getKnowledgeBaseEntries());
+
+            for (AST ast : this.controller.getKnowledgeBaseEntries()) {
                 KnowledgeBaseRegistry.addObtainedFrom(ast.toString(), "Hypothesis");
             }
             for (AST ast : this.controller.getGoalListData()) {
@@ -634,9 +663,10 @@ public class GUIControllerActions {
             }
 
             ManualPropositionalProof proof = new ManualPropositionalProof(
-                    new ArrayList<>(this.controller.getKnowledgeBaseEntries()),
+                    kbCopy,
                     new ArrayList<>(this.controller.getGoalListData()),
                     null, 1);
+
             this.controller.setCurrentProof(proof);
             this.controller.setProofCreated(true);
             ManualPropositionalProofStates.addOriginalState(proof);
@@ -650,7 +680,7 @@ public class GUIControllerActions {
             if (this.createProofButton != null) {
                 this.createProofButton.setEnabled(false);
             }
-            this.setStatus("Proof created - select KB formulas or goals to apply rules.", GUITheme.INTENT_POSITIVE);
+            this.setStatus("Proof created, select KB formulas or goals to apply rules.", GUITheme.INTENT_POSITIVE);
 
         }
         catch (Exception exception) {
@@ -705,7 +735,7 @@ public class GUIControllerActions {
                         this.updateStateDisplay();
                         this.clearSelections();
                     }
-                    this.setStatus("State completed - returned to parent state.", GUITheme.TEXT_SECONDARY);
+                    this.setStatus("State completed, returned to parent state.", GUITheme.TEXT_SECONDARY);
                 }
                 else {
                     this.updateStateDisplay();
@@ -716,7 +746,7 @@ public class GUIControllerActions {
                 }
             }
             else {
-                this.setStatus("Cannot complete - some goals or sub-states are unresolved.", GUITheme.INTENT_DANGER);
+                this.setStatus("Cannot complete, some goals or sub-states are unresolved.", GUITheme.INTENT_DANGER);
             }
         }
         catch (Exception exception) {
@@ -749,7 +779,7 @@ public class GUIControllerActions {
             }
         }
         catch (NumberFormatException exception) {
-            this.setStatus("Invalid state index - enter a number.", GUITheme.INTENT_DANGER);
+            this.setStatus("Invalid state index, enter a number.", GUITheme.INTENT_DANGER);
         }
         catch (Exception exception) {
             this.setStatus("Error changing state: " + exception.getMessage(), GUITheme.INTENT_DANGER);
@@ -945,8 +975,9 @@ public class GUIControllerActions {
     }
 
     public void runAutomatedProof() {
-        if (this.controller.getKnowledgeBaseEntries().isEmpty() || this.controller.getGoalListData().isEmpty()) {
-            this.setStatus("Please add knowledge base formulas and goals before automating.", GUITheme.INTENT_DANGER);
+        if (this.controller.getGoalListData().isEmpty() &&
+                (this.controller.getCurrentProof() == null || this.controller.getCurrentProof().getGoals().isEmpty())) {
+            this.setStatus("Please add at least one goal before automating.", GUITheme.INTENT_DANGER);
             return;
         }
 
@@ -954,13 +985,23 @@ public class GUIControllerActions {
 
         try {
             this.controller.getAutomatedProofOutputArea().setText("Running automated proof...\n\n");
-
             Signature signature = SignatureFactory.createSignature(UniverseOfDiscourse.PROPOSITIONS);
+
+            List<AST> currentKB;
+            List<AST> currentGoals;
+
+            if (this.controller.isProofCreated() && this.controller.getCurrentProof() != null) {
+                currentKB = new ArrayList<>(this.controller.getCurrentProof().getKnowledgeBase());
+                currentGoals = new ArrayList<>(this.controller.getCurrentProof().getGoals());
+            } else {
+                currentKB = new ArrayList<>(this.controller.getKnowledgeBaseEntries());
+                currentGoals = new ArrayList<>(this.controller.getGoalListData());
+            }
 
             PropositionalProof automatedProof = new PropositionalProof(
                     signature,
-                    new ArrayList<>(this.controller.getKnowledgeBaseEntries()),
-                    new ArrayList<>(this.controller.getGoalListData())
+                    currentKB,
+                    currentGoals
             );
 
             boolean result = automatedProof.proveWithoutPrinting();

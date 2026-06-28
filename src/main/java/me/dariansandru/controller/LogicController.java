@@ -62,17 +62,9 @@ public class LogicController {
         }
         OutputDevice.writeToConsole("Syntax validated!");
 
-        // Trivial proof for JVM to start its optimisation, resulting in less 
-        // execution time for further proofs
-//        List<AST> trivialKnowledgeBaseAST = new ArrayList<>();
-//        List<AST> trivialGoalAST = new ArrayList<>();
-//
-//        trivialKnowledgeBaseAST.add(new PropositionalAST("A", true));
-//        trivialGoalAST.add(new PropositionalAST("A", true));
-//        GlobalAtomID.addAtomId("A");
-//
-//        PropositionalProof trivialProof = new PropositionalProof(signature, trivialKnowledgeBaseAST, trivialGoalAST);
-//        trivialProof.proveWithoutPrinting();
+        // Trivial AST creation for JVM to start its optimisation, resulting in less
+        // execution time for further proofs, since JVM is already warmed up.
+        warmup();
     }
 
     public void automatedRun() {
@@ -101,5 +93,12 @@ public class LogicController {
         PropositionalAST ast = (PropositionalAST) PropositionalLogicHelper.buildImplication(knowledgeBaseAST, goalsAST.getFirst());
         ast.buildBDD();
         return !ast.getBuilder().isTautology();
+    }
+
+    private void warmup() {
+        for (int i = 0; i < 5000; i++) {
+            PropositionalAST dummy = new PropositionalAST("(A -> B) -> C", true);
+            dummy.buildBDD();
+        }
     }
 }

@@ -1,0 +1,12 @@
+                    We derive E from the Knowledge Base
+               From E -> (!I AND !M), by Material Implication, we derive !E OR (!I AND !M)
+We derive !P from the Knowledge Base
+     From (A AND W) -> P and !P, by Modus Tollens, we derive !(A AND W)
+          From !(A AND W), by De Morgan, we derive !A OR !W
+               From !A -> I, !W -> M and !A OR !W, by Constructive Dilemma, we derive I OR M
+                    From !E OR (!I AND !M) and I OR M, by Disjunctive Syllogism, we derive !E
+                         We derive a contradiction from E and !E
+----------------------------
+Proof completed in 117.45 ms
+Peak memory usage: 94.031 MB
+----------------------------

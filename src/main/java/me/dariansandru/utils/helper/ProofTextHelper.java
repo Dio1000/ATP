@@ -74,29 +74,6 @@ public abstract class ProofTextHelper {
         buildFormalProof("Contradiction");
     }
 
-    private static void addDerivationSteps(String formula, int indent, List<ProofStep> proofText, Set<String> visited) {
-        if (visited.contains(formula)) return;
-        visited.add(formula);
-
-        String ruleText = KnowledgeBaseRegistry.getString(formula);
-        List<String> parents = KnowledgeBaseRegistry.from(formula);
-
-        if (ruleText != null && !ruleText.isEmpty() && !ruleText.equals("Hypothesis")) {
-            proofText.add(new ProofStep(ruleText, indent));
-        }
-        else if (parents == null || parents.isEmpty()) {
-            if (!formula.equals("Contradiction") && !formula.contains("->") && !formula.contains("<->") && !formula.contains("AND") && !formula.contains("OR")) {
-                proofText.add(new ProofStep("We derive " + formula + " from the Knowledge Base", indent));
-            }
-        }
-
-        if (parents != null && !parents.isEmpty()) {
-            for (String parent : parents) {
-                addDerivationSteps(parent, indent + 1, proofText, visited);
-            }
-        }
-    }
-
     private static List<ProofStep> getAllByIndentation(List<ProofStep> steps, int indent) {
         List<ProofStep> result = new ArrayList<>();
         for (ProofStep step : steps) {
@@ -110,66 +87,57 @@ public abstract class ProofTextHelper {
     }
 
     public static void print() {
-        if (assumptionSteps.isEmpty() && conclusionSteps.isEmpty()) {
-            for (List<ProofStep> proof : proofSteps) {
-                for (ProofStep step : proof) {
-                    OutputDevice.writeIndentedToConsole(step.text(), step.indent());
-                    fullProof.add(step);
-                }
-            }
-            return;
+        int minIndent = Integer.MAX_VALUE;
+        int maxIndent = Integer.MIN_VALUE;
+
+        List<ProofStep> allProofSteps = new ArrayList<>();
+        for (List<ProofStep> proof : proofSteps) {
+            allProofSteps.addAll(proof);
         }
 
-        boolean isAssumption = true;
-        boolean isConclusion = false;
-        int printedProofIndex = 0;
-        int currentIndentation = 0;
+        for (ProofStep step : allProofSteps) {
+            minIndent = Math.min(minIndent, step.indent());
+            maxIndent = Math.max(maxIndent, step.indent());
+        }
 
-        do {
-            if (isAssumption) {
-                if (getStepsAtIndent(currentIndentation, assumptionSteps)) break;
-                currentIndentation++;
-                if (currentIndentation == rightMostIndent) isAssumption = false;
+        for (ProofStep step : assumptionSteps) {
+            OutputDevice.writeIndentedToConsole(step.text(), step.indent());
+            fullProof.add(step);
+        }
+
+        for (ProofStep step : allProofSteps) {
+            int transformedIndent = (maxIndent - step.indent()) + minIndent;
+
+            OutputDevice.writeIndentedToConsole(step.text(), transformedIndent);
+            fullProof.add(new ProofStep(step.text(), transformedIndent));
+        }
+        for (ProofStep step : conclusionSteps) {
+            OutputDevice.writeIndentedToConsole(step.text(), step.indent());
+            fullProof.add(step);
+        }
+    }
+
+    private static void addDerivationSteps(String formula, int indent, List<ProofStep> proofText, Set<String> visited) {
+        if (visited.contains(formula)) return;
+        visited.add(formula);
+
+        String ruleText = KnowledgeBaseRegistry.getString(formula);
+        List<String> parents = KnowledgeBaseRegistry.from(formula);
+
+        if (parents != null && !parents.isEmpty()) {
+            for (String parent : parents) {
+                addDerivationSteps(parent, indent + 1, proofText, visited);
             }
-            else if (isConclusion) {
-                if (getStepsAtIndent(currentIndentation, conclusionSteps)) break;
-                if (!getAllByIndentation(assumptionSteps, currentIndentation).isEmpty()) {
-                    isAssumption = true;
-                    isConclusion = false;
-                }
-                else currentIndentation--;
+        }
+
+        if (ruleText != null && !ruleText.isEmpty() && !ruleText.equals("Hypothesis")) {
+            proofText.add(new ProofStep(ruleText, indent));
+        }
+        else if (parents == null || parents.isEmpty()) {
+            if (!formula.equals("Contradiction") && !formula.contains("->") && !formula.contains("<->") && !formula.contains("AND") && !formula.contains("OR")) {
+                proofText.add(new ProofStep("We derive " + formula + " from the Knowledge Base", indent));
             }
-            else {
-                if (printedProofIndex == proofSteps.size()) {
-                    isConclusion = true;
-                    currentIndentation--;
-                    continue;
-                }
-
-                List<List<ProofStep>> proofsAtIndent = new ArrayList<>();
-                for (int i = printedProofIndex; i < proofSteps.size(); i++) {
-                    List<ProofStep> proof = proofSteps.get(i);
-                    if (!proof.isEmpty() && proof.getFirst().indent() == currentIndentation) {
-                        proofsAtIndent.add(proof);
-                    }
-                    else break;
-                }
-
-                for (List<ProofStep> proof : proofsAtIndent) {
-                    ProofStep lastStep = null;
-                    for (ProofStep step : proof) {
-                        OutputDevice.writeIndentedToConsole(step.text(), step.indent());
-                        fullProof.add(step);
-                        lastStep = step;
-                    }
-                    assert lastStep != null;
-                }
-
-                proofSteps.subList(printedProofIndex, printedProofIndex + proofsAtIndent.size()).clear();
-                currentIndentation--;
-                isConclusion = true;
-            }
-        } while (!(currentIndentation == -1 && isConclusion));
+        }
     }
 
     private static boolean getStepsAtIndent(int currentIndentation, List<ProofStep> assumptionSteps) {
@@ -235,11 +203,16 @@ public abstract class ProofTextHelper {
     }
 
     public static void printWithSymbol(String string, String symbol) {
-        System.out.println();
-        for (int i = 0; i < string.length(); i++) System.out.print(symbol);
+        String[] parts = string.split("\n");
+        int length = parts[0].length();
+        for (String part : parts) {
+            if (part.length() > length) length = part.length();
+        }
+
+        for (int i = 0; i < length; i++) System.out.print(symbol);
         System.out.println();
         System.out.println(string);
-        for (int i = 0; i < string.length(); i++) System.out.print(symbol);
+        for (int i = 0; i < length; i++) System.out.print(symbol);
     }
 
     public static String getProofString() {
